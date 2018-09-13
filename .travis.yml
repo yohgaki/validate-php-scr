@@ -1,0 +1,12 @@
+language: php
+php:
+  - '7.2'
+  - '7.1'
+  - '7.0'
+  - nightly
+
+before_script:
+  - curl -sSfL -o run-tests.php https://raw.githubusercontent.com/php/php-src/master/run-tests.php
+  - chmod 755 run-tests.php
+
+script: cd src; ../run-tests.php -p `which php` --show-diff tests
