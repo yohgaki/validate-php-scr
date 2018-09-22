@@ -146,7 +146,7 @@ Application INPUT validation failure MUST NOT require user interactions. INPUT v
 
 ### Application BUSINESS LOGIC Validation
 
-Application BUSINESS LOGIC validation validates values against business logic. e.g. Reservation date is future date, min value is less than max value, has privilege or not etc. BUSINESS LOGIC validations are responsible for logical correctness mainly.
+Application BUSINESS LOGIC validation validates values against business logic. e.g. Reservation date is not future date, min value is less than max value, has privilege or not etc. BUSINESS LOGIC validations are responsible for logical correctness mainly.
 
 Unlike INPUT validations, many BUSINESS LOGIC validation requires user interactions to correct input mistakes. Clients cannot handle input mistakes fully and logical correctness must be validated by server always.
 
