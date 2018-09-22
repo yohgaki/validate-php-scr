@@ -73,7 +73,7 @@ Multiple value validations at once.
 ```php
 <?php
 // Simple "username" and "email" form validation example.
-// "Validate" can be used for "From Validation" also.
+// "Validate" is suitable for "From Validations" also.
 require_once __DIR__.'/../validate_func.php';
 // In practice, you would define all inputs specifications at central repository.
 // If your web app does not have strict client side validations, you will need
@@ -160,13 +160,6 @@ INPUT validation failure must not simply ignored. Please refer to 2017 OWASP TOP
 https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring
 
 
-## Validate PHP C extension module
-
-This PHP script is based on validate C module for PHP 7. Features in this script version is planned to be ported to C module which can perform validations faster.
-
-https://github.com/yohgaki/validate-php (Do not use this, but PHP script version now.)
-
-
 ## Documents
 
 Reference.
@@ -200,16 +193,24 @@ Examples.
 
 Web developers must validate character encodings. If you don't validate character encoding, your application became vulnerable to DoS easily. i.e. htmlspecialchars() return empty, today's browsers refuse to render badly broken encoding, system has binary safe and encoding aware APIs/storages which cause DoS.
 
-"Validate" script version only validates character encoding and deny Unicode control characters. C module version will support explicitly selected (white list) Unicode "scripts" (character types) for maximum security.
+"Validate" script version only validates UTF-8 encoding and deny Unicode control characters. C module version will support explicitly selected (white list) Unicode categories (character types) for maximum security.
 
 
 ## Extending
 
-Since Validate PHP is designed as framework, it is easy to extend. "[src/tools](https://github.com/yohgaki/validate-php-scr/tree/master/src/tools)" directory contains
+Since Validate PHP is designed as framework, it is easy to extend. It can work with other validators such as Respect.
+
+"[src/tools](https://github.com/yohgaki/validate-php-scr/tree/master/src/tools)" directory contains
 tools that request logging, creating validation spec rules from log and validation script.
+
+
+## Validate PHP C extension module
+
+This PHP script is based on validate C module for PHP 7. Features in this script version is planned to be ported to C module which can perform validations faster.
+
+https://github.com/yohgaki/validate-php (Do not use this, but PHP script version now.)
 
 
 ## Others
 
 Comments, Bug reports and PRs are welcomed! Please remember "Validate" is not optimized for OO nor PHP scripts, but C module. This script is planed to be implemented as C module in the future.
-
