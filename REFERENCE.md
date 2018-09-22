@@ -638,3 +638,56 @@ $user_agent = [
 ];
 ```
 
+## Tips
+
+* "Validate PHP" has OO API, but I recommend procedural API.
+* If you would like to use "Validate PHP" for logic validation that you don't want any error/exception, simply use **VALIDATE_OPT_DISABLE_EXCEPTION** function option.
+* You would like to define central input parameter specifications similar to [this](https://github.com/yohgaki/validate-php-scr/blob/master/src/lib/basic_types.php). The definition file is an example definition for portable integer value handling also.
+
+```php
+<?php
+require_once __DIR__.'/../validate_func.php';
+// Procedural
+// mixed validate(Validate $ctx, mixed &$input, array $spec [, int $flags])
+// $ctx is automatically initialized.
+$result = validate($ctx, $input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
+$error_message = validate_get_user_errors($ctx); // Error messages defined by you.
+
+// OO
+$ctx = new Validate;
+$result = $ctx->validate($input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
+// This could be one liner if you don't need $ctx object.
+$result = (new Validate)->validate($input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
+?>
+```
+
+* You can log validation errors and ignore exceptions/errors. i.e.
+
+```php
+<?php
+// Procedural
+$ctx = validate_init();
+// Register logger simply logs errors.
+validate_set_logger_function($ctx, $my_logger);
+// validate() works without disturbing application.
+$result = validate($ctx, $input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_LOG_ERROR);
+// Examine logged errors.
+
+// OO
+$ctx = new Validate;
+$ctx->setLoggerFunction($my_logger);
+$result = $ctx->validate($input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_LOG_ERROR);
+?>
+```
+
+* You are better to define rock solid whitelist input validation rule for single/individual variable, then combine them for array inputs such as GET/POST/COOKIE/FILES/HTTP headers.
+* You can examine **unvalidated** inputs if you allow them.
+
+```php
+$result = validate($ctx, $input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
+
+// $input contains unvalidated values.
+var_dump($input);
+// You would validate them with more generic/loose validator.
+```
+

@@ -50,8 +50,23 @@ validate($ctx, $value, $B['fqdn']);
 
 Validation error results in Exception.
 
-
 ## Example #2
+
+Single value validation w/o exception.
+
+```php
+<?php
+require_once __DIR__.'/../validate_func.php';
+require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
+
+// Validate domain name w/o exception
+validate($ctx, $value, $B['fqdn'], VALIDATE_OPT_DISABLE_EXCEPTION);
+// Check $errors for interactive responses
+$errors = validate_get_user_errors($ctx);
+```
+
+
+## Example #3
 
 Multiple value validations at once.
 
@@ -115,10 +130,12 @@ var_dump($ctx->getErrors());     // Get system errors.
 A little more realistic working example is here:
  * https://sample.ohgaki.net/validate-php/validate-php-scr/src/examples/00-validate-web.php
 
-## Application "INPUT" and "BUSINESS LOGIC" validation
+
+## Application "INPUT" and "BUSINESS LOGIC" validation basics
 
 
 Application INPUT validation and BUSINESS LOGIC validation are **2 different validations**.
+
 
 ### Application INPUT Validation
 
@@ -126,11 +143,13 @@ Application INPUT validations should be done at **Application Trust Boundary**. 
 
 Application INPUT validation failure MUST NOT require user interactions. INPUT validation failure means "A user sent **Invalid values**.(= values clients cannot/should not send, unacceptable values. e.g. Too large, broken char encoding, malformed format/char, etc). These invalid inputs MUST simply be rejected and handled according to [**"FAIL FAST"**](https://en.wikipedia.org/wiki/Fail-fast) principle. i.e. Reject invalid inputs like WAF(Web Application Firewall) does. All inputs, including HTTP headers/Query parameters, must be validated always.
 
+
 ### Application BUSINESS LOGIC Validation
 
 Application BUSINESS LOGIC validation validates values against business logic. e.g. Reservation date is future date, min value is less than max value, has privilege or not etc. BUSINESS LOGIC validations are responsible for logical correctness mainly.
 
 Unlike INPUT validations, many BUSINESS LOGIC validation requires user interactions to correct input mistakes. Clients cannot handle input mistakes fully and logical correctness must be validated by server always.
+
 
 ### References
 
@@ -141,7 +160,7 @@ INPUT validation failure must not simply ignored. Please refer to 2017 OWASP TOP
 https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring
 
 
-## Validate C extension module
+## Validate PHP C extension module
 
 This PHP script is based on validate C module for PHP 7. Features in this script version is planned to be ported to C module which can perform validations faster.
 
@@ -161,59 +180,6 @@ Examples.
  * Validator behavior is described in [validate.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate.php).
  * Validator flags is described in [validate_defs.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate_defs.php)
 
-### Tips
-
-* This library is under development. Anything is subject to be changed.
-* If you would like to use "Validate" for logic validation that you don't want any error/exception, simply use **VALIDATE_OPT_DISABLE_EXCEPTION** function option.
-* You would like to define central input parameter specifications similar to [this](https://github.com/yohgaki/validate-php-scr/blob/master/src/lib/basic_types.php). The definition file is an example definition for portable integer value handling also.
-
-```php
-<?php
-require_once __DIR__.'/../validate_func.php';
-// Procedural
-// bool validate(Validate $v, mixed &$result, mixed &$input, array $spec, int $flags=0)
-// $v is automatically initialized.
-$result = validate($ctx, $input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-$error_message = validate_get_user_errors($ctx); // Error messages defined by you.
-// OO
-$ctx = new Validate;
-$result = $ctx->validate($input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-// This could be one liner if you don't need $ctx object.
-$result = (new Validate)->validate($input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-?>
-```
-
-* You can log validation errors and ignore exceptions/errors. i.e.
-
-```php
-<?php
-// Procedural
-$ctx = validate_init();
-// Register logger simply logs errors.
-validate_set_logger_function($ctx, $my_logger);
-// validate() works without disturbing application.
-$result = validate($ctx, $input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_LOG_ERROR);
-// Examine logged errors.
-
-// OO
-$ctx = new Validate;
-$ctx->setLoggerFunction($my_logger);
-$result = $ctx->validate($input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_LOG_ERROR);
-?>
-```
-
-* You are better to define rock solid whitelist input validation rule for single/individual variable, then combine them for array inputs such as GET/POST/COOKIE/FILES/HTTP headers.
-* You can examine **unvalidated** inputs if you allow them.
-
-```php
-$result = validate($ctx, $input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-// $input contains unvalidated values.
-var_dump($input);
-// You would validate them with more generic/loose validator.
-```
-
-* API is subject to be changed. If you need changes, please let me know.
-
 
 ## Status
 
@@ -226,9 +192,6 @@ var_dump($input);
 * More tests. (Most features are tested.)
 * Some minor features - Float is not validated like C module, etc.
 * Back port this to C module - When API is fixed. (TODO: Cleanup, Optimize, Reorganize PHP code for C implementation.)
-* Multi dimensional scalar array. (Done. Recursive reference is protected by "alimit" option.)
-* Error message controls like replacing values on the fly. (Done. '{{option_value}}' is replaced to $options' values.)
-* Multiple specs for single value. (Done. You can add spec doesn't raise Exception.)
 * Spec builder app(?).
 * Learning and automatic spec builder tool(?).
 
