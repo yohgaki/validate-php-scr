@@ -168,7 +168,10 @@ Reference.
 
 Examples.
 
- * [Examples](https://github.com/yohgaki/validate-php-scr/tree/master/src/examples) and [Tests](https://github.com/yohgaki/validate-php-scr/tree/master/src/tests)
+ * [Examples](https://github.com/yohgaki/validate-php-scr/tree/master/src/examples) and [Tests] (https://github.com/yohgaki/validate-php-scr/tree/master/src/tests)
+
+Codes.
+
  * validate() and other functions are in [validate_func.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate_func.php)
  * Validator behavior is described in [validate.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate.php).
  * Validator flags is described in [validate_defs.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate_defs.php)
