@@ -94,6 +94,7 @@ define('VALIDATE_CALLBACK_SYMBOL',         VALIDATE_STRING_SYMBOL); // WARNING: 
 define('VALIDATE_CALLBACK_MB',             VALIDATE_STRING_MB); // Allow MultiByte chars
 define('VALIDATE_CALLBACK_BINARY',         VALIDATE_STRING_BINARY); // WARNING: Dangerous option
 define('VALIDATE_CALLBACK_RFC3454_C',      VALIDATE_STRING_RFC3454_C); // Allow Unicode CNTRL char. ASCII code CNTRL is treated by above flags.
+define('VALIDATE_CALLBACK_RFC3454_D',      VALIDATE_STRING_RFC3454_D); // Allow Unicode CNTRL char. ASCII code CNTRL is treated by above flags.
 define('VALIDATE_CALLBACK_LAST_BIT', VALIDATE_STRING_LAST_BIT); /* Used internally */
 
 /* VALIDATE_REGEXP */
@@ -112,6 +113,7 @@ define('VALIDATE_REGEXP_SYMBOL',           VALIDATE_STRING_SYMBOL); // WARNING: 
 define('VALIDATE_REGEXP_MB',               VALIDATE_STRING_MB); // Allow MultiByte chars
 define('VALIDATE_REGEXP_BINARY',           VALIDATE_STRING_BINARY); // WARNING: Dangerous option
 define('VALIDATE_REGEXP_RFC3454_C',        VALIDATE_STRING_RFC3454_C); // Allow Unicode CNTRL char. ASCII code CNTRL is treated by above flags.
+define('VALIDATE_REGEXP_RFC3454_D',        VALIDATE_STRING_RFC3454_D); // Allow Unicode CNTRL char. ASCII code CNTRL is treated by above flags.
 define('VALIDATE_REGEXP_LAST_BIT', VALIDATE_STRING_LAST_BIT); /* Used internally */
 
 /* VALIDATE_ARRAY */
@@ -141,7 +143,7 @@ define('VALIDATE_FLAG_EMPTY_TO_DEFAULT',         1 << 21);  /* Input is empty ('
 define('VALIDATE_FLAG_NULL',                     1 << 22);  /* Accept NULL as valid input */
 define('VALIDATE_FLAG_ARRAY',                    1 << 23);  /* Require array of defined scalars. i.e. script.php?val[]=1&val[]=2 */
 define('VALIDATE_FLAG_ARRAY_RECURSIVE',          1 << 24);  /* Allow nested array. */
-define('VALIDATE_FLAG_ARRAY_KEY_ALNUM',          1 << 25);  /* Allow alnum + '_' keys. By default, only INT is allowed for keys. Use "callback" option for custom key validation. */
+define('VALIDATE_FLAG_ARRAY_KEY_ALNUM',          1 << 25);  /* Allow alnum + '_' keys. By default, only INT is allowed for keys. Use "key_callback" option for custom key validation. */
 define('VALIDATE_FLAG_WARNING',                  1 << 26);  /* WARNING: Dangerous option! Make validation error a warning error. i.e. Do not raise EXCEPTION / ERROR at all. */
 define('VALIDATE_FLAG_NOTICE',                   1 << 27);  /* WARNING: Dangerous option! Make validation error a notice error. i.e. Do not raise EXCEPTION / ERROR at all. */
 define('VALIDATE_FLAG_PASSTHRU',                 1 << 28);  /* WARNING: Dangerous option! Disables validation error & warning and logging. i.e. Behave as if there is no error/warning/notice. */

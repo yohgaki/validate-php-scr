@@ -3756,7 +3756,7 @@ class Validate
         $known_options = [
             'min', 'max', // INT / FLOAT range, STRING / REGEXP / CALLBACK value length.
             'amax', 'amin', 'alimit', // Number of array elements.
-            'key_callback', // Array of values array key validation callback.
+            'key_callback', // Array key validation callback for VALIDATE_FLAG_ARRAY.
             'INF', '-INF', 'length', // FLOAT option.
             'encoding', 'ascii', 'unicode', // STRING / REGEXP / CALLBACK option.
             'values', // INT / STRING option. (REGEXP / CALLBACK may use, but not use with them)
@@ -3765,7 +3765,6 @@ class Validate
             'filter', // Filter callback. All validators may have filter.
             'callback', // CALLBACK validator callback.
             'error_message', // Errors message.
-            'key_callback', // Array key validation callback for VALIDATE_FLAG_ARRAY.
         ];
         $cnt = 0;
         foreach ($known_options as $known) {

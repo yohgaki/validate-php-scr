@@ -217,8 +217,8 @@ function analyze_string_ascii_map(&$stat, $input) {
 
     $map = array_fill(0, 128, 0);
     $tmp = $stat[VALIDATE_ASCII_MAP] ?? array(); // Set previously found chars
-    foreach($tmp as $key => $input) {
-        $map[$key] = $input;
+    foreach($tmp as $key => $val) {
+        $map[$key] = $val;
     }
     $len = strlen($input);
     for ($i = 0; $i < $len; $i++) {
@@ -542,7 +542,7 @@ function create_string_spec($spec, $stat) {
     if (!empty($stat[VALIDATE_ASCII_MAP])) {
         $spec[VALIDATE_OPTIONS]['ascii'] = '';
         foreach ($stat[VALIDATE_ASCII_MAP] as $key => $val) {
-            if ($val) {
+            if ($val > 0) {
                 $spec[VALIDATE_OPTIONS]['ascii'] .= addslashes(chr($key));
             }
         }

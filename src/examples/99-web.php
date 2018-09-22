@@ -11,7 +11,7 @@
 require_once __DIR__.'/../validate_func.php';
 
 // Load parameter spec definitions
-require_once __DIR__.'/00-validate-web-param-specs.php';
+require_once __DIR__.'/99-web-specs.php';
 
 // Now you can combine above predefined parameter specs to a request validation spec.
 $spec1 = [

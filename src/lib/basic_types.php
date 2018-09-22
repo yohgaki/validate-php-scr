@@ -183,9 +183,17 @@ $B['alnum256'] =  [
 ];
 
 
-// Multibyte text line - Includes all SYMBOLS, so this could be dangerous.
+// Multibyte UTF-8 text line - Includes all SYMBOLS(Space and Symbols except newlines), so this could be dangerous.
 // You should set min/max by yourself to use 'line'.
 $B['line'] =  [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 0,
+    ]
+];
+
+$B['line_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -195,6 +203,14 @@ $B['line'] =  [
 
 $B['line32'] =  [
     VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 32,
+    ]
+];
+
+$B['line32_s'] =  [
+    VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
         'min' => 0, 'max' => 32,
@@ -202,6 +218,14 @@ $B['line32'] =  [
 ];
 
 $B['line64'] =  [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 64,
+    ]
+];
+
+$B['line64_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -211,6 +235,14 @@ $B['line64'] =  [
 
 $B['line128'] =  [
     VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 128,
+    ]
+];
+
+$B['line128_s'] =  [
+    VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
         'min' => 0, 'max' => 128,
@@ -219,6 +251,14 @@ $B['line128'] =  [
 
 $B['line256'] =  [
     VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 256,
+    ]
+];
+
+$B['line256_s'] =  [
+    VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
         'min' => 0, 'max' => 256,
@@ -226,6 +266,14 @@ $B['line256'] =  [
 ];
 
 $B['line512'] =  [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 512,
+    ]
+];
+
+$B['line512_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -238,6 +286,14 @@ $B['line512'] =  [
 // You should set min/max by yourself to use 'text'.
 $B['text'] =  [
     VALIDATE_STRING,
+    VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 0,
+    ]
+];
+
+$B['text_s'] =  [
+    VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
         'min' => 0, 'max' => 0,
@@ -245,6 +301,14 @@ $B['text'] =  [
 ];
 
 $B['text128'] =  [
+    VALIDATE_STRING,
+    VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 128,
+    ]
+];
+
+$B['text128_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -254,6 +318,14 @@ $B['text128'] =  [
 
 $B['text256'] =  [
     VALIDATE_STRING,
+    VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 256,
+    ]
+];
+
+$B['text256_s'] =  [
+    VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
         'min' => 0, 'max' => 256,
@@ -261,6 +333,14 @@ $B['text256'] =  [
 ];
 
 $B['text512'] =  [
+    VALIDATE_STRING,
+    VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 512,
+    ]
+];
+
+$B['text512_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -270,6 +350,14 @@ $B['text512'] =  [
 
 $B['text1024'] =  [
     VALIDATE_STRING,
+    VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 1024,
+    ]
+];
+
+$B['text1024_s'] =  [
+    VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
         'min' => 0, 'max' => 1024,
@@ -277,6 +365,14 @@ $B['text1024'] =  [
 ];
 
 $B['text2048'] =  [
+    VALIDATE_STRING,
+    VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 2048,
+    ]
+];
+
+$B['text2048_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -286,6 +382,14 @@ $B['text2048'] =  [
 
 $B['text4096'] =  [
     VALIDATE_STRING,
+    VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    [
+        'min' => 0, 'max' => 4096,
+    ]
+];
+
+$B['text4096_s'] =  [
+    VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
         'min' => 0, 'max' => 4096,
@@ -294,13 +398,13 @@ $B['text4096'] =  [
 
 $B['text8192'] =  [
     VALIDATE_STRING,
-    VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
+    VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
         'min' => 0, 'max' => 8192,
     ]
 ];
 
-$B['text8192'] =  [
+$B['text8192_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -403,7 +507,7 @@ $B['urle'] = [
     ]
 ];
 
-$B['urle_32'] = [
+$B['urle32'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -412,7 +516,7 @@ $B['urle_32'] = [
     ]
 ];
 
-$B['urle_64'] = [
+$B['urle64'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -421,7 +525,7 @@ $B['urle_64'] = [
     ]
 ];
 
-$B['urle_128'] = [
+$B['urle128'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -430,7 +534,7 @@ $B['urle_128'] = [
     ]
 ];
 
-$B['urle_256'] = [
+$B['urle256'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -454,7 +558,7 @@ $B['htmle'] = [
     ]
 ];
 
-$B['htmle_32'] = [
+$B['htmle32'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -463,7 +567,7 @@ $B['htmle_32'] = [
     ]
 ];
 
-$B['htmle_64'] = [
+$B['htmle64'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -472,7 +576,7 @@ $B['htmle_64'] = [
     ]
 ];
 
-$B['htmle_128'] = [
+$B['htmle128'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -481,7 +585,7 @@ $B['htmle_128'] = [
     ]
 ];
 
-$B['htmle_256'] = [
+$B['htmle256'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -490,7 +594,7 @@ $B['htmle_256'] = [
     ]
 ];
 
-$B['htmle_512'] = [
+$B['htmle512'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -499,7 +603,7 @@ $B['htmle_512'] = [
     ]
 ];
 
-$B['htmle_1024'] = [
+$B['htmle1024'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -621,10 +725,40 @@ $B['ipv6'] = [
     ]
 ];
 
+// Domain name
+$B['fqdn'] = [
+    VALIDATE_CALLBACK,
+    VALIDATE_STRING_ALNUM,
+    [
+        'min' => 3, 'max' => 253,
+        'ascii' => '.-_',
+        'callback' => function($ctx, &$result, $input) {
+            if (!strpos($input, '.') || $input{strlen($input)} === '.') {
+                validate_error($ctx, 'Invalid FQDN');
+                return false;
+            }
+            if (!dns_get_record($input)) {
+                validate_error($ctx, 'Cannot resolve by DNS');
+                return false;
+            }
+            $result = $input;
+            return true;
+    }]
+];
+
+// Hostname only
+$B['hostname'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM,
+    [
+        'min' => 1, 'max' => 63,
+        'ascii' => '-_',
+    ]
+];
 
 // HTTP header
 // https://tools.ietf.org/html/rfc7230#section-3.2
-
+// Trim is required(=spaces are allowed) by RFC
 $vtrim = function($ctx, $input, &$error) {
     assert($ctx instanceof Validate);
     if (is_array($input)) {
@@ -651,7 +785,7 @@ $B['header64'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
-        'min' => 0, 'max' => 128,
+        'min' => 1, 'max' => 64,
         'filter' => $vtrim,
     ]
 ];
@@ -661,7 +795,7 @@ $B['header64u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
-        'min' => 0, 'max' => 128,
+        'min' => 1, 'max' => 64,
         'filter' => $vtrim,
     ]
 ];
@@ -670,7 +804,7 @@ $B['header128'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
-        'min' => 0, 'max' => 128,
+        'min' => 1, 'max' => 128,
         'filter' => $vtrim,
     ]
 ];
@@ -679,7 +813,7 @@ $B['header128u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
-        'min' => 0, 'max' => 128,
+        'min' => 1, 'max' => 128,
         'filter' => $vtrim,
     ]
 ];
@@ -688,7 +822,7 @@ $B['header256'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
-        'min' => 0, 'max' => 256,
+        'min' => 1, 'max' => 256,
         'filter' => $vtrim,
     ]
 ];
@@ -697,7 +831,7 @@ $B['header256u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
-        'min' => 0, 'max' => 256,
+        'min' => 1, 'max' => 256,
         'filter' => $vtrim,
     ]
 ];
@@ -706,7 +840,7 @@ $B['header512'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
-        'min' => 0, 'max' => 512,
+        'min' => 1, 'max' => 512,
         'filter' => $vtrim,
     ]
 ];
@@ -715,7 +849,7 @@ $B['header512u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
-        'min' => 0, 'max' => 512,
+        'min' => 1, 'max' => 512,
         'filter' => $vtrim,
     ]
 ];
@@ -724,7 +858,7 @@ $B['header1024'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
-        'min' => 0, 'max' => 1024,
+        'min' => 1, 'max' => 1024,
         'filter' => $vtrim,
     ]
 ];
@@ -733,7 +867,7 @@ $B['header1024u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
-        'min' => 0, 'max' => 1024,
+        'min' => 1, 'max' => 1024,
         'filter' => $vtrim,
     ]
 ];
@@ -742,7 +876,7 @@ $B['header2048'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
-        'min' => 0, 'max' => 2048,
+        'min' => 1, 'max' => 2048,
         'filter' => $vtrim,
     ]
 ];
@@ -751,7 +885,7 @@ $B['header2048u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
-        'min' => 0, 'max' => 2048,
+        'min' => 1, 'max' => 2048,
         'filter' => $vtrim,
     ]
 ];
@@ -761,7 +895,7 @@ $B['header4096'] =
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
-        'min' => 0, 'max' => 4096,
+        'min' => 1, 'max' => 4096,
         'filter' => $vtrim,
     ]
 ];
@@ -771,7 +905,7 @@ $B['header4096u'] =
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
-        'min' => 0, 'max' => 4096,
+        'min' => 1, 'max' => 4096,
         'filter' => $vtrim,
     ]
 ];
@@ -780,7 +914,7 @@ $B['header8192'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
-        'min' => 0, 'max' => 8192,
+        'min' => 1, 'max' => 8192,
         'filter' => $vtrim,
     ]
 ];
@@ -789,7 +923,7 @@ $B['header8192u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
-        'min' => 0, 'max' => 8192,
+        'min' => 1, 'max' => 8192,
         'filter' => $vtrim,
     ]
 ];
@@ -798,7 +932,7 @@ $B['header32k'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
-        'min' => 0, 'max' => 32768,
+        'min' => 1, 'max' => 32768,
         'filter' => $vtrim,
     ]
 ];
@@ -807,7 +941,7 @@ $B['header32ku'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
-        'min' => 0, 'max' => 32768,
+        'min' => 1, 'max' => 32768,
         'filter' => $vtrim,
     ]
 ];

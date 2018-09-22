@@ -35,7 +35,25 @@ Validate is very flexible and is able to perform most validation tasks, includin
 * mbstring module - mb_ord() improves performance, more supported encodings and better encoding checks.
 * gmp module - "Validate" supports GMP integer also.
 
-## Example
+## Example #1
+
+Single value validation.
+
+```php
+<?php
+require_once __DIR__.'/../validate_func.php';
+require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
+
+// Validate domain name
+validate($ctx, $value, $B['fqdn']);
+```
+
+Validation error results in Exception.
+
+
+## Example #2
+
+Multiple value validations at once.
 
 ```php
 <?php
@@ -132,7 +150,11 @@ https://github.com/yohgaki/validate-php (Do not use this, but PHP script version
 
 ## Documents
 
-No documents yet, but there are examples.
+Reference.
+
+ * [REFERENCE.md](REFERENCE.md)
+
+Examples.
 
  * [Examples](https://github.com/yohgaki/validate-php-scr/tree/master/src/examples) and [Tests](https://github.com/yohgaki/validate-php-scr/tree/master/src/tests)
  * validate() and other functions are in [validate_func.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate_func.php)
