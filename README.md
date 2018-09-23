@@ -64,7 +64,7 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
 // Validate domain name w/o exception
 validate($ctx, $value, $B['fqdn'], VALIDATE_OPT_DISABLE_EXCEPTION);
 // Validte record ID
-validate($ctx, $id, $B['uint32']);
+validate($ctx, $id, $B['uint32'], VALIDATE_OPT_DISABLE_EXCEPTION);
 
 // Check $errors for interactive responses
 $errors = validate_get_user_errors($ctx);
