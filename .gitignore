@@ -1,0 +1,5 @@
+src/examples/*.inp
+src/examples/*.oac
+src/examples/*.out
+src/tmp
+validate-php-scr.code-workspace
