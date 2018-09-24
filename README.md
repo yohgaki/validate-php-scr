@@ -1,8 +1,8 @@
-# "Validate" for PHP - An INPUT validation framework.
+# "Validate" for PHP - An INPUT data validation framework
 
 [![Build Status](https://travis-ci.org/yohgaki/validate-php-scr.svg?branch=master)](https://travis-ci.org/yohgaki/validate-php-scr)
 
-"Validate" is "input validation **framework**" that is developed to be useful for "CERT Secure Coding" and "Design by Contract"(DbC). "Validate" is planned to be implemented as C module for PHP.
+"Validate" is "input data validation **framework**" that is developed to be useful for "CERT Secure Coding" and "Design by Contract"(DbC). "Validate" is planned to be implemented as C module for PHP.
 
 [**CERT Top 10 Secure Coding Practices.**](https://wiki.sei.cmu.edu/confluence/display/seccode/Top+10+Secure+Coding+Practices
 )
@@ -13,15 +13,15 @@
 
 ## Basic Design
 
-* **Framework** - Validate is framework, not an out of box library. It provides easy, yet flexible input validation framework for validations.
-* **Secure** - No insecure defaults. Everything has to be specified explicitly.
-* **Fast & Simple** - Define validation spec, validate the spec, and use. No code execution for building & checking validation rules.
+* **Framework** - "Validate" is framework, not an out of box library by itself. Provides easy, yet flexible input data validations.
+* **Secure** - No insecure defaults. Everything has to be specified explicitly. i.e. White list.
+* **Fast & Simple** - Define data validation rules and use them. No code execution for building validation rules.
 * **Easy to use** - Simple PHP array rule specification. Plain PHP code for complex inputs.
-* **Native type** - Validated values have native types when it is possible. This eliminates many type conversions in PHP app.
+* **Native type** - Returns natively typed data by default. Eliminates type conversions and helps faster PHP code execution with type hints.
 
-Validate is very flexible and is able to perform most validation tasks, including HTML form validations, JSON data validations, HTTP header validations with multi stage validations, etc. Although Validate is designed to validate all inputs at once, you may validate values one by one also.
+"Validate" is very flexible and able to perform any data validations, including HTTP header/Query parameter validations with multi stage validations, HTML form validations, JSON data validations, etc. Although "Validate" is designed to validate all inputs at once, you may validate values one by one also.
 
-"Strings" are the most important for input validations and Validate is strict for string validations. Many apps miss to validate "char encodings" and "length". Validate force them to be validated always by default. Validate does not allow Unicode control characters which cause problems by default.
+"Strings" are the most important for input validations and "Validate" is strict for string validations. Many apps miss to validate "char encodings" and "length". "Validate" forces them to be validated always by default. "Validate" does not allow Unicode control characters which cause problems by default.
 
 
 ## Requirements
@@ -54,7 +54,7 @@ Validation error results in Exception.
 
 ## Example #2
 
-Single value validation w/o exception.
+Single value validation without exception.
 
 ```php
 <?php
@@ -132,17 +132,16 @@ var_dump(validate_get_system_errors($ctx)); // Get system errors.
 ?>
 ```
 
-Validate PHP removes validated elements from $inputs. You can validate remaining elements
+"Validate" removes validated elements from $inputs. You can validate remaining elements
 by next validation.
 
 A little more realistic working example is here:
  * https://sample.ohgaki.net/validate-php/validate-php-scr/src/examples/99-web.php
 
 
-## Application "INPUT" and "BUSINESS LOGIC" validation basics
+## Application "INPUT" and "BUSINESS LOGIC" data validation basics
 
-
-Application INPUT validation and BUSINESS LOGIC validation are **2 different validations**.
+Application INPUT data validation and BUSINESS LOGIC data validation are **2 different validations**.
 
 
 ### Application INPUT Data Validation
@@ -158,7 +157,7 @@ Input data format correctness must be validated by server always.
 
 Application BUSINESS LOGIC data validation validates values against business logic. e.g. Reservation date is future date, min value is less than max value, has valid CSRF token, etc. BUSINESS LOGIC data validations are responsible for logical correctness mainly.
 
-Unlike Application INPUT data validations, many BUSINESS LOGIC data validation requires user interactions to correct input mistakes.
+Unlike Application INPUT data validations, many BUSINESS LOGIC data validations require user interactions to correct input mistakes.
 
 Logical data correctness must be validated by server always.
 
@@ -216,13 +215,13 @@ Some apps/libraries sanitize input data and make "invalid data" into "valid data
 
 ## Extending
 
-Since Validate PHP is designed as framework, it is easy to extend. It can work with other validators such as Respect.
+Since "Validate" is designed as framework, it is easy to extend. It can work with other validators such as Respect.
 
 "[src/tools](https://github.com/yohgaki/validate-php-scr/tree/master/src/tools)" directory contains
 tools that request logging, creating validation spec rules from log and validation script.
 
 
-## Validate PHP C extension module
+## "Validate" C extension module
 
 This PHP script is based on validate C module for PHP 7. Features are planned to be ported to C module which can perform validations a lot faster.
 
