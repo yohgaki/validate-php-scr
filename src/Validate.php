@@ -309,7 +309,7 @@ class Validate
         if (!$this->validate_params_checked) {
             if (($func_opts & VALIDATE_OPT_CHECK_SPEC)
                 && !$this->validateSpec($specs)) {
-                $err = $this->getErrors();
+                $err = $this->getSystemErrors();
                 if (!empty($err['warning'])) {
                     $cnt = count($err['waraning']);
                     trigger_error('Validation spec problem detected. Check spec errors. Hint: validate_get_errors($ctx); '.
@@ -458,7 +458,7 @@ class Validate
      *
      * @return array System errors.
      */
-    public function getErrors()
+    public function getSystemErrors()
     {
         return $this->getErrorAndWarning(E_ERROR);
     }

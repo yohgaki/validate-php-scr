@@ -115,7 +115,7 @@ $email = [
 $spec = [ // Combine predefined parameter spec into one spec.
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min'=>2, 'max'=>2], // Inputs must have exactly 2 elements.
+    ['min'=>2, 'max'=>10], // Inputs must have 2 to 10 elements.
     [
         // Simply reuse predefined spec for parameters.
         "username" => $username,
@@ -126,14 +126,17 @@ $spec = [ // Combine predefined parameter spec into one spec.
 
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // Disable exception, to check errors, etc.
 $results = validate($ctx, $inputs, $spec, $func_opts); // Now, let's validate and done.
-var_dump($ctx->getStatus());    // $results is NULL when error. getStatus() can be used also.
-var_dump($ctx->getUserErrors()); // Get user errors.
-var_dump($ctx->getErrors());     // Get system errors.
+var_dump(validate_get_status($ctx));             // $results is NULL when error. validate_get_status() can be used also.
+var_dump(validate_get_user_errors($ctx));   // Get user errors.
+var_dump(validate_get_system_errors($ctx)); // Get system errors.
 ?>
 ```
 
+Validate PHP removes validated elements from $inputs. You can validate remaining elements
+by next validation.
+
 A little more realistic working example is here:
- * https://sample.ohgaki.net/validate-php/validate-php-scr/src/examples/00-validate-web.php
+ * https://sample.ohgaki.net/validate-php/validate-php-scr/src/examples/99-web.php
 
 
 ## Application "INPUT" and "BUSINESS LOGIC" validation basics
@@ -173,7 +176,7 @@ Reference.
 
 Examples.
 
- * [Examples](https://github.com/yohgaki/validate-php-scr/tree/master/src/examples) and [Tests] (https://github.com/yohgaki/validate-php-scr/tree/master/src/tests)
+ * [Examples](https://github.com/yohgaki/validate-php-scr/tree/master/src/examples) and [Tests](https://github.com/yohgaki/validate-php-scr/tree/master/src/tests)
 
 Codes.
 

@@ -60,7 +60,7 @@ function validate(&$ctx, &$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
         return false;
     } elseif (($func_opts & VALIDATE_OPT_CHECK_SPEC)
          && !validate_spec($specs, $r, $tmp)) {
-        print_r($tmp->getErrors());
+        print_r($tmp->getSystemErrors());
         trigger_error('Invalid validation spec detected. Fix spec errors first.', E_USER_ERROR);
         return false;
     }
@@ -79,6 +79,18 @@ function validate(&$ctx, &$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
     $validated = $ctx->validate($inputs, $specs, $func_opts);
 
     return $validated;
+}
+
+
+/**
+ * Get validation status
+ *
+ * @param array $ctx  The context.
+ */
+function validate_get_status($ctx)
+{
+    assert($ctx instanceof Validate);
+    $ctx->getStatus();
 }
 
 
@@ -159,7 +171,7 @@ function validate_notice($ctx, $message)
 function validate_get_system_errors($ctx)
 {
     assert($ctx instanceof Validate);
-    return $ctx->getErrors();
+    return $ctx->getSystemErrors();
 }
 
 

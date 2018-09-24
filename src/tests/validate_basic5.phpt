@@ -77,7 +77,7 @@ $input = [
 	"extra" => 1234,
 ];
 var_dump(validate($ctx, $input, $spec, VALIDATE_OPT_UNVALIDATED), $ctx->getStatus(), $input);
-var_dump($ctx->getErrors());
+var_dump($ctx->getSystemErrors());
 ?>
 --EXPECT--
 array(3) {

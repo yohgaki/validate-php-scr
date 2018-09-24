@@ -10,6 +10,7 @@ Validate PHP is designed to handle both string inputs and natively typed inputs.
       * [Functions](#functions)
          * [validate_init()](#validate_init)
          * [validate()](#validate)
+         * [validate_get_status()](#validate_get_status)
          * [validate_set_error_level()](#validate_set_error_level)
          * [validate_error()](#validate_error)
          * [validate_warning()](#validate_warning)
@@ -35,6 +36,7 @@ Validate PHP is designed to handle both string inputs and natively typed inputs.
          * ['filter' callback](#filter-callback)
          * ['key_callback' for array of scalars](#key_callback-for-array-of-scalars)
          * ['callback' for VALIDATE_CALLBACK validator](#callback-for-validate_callback-validator)
+      * [Tips](#tips)
 
 ## Functions
 
@@ -88,6 +90,22 @@ $func_opts bit flag options:
  * VALIDATE_OPT_LOG_ERROR - Log errors by logger function set by validate_set_logger_function().
 
 
+### validate_get_status()
+
+Get validation status.
+
+```php
+bool validate(Validate $ctx)
+```
+
+Parameters:
+
+ * $ctx - Validate object.
+
+Description:
+
+Returns TRUE for successful validation, FALSE otherwise.
+
 
 ### validate_set_error_level()
 
@@ -104,7 +122,7 @@ Parameters:
 
 Description:
 
-Set PHP error level when "VALIDATE_OPT_DISABLE_EXCEPTION | 
+Set PHP error level for "VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_RAISE_ERROR" function options.
 
 
 
