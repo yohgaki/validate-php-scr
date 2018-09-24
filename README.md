@@ -145,27 +145,30 @@ A little more realistic working example is here:
 Application INPUT validation and BUSINESS LOGIC validation are **2 different validations**.
 
 
-### Application INPUT Validation
+### Application INPUT Data Validation
 
-Application INPUT validations should be done at **Application Trust Boundary**. Application INPUT validation assures "Values have correct forms".  e.g. length, range, encoding, used chars, specific formats such as date, phone, zip. **Correct and Input mistake values** are allowed by INPUT validation.
+All of application INPUT data must be validated and validations should be done at **Application Trust Boundary**. Application INPUT data validation assures "Values have correct **forms**".  e.g. length, range, encoding, used chars, specific formats such as date, phone, zip. Both **Correct and "Input mistake" values** are valid input data.
 
-Application INPUT validation failure MUST NOT require user interactions. INPUT validation failure means "A user sent **Invalid values**.(= values clients cannot/should not send, unacceptable values. e.g. Too large, broken char encoding, malformed format/char, etc). These invalid inputs MUST simply be rejected and handled according to [**"FAIL FAST"**](https://en.wikipedia.org/wiki/Fail-fast) principle. i.e. Reject invalid inputs like WAF(Web Application Firewall) does. All inputs, including HTTP headers/Query parameters, must be validated always.
+Application INPUT data validation failure MUST NOT require user interactions. INPUT data validation failure means "A user sent **Invalid values**.(= values clients cannot/should not send, unacceptable values. e.g. Too large, broken char encoding, malformed format/char, etc). These invalid inputs MUST simply be rejected and handled according to [**"FAIL FAST"**](https://en.wikipedia.org/wiki/Fail-fast) principle. i.e. Reject invalid inputs like WAF(Web Application Firewall) does. All inputs, including HTTP headers/query parameters, must be validated always.
+
+Input data format correctness must be validated by server always.
 
 
-### Application BUSINESS LOGIC Validation
+### Application BUSINESS LOGIC Data Validation
 
-Application BUSINESS LOGIC validation validates values against business logic. e.g. Reservation date is not future date, min value is less than max value, has privilege or not etc. BUSINESS LOGIC validations are responsible for logical correctness mainly.
+Application BUSINESS LOGIC data validation validates values against business logic. e.g. Reservation date is future date, min value is less than max value, has valid CSRF token, etc. BUSINESS LOGIC data validations are responsible for logical correctness mainly.
 
-Unlike INPUT validations, many BUSINESS LOGIC validation requires user interactions to correct input mistakes. Clients cannot handle input mistakes fully and logical correctness must be validated by server always.
+Unlike Application INPUT data validations, many BUSINESS LOGIC data validation requires user interactions to correct input mistakes.
+
+Logical data correctness must be validated by server always.
 
 
 ### References
 
-Please refer OWASP Code Review Guide - Section 7.6 Input Validation, for details.
-https://www.owasp.org/index.php/File:OWASP_Code_Review_Guide_v2.pdf
-
-INPUT validation failure must not simply ignored. Please refer to 2017 OWASP TOP 10 - "A10 Insufficient Logging & Monitoring" vulnerability for details.
-https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring
+ * Input and business logic validations are 2 different validations. [OWASP Code Review Guide](https://www.owasp.org/index.php/File:OWASP_Code_Review_Guide_v2.pdf) - Section 7.6 Input Validation, for details.
+ * INPUT validation failure must not simply ignored. [2017 OWASP TOP 10 - "A10 Insufficient Logging & Monitoring"](https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring).
+ * Input data validation is the most powerful security measure. [CWE/SANS Top 25 - Monster mitigations](http://cwe.mitre.org/top25/mitigations.html).
+ * Input data validation is the first Secure Coding principle. [CERT TOP 10 Secure Coding Practices](https://wiki.sei.cmu.edu/confluence/display/seccode/Top+10+Secure+Coding+Practices)
 
 
 ## Documents
@@ -180,9 +183,9 @@ Examples.
 
 Codes.
 
- * validate() and other functions are in [validate_func.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate_func.php)
- * Validator behavior is described in [validate.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate.php).
- * Validator flags is described in [validate_defs.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate_defs.php)
+ * validate() and other function definitions are in [validate_func.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate_func.php)
+ * Validator behavior is defined in [validate.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate.php)
+ * Validator flags is defined in [validate_defs.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate_defs.php)
 
 
 ## Status
@@ -200,11 +203,11 @@ Codes.
 * Learning and automatic spec builder tool(?).
 
 
-## Security Tips
+## String Security Tip and Note
 
-Web developers must validate character encodings. If you don't validate character encoding, your application became vulnerable to DoS easily. i.e. htmlspecialchars() return empty, today's browsers refuse to render badly broken encoding, system has binary safe and encoding aware APIs/storages which cause DoS.
+While most web apps does not validate input string character encoding, web developers must validate character encodings. If you don't validate character encoding, your application became vulnerable to DoS easily. i.e. htmlspecialchars() return empty, today's browsers refuse to render badly broken encoding, system has binary safe and encoding aware APIs/storages which cause DoS.
 
-"Validate" script version only validates UTF-8 encoding and deny Unicode control characters. C module version will support explicitly selected (white list) Unicode categories (character types) for maximum security.
+Validate PHP validates character encoding by default. Script version only validates UTF-8 encoding and deny Unicode control characters. C module version will support explicitly selected (white list) Unicode categories (character types) for maximum security.
 
 
 ## Extending
@@ -217,11 +220,11 @@ tools that request logging, creating validation spec rules from log and validati
 
 ## Validate PHP C extension module
 
-This PHP script is based on validate C module for PHP 7. Features in this script version is planned to be ported to C module which can perform validations faster.
+This PHP script is based on validate C module for PHP 7. Features are planned to be ported to C module which can perform validations a lot faster.
 
 https://github.com/yohgaki/validate-php (Do not use this, but PHP script version now.)
 
 
-## Others
+## Comments & Issues
 
 Comments, Bug reports and PRs are welcomed! Please remember "Validate" is not optimized for OO nor PHP scripts, but C module. This script is planed to be implemented as C module in the future.
