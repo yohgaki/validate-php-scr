@@ -1,0 +1,6 @@
+image: docker:5000/esi/httpd-build
+
+test:app:
+  script:
+  - cd src && TEST_PHP_EXECUTABLE=/usr/bin/php php run-tests.php -q --show-diff
+
