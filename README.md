@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/yohgaki/validate-php-scr.svg?branch=master)](https://travis-ci.org/yohgaki/validate-php-scr)
 
-"Validate" is "input data validation **framework**" that is developed to be useful for "CERT Secure Coding" and "Design by Contract"(DbC). "Validate" is planned to be implemented as C module for PHP.
+"Validate" is "input data validation **framework**" that is developed to be useful for "CERT Secure Coding" and "Design by Contract"(DbC). "Validate" is designed to develop [**OWASP TOP 10 A10:2017 vulnerability**](https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring) compliant application. "Validate" is planned to be implemented as C module for PHP.
 
 [**CERT Top 10 Secure Coding Practices.**](https://wiki.sei.cmu.edu/confluence/display/seccode/Top+10+Secure+Coding+Practices
 )
@@ -35,6 +35,22 @@
 * mbstring module - mb_ord() improves performance, more supported encodings and better encoding checks.
 * gmp module - "Validate" supports GMP integer also.
 
+## Basic Behaviors
+
+* validate() does now allow anything unless explicitly specified. i.e. Strictly white listing.
+* validate() converts input values to native types when it is possible. e.g. '123' to int. 'yes'/'no' to bool.
+* validate() processes input values and and validation specs recursively. i.e. Any input values (scalar/array/object) are accepted.
+* validate() checks validation spec format by default. i.e. Disable spec format check for production.
+* validate() stores validation statues to context. e.g. $ctx in examples below.
+* validate() throws InvalidArgumentException by default.
+
+Tip:
+
+* For application business logic data validations, disable exception and set 'error_message' option.
+* Define your own 'filter' for normalization.
+* Define your own 'key_callback' for custom array key validations.
+* Use VALIDATE_CALLBACK and 'callback' for complex validations.
+
 ## Example #1: Single value validation with exception
 
 src/examples/91-example.php
@@ -47,14 +63,14 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
 // Validate domain name
 $domain = 'es-i.jp';
 $domain = validate($ctx, $domain, $B['fqdn']);
-// Validte record ID
+// Validate record ID
 $id = '1234';
 $id = validate($ctx, $id, $B['uint32']);
 // Check result
 var_dump($domain, $id);
 ```
 
-Validation error results in Exception. Application input data validation errors should be handled by exeption without user interaction.
+Validation error results in Exception. Application input data validation errors should be handled by exception without user interaction.
 
 ## Example #2: Single value validation without exception
 
@@ -68,7 +84,7 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION;
 $domain = 'es-i.jp';
 $domain = validate($ctx, $domain, $B['fqdn'], $func_opts);
-// Validte record ID
+// Validate record ID
 $id = '1234';
 $id = validate($ctx, $id, $B['uint32'], $func_opts);
 
@@ -81,7 +97,7 @@ if (validate_get_status($ctx) == false) {
 var_dump($domain, $id, $error);
 ```
 
-Validaiton errors are stored in $ctx. Application business logic validation errors should be handled without error/exception for interactive error handling.
+Validation errors are stored in $ctx. Application business logic data validation errors should be handled without error/exception for interactive error handling.
 
 ## Example #3: Multiple value validations at once.
 
@@ -170,13 +186,11 @@ src/examples/94-example.php
 require_once __DIR__.'/../validate_func.php';
 require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
 
-$request_headers_orig = ['a'=>'abc', 'b'=>'456']; //apache_reuqest_headers(); // Get request headers
+$request_headers_orig = ['a'=>'abc', 'b'=>'456']; //apache_request_headers(); // Get request headers
 
-// Check cookei and user agent. Allow undefined and extra headers.
-$B['cookie'][VALIDATE_FLAGS]                 |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT;
-$B['cookie'][VALIDATE_OPTIONS]['default']     = '';
-$B['cookie'][VALIDATE_OPTIONS]['min']         = 0; // Allow 0 length(empty)
-$B['user-agent'][VALIDATE_FLAGS]             |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT;
+// Check cookie and user agent. Allow undefined and extra headers.
+$B['cookie'][VALIDATE_FLAGS]                 |= VALIDATE_FLAG_UNDEFINED; // Allow undefined(optional)
+$B['user-agent'][VALIDATE_FLAGS]             |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT; // Allow undefined and set default
 $B['user-agent'][VALIDATE_OPTIONS]['default'] = '';
 $B['user-agent'][VALIDATE_OPTIONS]['min']     = 0; // Allow 0 length(empty)
 $spec1 = [ // Explicit validations
@@ -206,9 +220,9 @@ $request_headers += validate($ctx, $request_headers_orig, $spec2);
 var_dump($request_headers, $request_headers_orig);
 ```
 
-OWASP TOP 10 A10:2017 requires to validate all inputs. Although you are better to do stricter validations against headers, this validation is OWASP TOP 10 A10:2017 compliant HTTP request header validation.
+[OWASP TOP 10 A10:2017](https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring) requires to validate all inputs. Although you are better to do stricter validations against headers, this validation is OWASP TOP 10 A10:2017 compliant HTTP request header validation.
 
-## Application "INPUT" and "BUSINESS LOGIC" data validation basics
+## Application "INPUT" and "BUSINESS LOGIC" Data Validation Basics
 
 Application INPUT data validation and BUSINESS LOGIC data validation are **2 different validations**.
 
@@ -258,7 +272,7 @@ Codes.
 
 ## Status
 
-* **Not suitable for production use yet.**
+* **Pre Alpha**
 * Please test drive and report bugs.
 
 ## TODO

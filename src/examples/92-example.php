@@ -6,7 +6,7 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION;
 $domain = 'es-i.jp';
 $domain = validate($ctx, $domain, $B['fqdn'], $func_opts);
-// Validte record ID
+// Validate record ID
 $id = '1234';
 $id = validate($ctx, $id, $B['uint32'], $func_opts);
 

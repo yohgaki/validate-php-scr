@@ -2,12 +2,10 @@
 require_once __DIR__.'/../validate_func.php';
 require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
 
-$request_headers_orig = ['a'=>'abc', 'b'=>'456']; //apache_reuqest_headers(); // Get request headers
+$request_headers_orig = ['a'=>'abc', 'b'=>'456']; //apache_request_headers(); // Get request headers
 
 // Check cookei and user agent. Allow undefined and extra headers.
-$B['cookie'][VALIDATE_FLAGS]                 |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT;
-$B['cookie'][VALIDATE_OPTIONS]['default']     = '';
-$B['cookie'][VALIDATE_OPTIONS]['min']         = 0; // Allow 0 length(empty)
+$B['cookie'][VALIDATE_FLAGS]                 |= VALIDATE_FLAG_UNDEFINED;
 $B['user-agent'][VALIDATE_FLAGS]             |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT;
 $B['user-agent'][VALIDATE_OPTIONS]['default'] = '';
 $B['user-agent'][VALIDATE_OPTIONS]['min']     = 0; // Allow 0 length(empty)

@@ -5,7 +5,7 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
 // Validate domain name
 $domain = 'es-i.jp';
 $domain = validate($ctx, $domain, $B['fqdn']);
-// Validte record ID
+// Validate record ID
 $id = '1234';
 $id = validate($ctx, $id, $B['uint32']);
 // Check result
