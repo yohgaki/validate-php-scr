@@ -35,9 +35,9 @@
 * mbstring module - mb_ord() improves performance, more supported encodings and better encoding checks.
 * gmp module - "Validate" supports GMP integer also.
 
-## Example #1
+## Example #1: Single value validation with exception
 
-Single value validation.
+src/examples/91-example.php
 
 ```php
 <?php
@@ -45,44 +45,60 @@ require_once __DIR__.'/../validate_func.php';
 require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
 
 // Validate domain name
-validate($ctx, $domain, $B['fqdn']);
+$domain = 'es-i.jp';
+$domain = validate($ctx, $domain, $B['fqdn']);
 // Validte record ID
-validate($ctx, $id, $B['uint32']);
+$id = '1234';
+$id = validate($ctx, $id, $B['uint32']);
+// Check result
+var_dump($domain, $id);
 ```
 
-Validation error results in Exception.
+Validation error results in Exception. Application input data validation errors should be handled by exeption without user interaction.
 
-## Example #2
+## Example #2: Single value validation without exception
 
-Single value validation without exception.
+src/examples/92-example.php
 
 ```php
-<?php
 require_once __DIR__.'/../validate_func.php';
 require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
 
 // Validate domain name w/o exception
-validate($ctx, $value, $B['fqdn'], VALIDATE_OPT_DISABLE_EXCEPTION);
+$func_opts = VALIDATE_OPT_DISABLE_EXCEPTION;
+$domain = 'es-i.jp';
+$domain = validate($ctx, $domain, $B['fqdn'], $func_opts);
 // Validte record ID
-validate($ctx, $id, $B['uint32'], VALIDATE_OPT_DISABLE_EXCEPTION);
+$id = '1234';
+$id = validate($ctx, $id, $B['uint32'], $func_opts);
 
-// Check $errors for interactive responses
-$errors = validate_get_user_errors($ctx);
+if (validate_get_status($ctx) == false) {
+    // Check $errors for interactive responses
+    $error = validate_get_user_errors($ctx);
+    // Show useful $error here
+}
+//Check results
+var_dump($domain, $id, $error);
 ```
 
+Validaiton errors are stored in $ctx. Application business logic validation errors should be handled without error/exception for interactive error handling.
 
-## Example #3
+## Example #3: Multiple value validations at once.
 
-Multiple value validations at once.
+src/examples/93-example.php
 
 ```php
 <?php
 // Simple "username" and "email" form validation example.
 // "Validate" is suitable for "From Validations" also.
 require_once __DIR__.'/../validate_func.php';
+require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
+
 // In practice, you would define all inputs specifications at central repository.
 // If your web app does not have strict client side validations, you will need
-// "Input validation spec" AND "Logic(Form) validation spec".
+// "Input validation spec" AND "Business logic(Form) validation spec".
+
+// If client JavaScript has validation
 $username = [
     VALIDATE_STRING,        // "username" is string
     VALIDATE_STRING_ALNUM,  // "username" has only alphanumeric chars.
@@ -124,12 +140,18 @@ $spec = [ // Combine predefined parameter spec into one spec.
     ]
 ];
 
+$inputs = [
+    'username' => 'yohgaki',
+    'email' => 'yohgaki@ohgaki.net'
+];
+
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // Disable exception, to check errors, etc.
 $results = validate($ctx, $inputs, $spec, $func_opts); // Now, let's validate and done.
-var_dump(validate_get_status($ctx));             // $results is NULL when error. validate_get_status() can be used also.
+
+var_dump(validate_get_status($ctx));        // $results is NULL when error. validate_get_status() can be used also.
+var_dump($results, $inputs);                // $inputs contains unvalidated values.
 var_dump(validate_get_user_errors($ctx));   // Get user errors.
 var_dump(validate_get_system_errors($ctx)); // Get system errors.
-?>
 ```
 
 "Validate" removes validated elements from $inputs. You can validate remaining elements
@@ -138,6 +160,53 @@ by next validation.
 A little more realistic working example is here:
  * https://sample.ohgaki.net/validate-php/validate-php-scr/src/examples/99-web.php
 
+
+## Example #4: Validation that validates all HTTP headers
+
+src/examples/94-example.php
+
+```php
+<?php
+require_once __DIR__.'/../validate_func.php';
+require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
+
+$request_headers_orig = ['a'=>'abc', 'b'=>'456']; //apache_reuqest_headers(); // Get request headers
+
+// Check cookei and user agent. Allow undefined and extra headers.
+$B['cookie'][VALIDATE_FLAGS]                 |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT;
+$B['cookie'][VALIDATE_OPTIONS]['default']     = '';
+$B['cookie'][VALIDATE_OPTIONS]['min']         = 0; // Allow 0 length(empty)
+$B['user-agent'][VALIDATE_FLAGS]             |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT;
+$B['user-agent'][VALIDATE_OPTIONS]['default'] = '';
+$B['user-agent'][VALIDATE_OPTIONS]['min']     = 0; // Allow 0 length(empty)
+$spec1 = [ // Explicit validations
+    VALIDATE_ARRAY,
+    VALIDATE_FLAG_NONE,
+    ['min'=>2, 'max'=>20], // Inputs must have 2 to 20 elements.
+    [
+        'Cookie' => $B['cookie'],
+        'User-Agent' => $B['user-agent'],
+    ]
+];
+
+// validate() removes validated values from $request_headers_orig
+$request_headers = validate($ctx, $request_headers_orig, $spec1);
+
+// Check the rest of headers.
+// Allow array 'header512' strings and ALNUM + '_' + '-' keys
+$B['header512'][VALIDATE_FLAGS]   |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
+$B['header512'][VALIDATE_OPTIONS]['min'] = 0; // Allow 0 length(empty) headers
+$B['header512'][VALIDATE_OPTIONS]['amin'] = 0; // Allow 0 extra headers
+$B['header512'][VALIDATE_OPTIONS]['amax'] = 20; // Allow 20 extra headers
+$spec2 = $B['header512'];
+
+// $request_headers has only validated values. No control chars nor multibyte chars.
+$request_headers += validate($ctx, $request_headers_orig, $spec2);
+// Check result
+var_dump($request_headers, $request_headers_orig);
+```
+
+OWASP TOP 10 A10:2017 requires to validate all inputs. Although you are better to do stricter validations against headers, this validation is OWASP TOP 10 A10:2017 compliant HTTP request header validation.
 
 ## Application "INPUT" and "BUSINESS LOGIC" data validation basics
 

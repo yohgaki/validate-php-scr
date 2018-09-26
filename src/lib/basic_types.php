@@ -733,7 +733,7 @@ $B['fqdn'] = [
         'min' => 3, 'max' => 253,
         'ascii' => '.-_',
         'callback' => function($ctx, &$result, $input) {
-            if (!strpos($input, '.') || $input{strlen($input)} === '.') {
+            if (!strpos($input, '.') || $input{strlen($input)-1} === '.') {
                 validate_error($ctx, 'Invalid FQDN');
                 return false;
             }
@@ -945,3 +945,9 @@ $B['header32ku'] = [
         'filter' => $vtrim,
     ]
 ];
+
+// Some HTTP header aliases
+$B['content-length'] = $B['uint32'];
+$B['content-type'] = $B['header128'];
+$B['user-agent'] = $B['header512'];
+$B['cookie'] = $B['header4096'];

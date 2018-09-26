@@ -373,7 +373,7 @@ $single_value_spec[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED;
  * VALIDATE_FLAG_NULL - Accept NULL as valid input.
  * VALIDATE_FLAG_ARRAY - Require array of scalars. e.g. script.php?val[]=1&val[]=2
  * VALIDATE_FLAG_ARRAY_RECURSIVE - Allow nested array of scalars.
- * VALIDATE_FLAG_ARRAY_KEY_ALNUM - Allow alnum + '_' keys. By default, only INT is allowed for keys. Use "key_callback" option for custom key validation.
+ * VALIDATE_FLAG_ARRAY_KEY_ALNUM - Allow alnum + '-' + '_' keys. By default, only INT + '-' + '_' is allowed for keys. Use "key_callback" option for custom key validation.
  * VALIDATE_FLAG_WARNING - WARNING: Dangerous option! Make validation error a warning error. i.e. Do not raise EXCEPTION / ERROR at all.
  * VALIDATE_FLAG_NOTICE - WARNING: Dangerous option! Make validation error a notice error. i.e. Do not raise EXCEPTION / ERROR at all.
  * VALIDATE_FLAG_PASSTHRU - WARNING: Dangerous option! Disables validation error & warning and logging. i.e. Behave as if there is no error/warning/notice.
