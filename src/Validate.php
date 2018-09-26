@@ -344,6 +344,7 @@ class Validate
         $this->value_validation = true;
         $ret = $this->validateImpl($this->validated, $inputs, $specs, $func_opts);
         assert(is_bool($ret));
+        $this->status = $ret;
 
         if (!($func_opts & VALIDATE_OPT_UNVALIDATED) && !$scalar_validation && is_array($inputs)) {
             if (count($inputs)) {
@@ -777,7 +778,7 @@ class Validate
 
         // Multiple specs for a element
         if ($id === VALIDATE_MULTI) {
-            return  $this->validateMulti($validated, $inputs, $specs, $func_opts);
+            return $this->validateMulti($validated, $inputs, $specs, $func_opts);
         }
 
         // Single value spec
@@ -1233,7 +1234,7 @@ class Validate
                         // If users have trouble with this restriction, use user defined key validator.
                         return false;
                     }
-                    $chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_';
+                    $chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
                     if (strlen($key) === strspn($key, $chars)) {
                         return true;
                     }
@@ -1246,7 +1247,7 @@ class Validate
                         // If users have trouble with this restriction, use user defined key validator.
                         return false;
                     }
-                    if (is_int($key) || (strlen($key) === strspn($key, '1234567890-'))) {
+                    if (is_int($key) || (strlen($key) === strspn($key, '1234567890_-'))) {
                         return true;
                     }
                     return false;

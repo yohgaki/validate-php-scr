@@ -90,7 +90,7 @@ function validate(&$ctx, &$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
 function validate_get_status($ctx)
 {
     assert($ctx instanceof Validate);
-    $ctx->getStatus();
+    return $ctx->getStatus();
 }
 
 
