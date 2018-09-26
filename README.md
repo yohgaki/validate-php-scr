@@ -275,15 +275,11 @@ Codes.
 
 Strings are the most risky inputs and web apps are made by string inputs. i.e. Almost all inputs to web apps are strings. Invalid strings must not be processed by web apps' code at all.
 
-<<<<<<< HEAD
-"Validate" validates character encoding by default. Script version only validates UTF-8 encoding and deny Unicode control characters. C module version will support explicitly selected (white list) Unicode categories (character types) for maximum security.
-=======
 While most web apps do not validate input string character encoding, web developers must validate character encodings. If you don't validate character encoding, your application became vulnerable to DoS easily. i.e. htmlspecialchars() return empty string, modern browsers refuse to render badly broken encoding, system has both binary safe and encoding aware APIs/storages. These facts create very hard to find DoS vulnerabilities.
 
 In order to programs to work correctly, valid data is absolute mandatory requirement. Invalid data for program results in invalid state always.
 
 Some apps/libraries sanitize input data and make "invalid data" into "valid data" because "valid data" is mandatory. However sanitization ignores and hides attacks from cyber criminals. Ignoring and hiding attacks is insecure practice should be avoided. Developers must not rely on sanitizer in general.
->>>>>>> master
 
 
 ## Extending
