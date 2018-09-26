@@ -80,8 +80,8 @@ src/examples/92-example.php
 require_once __DIR__.'/../validate_func.php';
 require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
 
-// Validate domain name w/o exception
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION;
+// Validate domain name w/o exception
 $domain = 'es-i.jp';
 $domain = validate($ctx, $domain, $B['fqdn'], $func_opts);
 // Validate record ID
@@ -90,11 +90,11 @@ $id = validate($ctx, $id, $B['uint32'], $func_opts);
 
 if (validate_get_status($ctx) == false) {
     // Check $errors for interactive responses
-    $error = validate_get_user_errors($ctx);
+    $errors = validate_get_user_errors($ctx);
     // Show useful $error here
 }
 //Check results
-var_dump($domain, $id, $error);
+var_dump($domain, $id, $errors);
 ```
 
 Validation errors are stored in $ctx. Application business logic data validation errors should be handled without error/exception for interactive error handling.
@@ -164,6 +164,7 @@ $inputs = [
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // Disable exception, to check errors, etc.
 $results = validate($ctx, $inputs, $spec, $func_opts); // Now, let's validate and done.
 
+// Check results
 var_dump(validate_get_status($ctx));        // $results is NULL when error. validate_get_status() can be used also.
 var_dump($results, $inputs);                // $inputs contains unvalidated values.
 var_dump(validate_get_user_errors($ctx));   // Get user errors.

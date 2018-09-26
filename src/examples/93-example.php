@@ -58,6 +58,7 @@ $inputs = [
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // Disable exception, to check errors, etc.
 $results = validate($ctx, $inputs, $spec, $func_opts); // Now, let's validate and done.
 
+// Check results
 var_dump(validate_get_status($ctx));        // $results is NULL when error. validate_get_status() can be used also.
 var_dump($results, $inputs);                // $inputs contains unvalidated values.
 var_dump(validate_get_user_errors($ctx));   // Get user errors.
