@@ -11,9 +11,10 @@ $id = '1234';
 $id = validate($ctx, $id, $B['uint32'], $func_opts);
 
 if (validate_get_status($ctx) == false) {
-    // Check $errors for interactive responses
-    $errors = validate_get_user_errors($ctx);
-    // Show useful $errors here
+    // Check last validation error
 }
+// Get all user error
+$errors = validate_get_user_errors($ctx);
+
 //Check results
 var_dump($domain, $id, $errors);

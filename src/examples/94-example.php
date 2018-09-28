@@ -32,5 +32,5 @@ $spec2 = $B['header512'];
 
 // $request_headers has only validated values. No control chars nor multibyte chars.
 $request_headers += validate($ctx, $request_headers_orig, $spec2);
-// Check result
+// Check results
 var_dump($request_headers, $request_headers_orig);

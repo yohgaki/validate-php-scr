@@ -8,5 +8,5 @@ $domain = validate($ctx, $domain, $B['fqdn']);
 // Validate record ID
 $id = '1234';
 $id = validate($ctx, $id, $B['uint32']);
-// Check result
+// Check results
 var_dump($domain, $id);
