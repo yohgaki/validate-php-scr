@@ -78,6 +78,8 @@ Parameters:
 
 validate() validates scalar or array. Array of scalars and/or array such as $_GET/$_POST can be validated. Nested array is supported.
 
+validate() returns validated values. Values remained in $inputs contains unvalidated values.
+
 $func_opts bit flag options:
 
  * VALIDATE_OPT_CHECK_SPEC - Check $spec parameter before validation. Use this for development and debugging.
@@ -88,6 +90,25 @@ $func_opts bit flag options:
  * VALIDATE_OPT_ERROR_SQUASH - Use squashed parameter name for error. e.g. root=>array1=>array2=>param as error input param.
  * VALIDATE_OPT_DISABLE_EXCEPTION - Disable exception. Use this for debugging.
  * VALIDATE_OPT_LOG_ERROR - Log errors by logger function set by validate_set_logger_function().
+
+
+### validate_assert()
+
+Validate variable(s) by specified validation spec for assert().
+e.g. assert(validate_assert($my_int, $my_int_spec));
+
+```php
+bool validate(mixed &$inputs, array $specs)
+```
+
+Parameters:
+
+ * $inputs - Variable(s) to be validated.
+ * $spec - Validation spec array.
+
+validate_assert() validates scalar or array like validate(). validate_assert() is intended to use with assert().
+
+validate_assert() returns true for success. validate_assert() returns false for unsuccessful validation and print_r() system error messages array.
 
 
 ### validate_get_status()

@@ -40,6 +40,8 @@ function validate_init($root_name = 'ROOT')
 
 
 /**
+ * Validate $inputs by $specs.
+ * validate() is designed for input validations.
  * This function expect correct $specs array for maximum efficiency.
  *
  * @param array    $ctx  Validate context.
@@ -79,6 +81,38 @@ function validate(&$ctx, &$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
     $validated = $ctx->validate($inputs, $specs, $func_opts);
 
     return $validated;
+}
+
+
+/**
+ * Validate $inputs by $specs.
+ * validate_assert() is designed for input assertions. e.g. assert(validate_assert($input, $spec));
+ * This function expect correct $specs array for maximum efficiency.
+ *
+ * @param mixed    $inputs    Scalar or array values. Validated elements are removed.
+ * @param array    $specs     Spec array.
+ *
+ * @return bool Return true for successful validation, false otherwise.
+ */
+function validate_assert(&$inputs, $specs)
+{
+    $ctx = new Validate();
+    $func_opts = VALIDATE_OPT_CHECK_SPEC | VALIDATE_OPT_DISABLE_EXCEPTION;
+    if (!is_array($specs)) {
+        trigger_error('Spec must be array.', E_USER_ERROR);
+        return false;
+    } elseif (($func_opts & VALIDATE_OPT_CHECK_SPEC)
+         && !validate_spec($specs, $r, $tmp)) {
+        print_r($tmp->getSystemErrors());
+        trigger_error('Invalid validation spec detected. Fix spec errors first.', E_USER_ERROR);
+        return false;
+    }
+    $ctx->params_checked = true;
+    $validated = $ctx->validate($inputs, $specs, $func_opts);
+
+    $status = $ctx->getStatus();
+    if (!$status) print_r($ctx->getSystemErrors());
+    return $status;
 }
 
 
