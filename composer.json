@@ -1,0 +1,23 @@
+{
+    "name": "yohgaki/validate-php-scr",
+    "type": "library",
+    "description": "Simple general purpose input data validation framework. Script version.",
+    "license": "MIT",
+    "homepage": "https://github.com/yohgaki/validate-php-scr",
+    "authors": [
+        {
+            "name": "Yasuo Ohgaki",
+            "email": "yohgaki@ohgaki.net",
+            "homepage": "https://blog.ohgaki.net",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "ext-bcmath": "*"
+    },
+    "suggests": {
+        "ext-mbstring": "Better multibyte char handling",
+        "ext-gmp": "Better integer handling"
+    }
+}
