@@ -16,7 +16,7 @@
         "php": ">=7.0",
         "ext-bcmath": "*"
     },
-    "suggests": {
+    "suggest": {
         "ext-mbstring": "Better multibyte char handling",
         "ext-gmp": "Better integer handling"
     }
