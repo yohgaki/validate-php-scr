@@ -2,6 +2,7 @@
     "name": "yohgaki/validate-php-scr",
     "type": "library",
     "description": "Simple general purpose input data validation framework. Script version.",
+    "keywords": ["validation","validator","secure coding"],
     "license": "MIT",
     "homepage": "https://github.com/yohgaki/validate-php-scr",
     "authors": [
