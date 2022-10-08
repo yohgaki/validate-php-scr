@@ -2206,8 +2206,8 @@ class Validate
             $chr = $options['ascii'];
             $len = strlen($chr);
             for ($i=0; $i < $len; $i++) {
-                assert(ord($chr{$i}) < 128);
-                $map[ord($chr{$i})] = true;
+                assert(ord($chr[$i]) < 128);
+                $map[ord($chr[$i])] = true;
             }
         }
 
@@ -2221,7 +2221,7 @@ class Validate
                   && ($flags & VALIDATE_STRING_LF)
                   && !($flags & VALIDATE_STRING_CRLF_MIXED));
         for ($i=0; $i < $len; $i++) {
-            $c = $ret{$i};
+            $c = $ret[$i];
             // UTF-8 multibyte chars should be safe by encoding check.
             if (ord($c) >= 127) {
                 // At this point, UTF-8 encoding is validated already.
@@ -2267,7 +2267,7 @@ class Validate
                     return false;
                 }
                 if ($c === "\r") {
-                    $c = $ret{++$i};
+                    $c = $ret[++$i];
                     if ($c !== "\n") {
                         $this->internalError(
                             [
@@ -2314,7 +2314,7 @@ class Validate
     {
         assert(is_int($idx));
         assert(is_string($value));
-        assert((ord($value{$idx}) & 0x80));
+        assert((ord($value[$idx]) & 0x80));
         assert(is_array($unimap));
         assert(is_int($id));
         assert(is_int($flags));
@@ -2322,7 +2322,7 @@ class Validate
         assert(is_int($func_opts));
 
         $len = 0;
-        $fb = ord($value{$idx});
+        $fb = ord($value[$idx]);
         $c = $fb;
         for ($i = 0; $i < 6; $i++) {
             if ($c & 0x80) {
@@ -2336,20 +2336,20 @@ class Validate
         switch ($len) {
             case 2:
                 $b1 = $fb & 0b00011111;
-                $b2 = ord($value{$idx+1}) & 0b00111111;
+                $b2 = ord($value[$idx+1]) & 0b00111111;
                 $cp = ($b1 << 6) | ($b2);
                 break;
             case 3:
                 $b1 = $fb & 0b00001111;
-                $b2 = ord($value{$idx+1}) & 0b00111111;
-                $b3 = ord($value{$idx+2}) & 0b00111111;
+                $b2 = ord($value[$idx+1]) & 0b00111111;
+                $b3 = ord($value[$idx+2]) & 0b00111111;
                 $cp = ($b1 << 12) | ($b2 << 6) | ($b3);
                 break;
             case 4:
                 $b1 = $fb & 0b00000111;
-                $b2 = ord($value{$idx+1}) & 0b00111111;
-                $b3 = ord($value{$idx+2}) & 0b00111111;
-                $b4 = ord($value{$idx+3}) & 0b00111111;
+                $b2 = ord($value[$idx+1]) & 0b00111111;
+                $b3 = ord($value[$idx+2]) & 0b00111111;
+                $b4 = ord($value[$idx+3]) & 0b00111111;
                 $cp = ($b1 << 18) | ($b2 << 12) | ($b3 << 6) | ($b4);
                 break;
             default:
@@ -3040,11 +3040,10 @@ class Validate
             );
             return false;
         }
-        $class = get_class($value);
-        if (!is_callable(array($class, $options['callback']))) {
+        if (!is_object($value) || !is_callable([$value, $options['callback']])) {
             $this->internalError(
                 [
-                    'message' => 'VALIDATE_OBJECT: Callback is not callable or does not exist. Callback: \''.$options['callback'].'\'',
+                    'message' => 'VALIDATE_OBJECT: "'. get_class($value) . '" class validation callback is not callable or does not exist. Callback: \''.$options['callback'].'\'',
                     'value' => $value,
                 ],
                 [VALIDATE_CALLBACK, $flags, $options],
@@ -3103,7 +3102,7 @@ class Validate
             'orig_value' => $this->context_vars['orig_value'],
         ];
 
-        if (!is_scalar($this->context_vars['value'])) {
+        if (!is_scalar($this->context_vars['value']) || is_null($this->context_vars['value'])) {
             $value = serialize($this->context_vars['value']);
         } else {
             $value = $this->context_vars['value'];
@@ -3123,8 +3122,9 @@ class Validate
 
         // Set error type flags setting controls ERROR / EXCEPTION.
         // Warning would not raise ERROR nor EXCEPTION.
+        $func_opts = $this->context_vars['spec'][1] ?? 0;
         $fatal = !($type & (E_USER_WARNING | E_USER_NOTICE))
-                 && !($this->context_vars['spec'][1] & (VALIDATE_FLAG_WARNING | VALIDATE_FLAG_NOTICE));
+                 && !($func_opts & (VALIDATE_FLAG_WARNING | VALIDATE_FLAG_NOTICE));
         $user_error_msg = $this->context_vars['spec'][2]['error_message'] ?? null;
 
         // Store error messages
@@ -3821,7 +3821,7 @@ class Validate
         }
         // Count user custom options by '_' prefix or integer key.
         foreach ($options as $key => $uv) {
-            if (is_string($key) && $key{0} === '_') {
+            if (is_string($key) && $key[0] === '_') {
                 $cnt++;
             }
         }

@@ -181,14 +181,14 @@ print_r($result);
 bool(false)
 array(1) {
   ["GET"]=>
-  &array(1) {
+  array(1) {
     ["allowed"]=>
     int(1)
   }
 }
 array(3) {
   ["GET"]=>
-  &array(2) {
+  array(2) {
     ["rejected"]=>
     string(1) "1"
     ["unvalidated"]=>
