@@ -26,6 +26,7 @@
 
 ## Requirements
 
+* PHP 8.0 and up.
 * PHP 7.0 and up.
 * bcmath module.
 
@@ -33,7 +34,7 @@
 
 * PHP 7.2 and up - Newer mbstring provides better performance.
 * mbstring module - mb_ord() improves performance, more supported encodings and better encoding checks.
-* gmp module - "Validate" supports GMP integer also.
+* GMP module - "Validate" supports GMP integer also.
 
 ## Basic Behaviors
 
@@ -311,7 +312,7 @@ tools that request logging, creating validation spec rules from log and validati
 
 This PHP script is based on validate C module for PHP 7. Features are planned to be ported to C module which can perform validations a lot faster.
 
-https://github.com/yohgaki/validate-php (Do not use this, but PHP script version now.)
+https://github.com/yohgaki/validate-php (Do not use this. Use PHP script version for now.)
 
 
 ## Comments & Issues
