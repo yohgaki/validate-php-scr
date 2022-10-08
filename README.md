@@ -11,6 +11,17 @@
 > of software vulnerabilities. **Be suspicious of most external data sources**, including command line arguments, network
 > interfaces, environmental variables, and user controlled files [Seacord 05].
 
+Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.mitre.org/top25/mitigations.html#Mit-M1).
+
+> Use a **standard input validation** mechanism to validate all input for:
+>
+> * length
+> * type of input
+> * syntax
+> * missing or extra inputs
+> * consistency across related fields
+> * business rules
+
 ## Basic Design
 
 * **Framework** - "Validate" is framework, not an out of box library by itself. Provides easy, yet flexible input data validations.
@@ -28,7 +39,7 @@
 
 * PHP 8.0 and up.
 * PHP 7.0 and up.
-* bcmath module.
+* BCMath module.
 
 ### Recommended
 
@@ -59,7 +70,8 @@ src/examples/91-example.php
 ```php
 <?php
 require_once __DIR__.'/../validate_func.php';
-require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
+// Define basic type specifications array $B. You can define any validation rule as you like.
+require_once __DIR__.'/../lib/basic_types.php';
 
 // Validate domain name
 $domain = 'es-i.jp';
@@ -73,6 +85,8 @@ var_dump($domain, $id);
 
 Validation error results in Exception. Application input data validation errors should be handled by exception without user interaction.
 
+NOTE: Valid inputs are any inputs that the application is supposed to handle. i.e. **Input mistakes are valid inputs for an application.**
+
 ## Example #2: Single value validation without exception
 
 src/examples/92-example.php
@@ -80,7 +94,7 @@ src/examples/92-example.php
 ```php
 <?php
 require_once __DIR__.'/../validate_func.php';
-require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
+require_once __DIR__.'/../lib/basic_types.php'; // Defines basic type array $B
 
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION;
 // Validate domain name w/o exception
@@ -111,7 +125,7 @@ src/examples/93-example.php
 // Simple "username" and "email" form validation example.
 // "Validate" is suitable for "From Validations" also.
 require_once __DIR__.'/../validate_func.php';
-require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
+require_once __DIR__.'/../lib/basic_types.php'; // Defines basic type array $B
 
 // In practice, you would define all inputs specifications at central repository.
 // If your web app does not have strict client side validations, you will need
@@ -226,27 +240,34 @@ var_dump($request_headers, $request_headers_orig);
 
 [OWASP TOP 10 A10:2017](https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring) requires to validate all inputs. Although you are better to do stricter validations against headers, this validation is OWASP TOP 10 A10:2017 compliant HTTP request header validation.
 
-## Application "INPUT" and "BUSINESS LOGIC" Data Validation Basics
+## "APPLICATION INPUT" and "BUSINESS LOGIC" Data Validation Basics
 
-Application INPUT data validation and BUSINESS LOGIC data validation are **2 different validations**.
-
-
-### Application INPUT Data Validation
-
-All of application INPUT data must be validated and validations should be done at **Application Trust Boundary**. Application INPUT data validation assures "Values have correct **forms**".  e.g. length, range, encoding, used chars, specific formats such as date, phone, zip. Both **Correct and "Input mistake" values** are valid input data.
-
-Application INPUT data validation failure MUST NOT require user interactions. INPUT data validation failure means "A user sent **Invalid values**.(= values clients cannot/should not send, unacceptable values. e.g. Too large, broken char encoding, malformed format/char, etc). These invalid inputs MUST simply be rejected and handled according to [**"FAIL FAST"**](https://en.wikipedia.org/wiki/Fail-fast) principle. i.e. Reject invalid inputs like WAF(Web Application Firewall) does. All inputs, including HTTP headers/query parameters, must be validated always.
-
-Input data format correctness must be validated by server always.
+APPLICATION INPUT data validation and BUSINESS LOGIC data validation are **2 different validations**.
 
 
-### Application BUSINESS LOGIC Data Validation
+### APPLICATION INPUT Data Validation
+
+IMPORTANT: User mistakes are valid inputs.
+
+**APPLICATION INPUT data should be validated as fast as it can to minimize misbehavior/vulnerability.** Application INPUT data validation must validate all inputs are valid for the application. i.e. If ID is number between 1000 and INT_MAX, then you must only accepts number 1000 from INT_MAX. If a string is for names, then the string should never exceed 512 bytes unless attacker is tampering your application. If your application restricts name length to 100 by client side JavaScript, then you should never accept strings longer than 100. Do not forget to check too few/many parameters as this is one of a "standard input validation" requirement.
+
+All of application input data must be validated and validations should be done at **Application Trust Boundary**. Application INPUT data validation assures "Values have correct **forms**".  e.g. length, range, encoding, used chars, specific formats such as date, phone, zip. Both **Correct and "Input mistake" values** are valid input data.
+
+Application INPUT data validation failure MUST NOT require user interactions. INPUT data validation failure means "A user sent **Invalid values**.(= values clients cannot/should not send. unacceptable values. e.g. Too large, broken char encoding, malformed format/char, etc). These invalid inputs MUST simply be rejected and handled according to [**"FAIL FAST"**](https://en.wikipedia.org/wiki/Fail-fast) principle. i.e. Reject invalid inputs like WAF(Web Application Firewall) does. All inputs, including HTTP headers/query parameters, must be validated always.
+
+Input data format correctness must be validated by server always AND the validation must be done as fast as it can. Input data validation should not require user interaction, should not provide meaningful error message (to attackers).
+
+### BUSINESS LOGIC Data Validation
+
+IMPORTANT: Detecting broken/totally wrong/invalid inputs at business logic code is too late. It is good for "fail safe", but "fail safe" is not an ideal security measure.
+
+**BUSINESS LOGIC data validation is for input mistake detection that users allowed to, not for totally broken inputs sent from crackers.** Business logic (e.g. Model in MVC) should not supposed to handle totally wrong input value (e.g. number is expected, but string is supplied) because totally wrong values should be handled by APPLICATION INPUT validation already.
 
 Application BUSINESS LOGIC data validation validates values against business logic. e.g. Reservation date is future date, min value is less than max value, has valid CSRF token, etc. BUSINESS LOGIC data validations are responsible for logical correctness mainly.
 
 Unlike Application INPUT data validations, many BUSINESS LOGIC data validations require user interactions to correct input mistakes.
 
-Logical data correctness must be validated by server always.
+Logical data correctness must be validated by server always. Business logic validation usually requires user interaction and/or should provide meaningful error message what went wrong.
 
 
 ### References
