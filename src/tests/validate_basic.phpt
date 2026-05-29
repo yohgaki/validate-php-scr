@@ -191,7 +191,7 @@ $int_spec = [
 ];
 
 $result = validate($ctx, $int, $int_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->GetStatus());
+var_dump($result, $ctx->getStatus());
 
 
 // Example 2 — success.
@@ -346,7 +346,7 @@ $utf8_spec = [
 try {
     $result =validate($ctx, $utf8, $utf8_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 } catch (Exception $e) {
-    var_dump($d->getMessage());
+    var_dump($e->getMessage());
 }
 var_dump($result, $ctx->getStatus()); // failure — "Multibyte char detected." in the system error log.
 

@@ -247,9 +247,11 @@ class Validate
 
 
     /**
-     * Get currently working parameter name
+     * Return the name of the parameter currently being validated — the leaf
+     * of the recursion path stack ($currentElem). Numeric array indices come
+     * back as int, named keys as string.
      *
-     * @return string This could be int also.
+     * @return string|int
      */
     public function getCurrentParam()
     {
@@ -327,7 +329,7 @@ class Validate
                 && !$this->validateSpec($specs)) {
                 $err = $this->getSystemErrors();
                 if (!empty($err['warning'])) {
-                    $cnt = count($err['waraning']);
+                    $cnt = count($err['warning']);
                     trigger_error('Validation spec problem detected. Check spec errors. Hint: validate_get_errors($ctx); '.
                                   'Warnings: '.$cnt, E_USER_WARNING);
                 }
@@ -435,9 +437,10 @@ class Validate
 
 
     /**
-     * Get validation status
+     * Return the overall status of the most recent validation pass.
+     * Returns null when validate() has not been called yet.
      *
-     * @return bool TRUE for success.
+     * @return bool|null
      */
     public function getStatus()
     {
@@ -446,13 +449,14 @@ class Validate
     }
 
     /**
-     * Get context
+     * Return the active per-call context — the Validate instance currently
+     * driving the validation pass. Equal to $this except inside nested calls.
      *
-     * @return array Context array
+     * @return Validate
      */
     public function getContext()
     {
-        assert(is_array($this->context));
+        assert($this->context instanceof Validate);
         return $this->context;
     }
 

@@ -106,7 +106,7 @@ try {
 echo "\n** \$result **\n";
 var_dump($result);
 echo "\n** \$status **\n";
-var_dump($ctx->GetStatus());
+var_dump($ctx->getStatus());
 ?>
 --EXPECT--
 **** test #1 *****
