@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <ruleset name="Custom Standard" namespace="MyProject\CS\Standard">
  <exclude-pattern>*/tests/*</exclude-pattern>
- <exclude-pattern>*/example/*</exclude-pattern>
- <rule ref="PSR2"/>
+ <exclude-pattern>*/examples/*</exclude-pattern>
+ <exclude-pattern>*/run-tests.php</exclude-pattern>
+ <rule ref="PSR2">
+  <!-- Project is designed as a procedural API matching a planned C extension.
+       Namespaces are deliberately not used; small exception classes live with Validate. -->
+  <exclude name="PSR1.Classes.ClassDeclaration.MissingNamespace"/>
+  <exclude name="PSR1.Classes.ClassDeclaration.MultipleClasses"/>
+ </rule>
 </ruleset>

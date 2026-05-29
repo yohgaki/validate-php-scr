@@ -794,7 +794,7 @@ $basicTypes['uuid'] = [
     VALIDATE_FLAG_NONE,
     [
         'min' => 36, 'max' => 36,
-        'filter' => function($ctx, $input, &$error) {
+        'filter' => function ($ctx, $input, &$error) {
             if (!is_string($input)) {
                 $error = 'UUID Filter error: UUID must be string.';
                 return;
@@ -882,7 +882,7 @@ $basicTypes['fqdn'] = [
     [
         'min' => 3, 'max' => 253,
         'ascii' => '.-_',
-        'callback' => function($ctx, &$result, $input) {
+        'callback' => function ($ctx, &$result, $input) {
             if (!strpos($input, '.') || $input[strlen($input)-1] === '.') {
                 validate_error($ctx, 'Invalid FQDN');
                 return false;
@@ -893,7 +893,7 @@ $basicTypes['fqdn'] = [
             }
             $result = $input;
             return true;
-    }]
+        }]
 ];
 
 // Hostname only
@@ -925,7 +925,7 @@ $basicTypes['email'] = [
     VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
     [
         'min' => 6, 'max' => 254,
-        'callback' => function($ctx, &$result, $input) {
+        'callback' => function ($ctx, &$result, $input) {
             if (!filter_var($input, FILTER_VALIDATE_EMAIL)) {
                 validate_error($ctx, 'Invalid email address format.');
                 return false;
@@ -951,7 +951,7 @@ $basicTypes['slug'] = [
 // HTTP header
 // https://tools.ietf.org/html/rfc7230#section-3.2
 // Trim is required(=spaces are allowed) by RFC
-$vtrim = function($ctx, $input, &$error) {
+$vtrim = function ($ctx, $input, &$error) {
     assert($ctx instanceof Validate);
     if (is_array($input)) {
         $error = 'HTTP Header Filter error: HTTP header must be string.';
@@ -1146,7 +1146,7 @@ $basicTypes['json'] = [
      | VALIDATE_CALLBACK_CRLF | VALIDATE_CALLBACK_TAB | VALIDATE_CALLBACK_MB,
     [
         'min' => 2, 'max' => 65535,
-        'callback' => function($ctx, &$result, $input) {
+        'callback' => function ($ctx, &$result, $input) {
             json_decode($input);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 validate_error($ctx, 'Invalid JSON: ' . json_last_error_msg());

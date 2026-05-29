@@ -51,7 +51,8 @@ echo 'Done. Check generated spec file: '. $spec_file . "\n";
 /**
  * Usage
  */
-function usage($argv) {
+function usage($argv)
+{
     echo "
 Usage: {$argv[0]} [/path/to/log_dir]
 '/path/to/log_dir' is optional. Default: '/var/tmp/validate'
@@ -65,7 +66,8 @@ Usage: {$argv[0]} [/path/to/log_dir]
 /**
  * Log analyzer wrapper
  */
-function analyze_log($log_dir) {
+function analyze_log($log_dir)
+{
     $logs = glob($log_dir.'/*-log.php');
     if (empty($logs)) {
         trigger_error('Empty logs. Check log directory: '. $log_dir);
@@ -89,7 +91,8 @@ function analyze_log($log_dir) {
 /**
  * Recursively analyze input data.
  */
-function analyze_log_impl(&$stat, $inputs) {
+function analyze_log_impl(&$stat, $inputs)
+{
     assert(is_array($inputs) || is_scalar($inputs) || is_null($inputs));
 
     if (!is_array($inputs)) {
@@ -120,7 +123,8 @@ function analyze_log_impl(&$stat, $inputs) {
 }
 
 
-function analyze_scalar_log(&$stat, $input) {
+function analyze_scalar_log(&$stat, $input)
+{
     assert(is_scalar($input));
     $type = gettype($input);
     switch ($type) {
@@ -140,7 +144,8 @@ function analyze_scalar_log(&$stat, $input) {
 }
 
 
-function analyze_int_log(&$stat, $input) {
+function analyze_int_log(&$stat, $input)
+{
     assert(is_int($input));
 
     $stat_opts = &$stat[VALIDATE_OPTIONS];
@@ -164,7 +169,8 @@ function analyze_int_log(&$stat, $input) {
 }
 
 
-function analyze_float_log(&$stat, $input) {
+function analyze_float_log(&$stat, $input)
+{
     assert(is_float($input));
 
     $stat_opts = &$stat[VALIDATE_OPTIONS];
@@ -187,7 +193,8 @@ function analyze_float_log(&$stat, $input) {
 }
 
 
-function analyze_string_log(&$stat, $input) {
+function analyze_string_log(&$stat, $input)
+{
     assert(is_string($input));
 
     $stat_opts = &$stat[VALIDATE_OPTIONS];
@@ -212,12 +219,13 @@ function analyze_string_log(&$stat, $input) {
 }
 
 
-function analyze_string_ascii_map(&$stat, $input) {
+function analyze_string_ascii_map(&$stat, $input)
+{
     assert(is_string($input));
 
     $map = array_fill(0, 128, 0);
     $tmp = $stat[VALIDATE_ASCII_MAP] ?? array(); // Set previously found chars
-    foreach($tmp as $key => $val) {
+    foreach ($tmp as $key => $val) {
         $map[$key] = $val;
     }
     $len = strlen($input);
@@ -233,7 +241,8 @@ function analyze_string_ascii_map(&$stat, $input) {
 }
 
 
-function analyze_store_values(&$stat, $input) {
+function analyze_store_values(&$stat, $input)
+{
     if (is_array($input)) {
         $in = join("\b", array_keys($input));
     } else {
@@ -259,15 +268,17 @@ function analyze_store_values(&$stat, $input) {
 
 /* Stat optimizer */
 
-function optimize_stat(&$stat) {
+function optimize_stat(&$stat)
+{
     assert(is_array($stat));
-    foreach($stat as $uri => $val) {
+    foreach ($stat as $uri => $val) {
         optimize_stat_recursive($stat[$uri]);
     }
 }
 
 
-function optimize_stat_recursive(&$stat) {
+function optimize_stat_recursive(&$stat)
+{
     if ($stat[VALIDATE_ID] !== VALIDATE_ARRAY) {
         optimize_scalar_stat($stat);
         return;
@@ -279,7 +290,8 @@ function optimize_stat_recursive(&$stat) {
 }
 
 
-function optimize_stat_hint(&$stat, $key) {
+function optimize_stat_hint(&$stat, $key)
+{
     if (preg_match('/mail/i', $key)) {
         $stat['hint']['email'] = $stat['hint']['email'] ?? 0;
         $stat['hint']['email']++;
@@ -358,10 +370,11 @@ function optimize_stat_hint(&$stat, $key) {
             $stat['hint']['hex']++;
         }
     }
- }
+}
 
 
-function optimize_scalar_stat(&$stat) {
+function optimize_scalar_stat(&$stat)
+{
     if (count($stat[VALIDATE_TYPES]) > 1) {
         print_r($stat);
         trigger_error('Mixed types are not supported: '.join(', ', $stat[VALIDATE_TYPES]));
@@ -389,31 +402,34 @@ function optimize_scalar_stat(&$stat) {
  * Do some optimization
  * TODO Add real optimization
  */
-function optimize_int_stat(&$stat) {
+function optimize_int_stat(&$stat)
+{
     // Cannot automatically set reliable range
     $stat[VALIDATE_OPTIONS]['omin'] = PHP_INT_MIN;
     $stat[VALIDATE_OPTIONS]['omax'] = PHP_INT_MAX;
 }
 
 
-function optimize_float_stat(&$stat) {
+function optimize_float_stat(&$stat)
+{
     // Cannot automatically set reliable range
     $stat[VALIDATE_OPTIONS]['omin'] = -INF;
     $stat[VALIDATE_OPTIONS]['omax'] = INF;
 }
 
 
-function optimize_string_stat(&$stat) {
+function optimize_string_stat(&$stat)
+{
     // Cannot automatically set reliable length
     $stat[VALIDATE_OPTIONS]['omin'] = 0;
     if ($stat[VALIDATE_OPTIONS]['lmax'] > 300) {
         $stat[VALIDATE_OPTIONS]['omax'] = 1024*256;
-    } else if ($stat[VALIDATE_OPTIONS]['lmax'] > 50) {
+    } elseif ($stat[VALIDATE_OPTIONS]['lmax'] > 50) {
         $stat[VALIDATE_OPTIONS]['omax'] = 1024;
     } else {
         $stat[VALIDATE_OPTIONS]['omax'] = 100;
     }
-    foreach($stat[VALIDATE_ASCII_MAP] as $key => $val) {
+    foreach ($stat[VALIDATE_ASCII_MAP] as $key => $val) {
         $stat[VALIDATE_OPTIONS]['oflags'] = $stat[VALIDATE_OPTIONS]['oflags'] ?? 0;
         if ($key >= ord('0') && $key <= ord('9')) {
             $stat[VALIDATE_OPTIONS]['oflags'] |= VALIDATE_STRING_DIGIT;
@@ -434,7 +450,8 @@ function optimize_string_stat(&$stat) {
 /**
  * Create stat file
  */
-function create_stat($stat_file, $stat) {
+function create_stat($stat_file, $stat)
+{
     $str_stat = '<?php
  $stat =
 ';
@@ -449,10 +466,11 @@ function create_stat($stat_file, $stat) {
 /**
  * Create SPEC file
  */
-function create_spec($spec_file, $stat) {
+function create_spec($spec_file, $stat)
+{
     $spec = array();
     // TODO Implement nicer exporter that supports "string" ID, FLAGS.
-    foreach($stat as $uri => $val) {
+    foreach ($stat as $uri => $val) {
         create_spec_recursive($spec[$uri], $val);
     }
     $str_spec = '<?php
@@ -471,7 +489,8 @@ $EXTRA_SPECS =
 }
 
 
-function create_spec_recursive(&$spec, $stat) {
+function create_spec_recursive(&$spec, $stat)
+{
     if ($stat[VALIDATE_ID] !== VALIDATE_ARRAY) {
         return create_scalar_spec($spec, $stat);
     }
@@ -483,7 +502,7 @@ function create_spec_recursive(&$spec, $stat) {
     // Allow 10 more extra vars because number of elements is not reliable.
     $spec[VALIDATE_OPTIONS]['max'] = $stat[VALIDATE_OPTIONS]['lmax'] + 10;
     $params = [];
-    foreach($stat[VALIDATE_PARAMS] as $key => $val) {
+    foreach ($stat[VALIDATE_PARAMS] as $key => $val) {
         $params[$key] = create_spec_recursive($stat[$key], $val);
     }
     $spec[VALIDATE_PARAMS] = $params;
@@ -493,7 +512,8 @@ function create_spec_recursive(&$spec, $stat) {
 /**
  * Create spec from stat data
  */
-function create_scalar_spec($spec, $stat) {
+function create_scalar_spec($spec, $stat)
+{
     assert($stat[VALIDATE_ID] !== VALIDATE_ARRAY);
     $type = $stat[VALIDATE_ID];
     switch ($type) {
@@ -513,7 +533,8 @@ function create_scalar_spec($spec, $stat) {
 }
 
 
-function create_int_spec($spec, $stat) {
+function create_int_spec($spec, $stat)
+{
     assert($stat[VALIDATE_ID] === VALIDATE_INT);
     $spec[VALIDATE_ID] = VALIDATE_INT;
     $spec[VALIDATE_FLAGS] = ($stat[VALIDATE_OPTIONS]['oflags'] ?? 0);
@@ -523,7 +544,8 @@ function create_int_spec($spec, $stat) {
 }
 
 
-function create_float_spec($spec, $stat) {
+function create_float_spec($spec, $stat)
+{
     assert($stat[VALIDATE_ID] === VALIDATE_FLOAT);
     $spec[VALIDATE_ID] = VALIDATE_FLOAT;
     $spec[VALIDATE_FLAGS] = ($stat[VALIDATE_OPTIONS]['oflags'] ?? 0);
@@ -533,7 +555,8 @@ function create_float_spec($spec, $stat) {
 }
 
 
-function create_string_spec($spec, $stat) {
+function create_string_spec($spec, $stat)
+{
     assert($stat[VALIDATE_ID] === VALIDATE_STRING);
     $spec[VALIDATE_ID] = VALIDATE_STRING;
     $spec[VALIDATE_FLAGS] = ($stat[VALIDATE_OPTIONS]['oflags'] ?? 0);

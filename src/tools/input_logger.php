@@ -9,7 +9,7 @@
  */
 
 // Use closure to keep namespace clean.
-(function() {
+(function () {
     // Input log path
     $path = "/var/tmp/validate/";
     if (!is_dir($path)) {

@@ -2438,93 +2438,327 @@ class Validate
             do {
                 // C 1.1 - ASCII Space is ignored here.
                 // C 1.2
-                if ($cp == 0x0000A0)  { $ret = $cp; break; }
-                if ($cp == 0x001680)  { $ret = $cp; break; }
-                if ($cp == 0x002000)  { $ret = $cp; break; }
-                if ($cp == 0x002001)  { $ret = $cp; break; }
-                if ($cp == 0x002002)  { $ret = $cp; break; }
-                if ($cp == 0x002003)  { $ret = $cp; break; }
-                if ($cp == 0x002004)  { $ret = $cp; break; }
-                if ($cp == 0x002005)  { $ret = $cp; break; }
-                if ($cp == 0x002006)  { $ret = $cp; break; }
-                if ($cp == 0x002007)  { $ret = $cp; break; }
-                if ($cp == 0x002008)  { $ret = $cp; break; }
-                if ($cp == 0x002009)  { $ret = $cp; break; }
-                if ($cp == 0x00200A)  { $ret = $cp; break; }
-                if ($cp == 0x00200B)  { $ret = $cp; break; }
-                if ($cp == 0x00202F)  { $ret = $cp; break; }
-                if ($cp == 0x00205F)  { $ret = $cp; break; }
-                if ($cp == 0x003000)  { $ret = $cp; break; }
+                if ($cp == 0x0000A0) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x001680) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002000) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002001) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002002) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002003) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002004) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002005) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002006) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002007) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002008) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002009) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00200A) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00200B) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00202F) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00205F) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x003000) {
+                    $ret = $cp;
+                    break;
+                }
                 // C 2.1 ｰ ASCII cntrls are ignored here
                 // C 2.2
-                if ($cp >= 0x000080 && $cp <= 0x00009F)  { $ret = $cp; break; }
-                if ($cp == 0x0006DD)  { $ret = $cp; break; }
-                if ($cp == 0x00070F)  { $ret = $cp; break; }
-                if ($cp == 0x00180E)  { $ret = $cp; break; }
-                if ($cp == 0x00200C)  { $ret = $cp; break; }
-                if ($cp == 0x00200D)  { $ret = $cp; break; }
-                if ($cp == 0x002028)  { $ret = $cp; break; }
-                if ($cp == 0x002029)  { $ret = $cp; break; }
-                if ($cp == 0x002060)  { $ret = $cp; break; }
-                if ($cp == 0x002061)  { $ret = $cp; break; }
-                if ($cp == 0x002062)  { $ret = $cp; break; }
-                if ($cp == 0x002063)  { $ret = $cp; break; }
-                if ($cp >= 0x00206A && $cp <= 0x00206F)  { $ret = $cp; break; }
-                if ($cp == 0x00FEFF)  { $ret = $cp; break; }
-                if ($cp >= 0x00FFF9 && $cp <= 0x00FFFC)  { $ret = $cp; break; }
-                if ($cp >= 0x01D173 && $cp <= 0x01D17A)  { $ret = $cp; break; }
+                if ($cp >= 0x000080 && $cp <= 0x00009F) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x0006DD) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00070F) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00180E) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00200C) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00200D) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002028) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002029) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002060) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002061) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002062) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x002063) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x00206A && $cp <= 0x00206F) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00FEFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x00FFF9 && $cp <= 0x00FFFC) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x01D173 && $cp <= 0x01D17A) {
+                    $ret = $cp;
+                    break;
+                }
                 // C 3
-                if ($cp >= 0x00E000 && $cp <= 0x00F8FF)  { $ret = $cp; break; }
-                if ($cp >= 0x0F0000 && $cp <= 0x0FFFFD)  { $ret = $cp; break; }
-                if ($cp >= 0x100000 && $cp <= 0x10FFFD)  { $ret = $cp; break; }
+                if ($cp >= 0x00E000 && $cp <= 0x00F8FF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x0F0000 && $cp <= 0x0FFFFD) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x100000 && $cp <= 0x10FFFD) {
+                    $ret = $cp;
+                    break;
+                }
                 // C 4
-                if ($cp >= 0x00FDD0 && $cp <= 0x00FDEF)  { $ret = $cp; break; }
-                if ($cp >= 0x00FFFE && $cp <= 0x00FFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x01FFFE && $cp <= 0x01FFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x02FFFE && $cp <= 0x02FFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x03FFFE && $cp <= 0x03FFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x04FFFE && $cp <= 0x04FFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x05FFFE && $cp <= 0x05FFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x06FFFE && $cp <= 0x06FFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x07FFFE && $cp <= 0x07FFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x08FFFE && $cp <= 0x08FFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x09FFFE && $cp <= 0x09FFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x0AFFFE && $cp <= 0x0AFFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x0BFFFE && $cp <= 0x0BFFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x0CFFFE && $cp <= 0x0CFFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x0DFFFE && $cp <= 0x0DFFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x0EFFFE && $cp <= 0x0EFFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x0FFFFE && $cp <= 0x0FFFFF)  { $ret = $cp; break; }
-                if ($cp >= 0x10FFFE && $cp <= 0x10FFFF)  { $ret = $cp; break; }
+                if ($cp >= 0x00FDD0 && $cp <= 0x00FDEF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x00FFFE && $cp <= 0x00FFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x01FFFE && $cp <= 0x01FFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x02FFFE && $cp <= 0x02FFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x03FFFE && $cp <= 0x03FFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x04FFFE && $cp <= 0x04FFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x05FFFE && $cp <= 0x05FFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x06FFFE && $cp <= 0x06FFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x07FFFE && $cp <= 0x07FFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x08FFFE && $cp <= 0x08FFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x09FFFE && $cp <= 0x09FFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x0AFFFE && $cp <= 0x0AFFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x0BFFFE && $cp <= 0x0BFFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x0CFFFE && $cp <= 0x0CFFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x0DFFFE && $cp <= 0x0DFFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x0EFFFE && $cp <= 0x0EFFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x0FFFFE && $cp <= 0x0FFFFF) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x10FFFE && $cp <= 0x10FFFF) {
+                    $ret = $cp;
+                    break;
+                }
                 // C 5
-                if ($cp >= 0x00D800 && $cp <= 0x00DFFF)  { $ret = $cp; break; }
+                if ($cp >= 0x00D800 && $cp <= 0x00DFFF) {
+                    $ret = $cp;
+                    break;
+                }
                 // C 6
-                if ($cp == 0x00FFF9)  { $ret = $cp; break; }
-                if ($cp == 0x00FFFA)  { $ret = $cp; break; }
-                if ($cp == 0x00FFFB)  { $ret = $cp; break; }
-                if ($cp == 0x00FFFC)  { $ret = $cp; break; }
-                if ($cp == 0x00FFFD)  { $ret = $cp; break; }
+                if ($cp == 0x00FFF9) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00FFFA) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00FFFB) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00FFFC) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00FFFD) {
+                    $ret = $cp;
+                    break;
+                }
                 // C 7
-                if ($cp >= 0x002FF0 && $cp <= 0x002FFB)  { $ret = $cp; break; }
+                if ($cp >= 0x002FF0 && $cp <= 0x002FFB) {
+                    $ret = $cp;
+                    break;
+                }
                 // C 8
-                if ($cp == 0x000340)  { $ret = $cp; break; }
-                if ($cp == 0x000341)  { $ret = $cp; break; }
-                if ($cp == 0x00200E)  { $ret = $cp; break; }
-                if ($cp == 0x00200F)  { $ret = $cp; break; }
-                if ($cp == 0x00202A)  { $ret = $cp; break; }
-                if ($cp == 0x00202B)  { $ret = $cp; break; }
-                if ($cp == 0x00202C)  { $ret = $cp; break; }
-                if ($cp == 0x00202D)  { $ret = $cp; break; }
-                if ($cp == 0x00202E)  { $ret = $cp; break; }
-                if ($cp == 0x00206A)  { $ret = $cp; break; }
-                if ($cp == 0x00206B)  { $ret = $cp; break; }
-                if ($cp == 0x00206C)  { $ret = $cp; break; }
-                if ($cp == 0x00206D)  { $ret = $cp; break; }
-                if ($cp == 0x00206E)  { $ret = $cp; break; }
-                if ($cp == 0x00206F)  { $ret = $cp; break; }
+                if ($cp == 0x000340) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x000341) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00200E) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00200F) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00202A) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00202B) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00202C) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00202D) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00202E) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00206A) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00206B) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00206C) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00206D) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00206E) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp == 0x00206F) {
+                    $ret = $cp;
+                    break;
+                }
                 // C 9
-                if ($cp == 0x0E0001)  { $ret = $cp; break; }
-                if ($cp >= 0x0E0020 && $cp <= 0x0E007F)  { $ret = $cp; break; }
+                if ($cp == 0x0E0001) {
+                    $ret = $cp;
+                    break;
+                }
+                if ($cp >= 0x0E0020 && $cp <= 0x0E007F) {
+                    $ret = $cp;
+                    break;
+                }
             } while (0);
         }
 
@@ -3270,7 +3504,7 @@ class Validate
 
         if ($mode & VALIDATE_OPT_ERROR_FULL) {
             $storage = $storage;
-            foreach($this->currentElem as $el) {
+            foreach ($this->currentElem as $el) {
                 if (!isset($storage[$el])) {
                     $storage[$el] = array();
                 }
@@ -3715,48 +3949,108 @@ class Validate
             case VALIDATE_STRING: // REGEXP / CALLBACK shares the same flags
             case VALIDATE_REGEXP:
             case VALIDATE_CALLBACK:
-                if ($flags & VALIDATE_STRING_SPACE) $f[] = 'VALIDATE_STRING_SPACE';
-                if ($flags & VALIDATE_STRING_DIGIT) $f[] = 'VALIDATE_STRING_DIGIT';
-                if ($flags & VALIDATE_STRING_TAB) $f[] = 'VALIDATE_STRING_TAB';
-                if ($flags & VALIDATE_STRING_LF) $f[] = 'VALIDATE_STRING_LF';
-                if ($flags & VALIDATE_STRING_CR) $f[] = 'VALIDATE_STRING_CR';
-                if ($flags & VALIDATE_STRING_CRLF_MIXED) $f[] = 'VALIDATE_STRING_CRLF_MIXED';
-                if ($flags & VALIDATE_STRING_CRLF) $f[] = 'VALIDATE_STRING_CRLF';
-                if ($flags & VALIDATE_STRING_LOWER_ALPHA) $f[] = 'VALIDATE_STRING_LOWER_ALPHA';
-                if ($flags & VALIDATE_STRING_UPPER_ALPHA) $f[] = 'VALIDATE_STRING_UPPER_ALPHA';
-                if ($flags & VALIDATE_STRING_ALPHA) $f[] = 'VALIDATE_STRING_ALPHA';
-                if ($flags & VALIDATE_STRING_ALNUM) $f[] = 'VALIDATE_STRING_ALNUM';
-                if ($flags & VALIDATE_STRING_SYMBOL) $f[] = 'VALIDATE_STRING_SYMBOL';
-                if ($flags & VALIDATE_STRING_MB) $f[] = 'VALIDATE_STRING_MB';
-                if ($flags & VALIDATE_STRING_BINARY) $f[] = 'VALIDATE_STRING_BINARY';
-                if ($flags & VALIDATE_STRING_RFC3454_D) $f[] = 'VALIDATE_STRING_RFC3454_D';
+                if ($flags & VALIDATE_STRING_SPACE) {
+                    $f[] = 'VALIDATE_STRING_SPACE';
+                }
+                if ($flags & VALIDATE_STRING_DIGIT) {
+                    $f[] = 'VALIDATE_STRING_DIGIT';
+                }
+                if ($flags & VALIDATE_STRING_TAB) {
+                    $f[] = 'VALIDATE_STRING_TAB';
+                }
+                if ($flags & VALIDATE_STRING_LF) {
+                    $f[] = 'VALIDATE_STRING_LF';
+                }
+                if ($flags & VALIDATE_STRING_CR) {
+                    $f[] = 'VALIDATE_STRING_CR';
+                }
+                if ($flags & VALIDATE_STRING_CRLF_MIXED) {
+                    $f[] = 'VALIDATE_STRING_CRLF_MIXED';
+                }
+                if ($flags & VALIDATE_STRING_CRLF) {
+                    $f[] = 'VALIDATE_STRING_CRLF';
+                }
+                if ($flags & VALIDATE_STRING_LOWER_ALPHA) {
+                    $f[] = 'VALIDATE_STRING_LOWER_ALPHA';
+                }
+                if ($flags & VALIDATE_STRING_UPPER_ALPHA) {
+                    $f[] = 'VALIDATE_STRING_UPPER_ALPHA';
+                }
+                if ($flags & VALIDATE_STRING_ALPHA) {
+                    $f[] = 'VALIDATE_STRING_ALPHA';
+                }
+                if ($flags & VALIDATE_STRING_ALNUM) {
+                    $f[] = 'VALIDATE_STRING_ALNUM';
+                }
+                if ($flags & VALIDATE_STRING_SYMBOL) {
+                    $f[] = 'VALIDATE_STRING_SYMBOL';
+                }
+                if ($flags & VALIDATE_STRING_MB) {
+                    $f[] = 'VALIDATE_STRING_MB';
+                }
+                if ($flags & VALIDATE_STRING_BINARY) {
+                    $f[] = 'VALIDATE_STRING_BINARY';
+                }
+                if ($flags & VALIDATE_STRING_RFC3454_D) {
+                    $f[] = 'VALIDATE_STRING_RFC3454_D';
+                }
                 $ret = $this->validateScalarSpecFlags($f, $flags, VALIDATE_STRING_LAST_BIT, $max_bit);
                 break;
             case VALIDATE_INT:
-                if ($flags & VALIDATE_INT_AS_STRING) $f[] = 'VALIDATE_INT_AS_STRING';
-                if ($flags & VALIDATE_INT_POSITIVE_SIGN) $f[] = 'VALIDATE_INT_POSITIVE_SIGN';
-                if ($flags & VALIDATE_INT_NEGATIVE_SIGN) $f[] = 'VALIDATE_INT_NEGATIVE_SIGN';
+                if ($flags & VALIDATE_INT_AS_STRING) {
+                    $f[] = 'VALIDATE_INT_AS_STRING';
+                }
+                if ($flags & VALIDATE_INT_POSITIVE_SIGN) {
+                    $f[] = 'VALIDATE_INT_POSITIVE_SIGN';
+                }
+                if ($flags & VALIDATE_INT_NEGATIVE_SIGN) {
+                    $f[] = 'VALIDATE_INT_NEGATIVE_SIGN';
+                }
                 $ret = $this->validateScalarSpecFlags($f, $flags, VALIDATE_INT_LAST_BIT, $max_bit);
                 break;
             case VALIDATE_FLOAT:
-                if ($flags & VALIDATE_FLOAT_AS_STRING) $f[] = 'VALIDATE_FLOAT_AS_STRING';
-                if ($flags & VALIDATE_FLOAT_FRACTION) $f[] = 'VALIDATE_FLOAT_AS_FRACTION';
-                if ($flags & VALIDATE_FLOAT_SCIENTIFIC) $f[] = 'VALIDATE_FLOAT_SCIENTIFIC';
-                if ($flags & VALIDATE_FLOAT_POSITIVE_SIGN) $f[] = 'VALIDATE_FLOAT_POSITIVE_SIGN';
-                if ($flags & VALIDATE_FLOAT_NEGATIVE_SIGN) $f[] = 'VALIDATE_FLOAT_NEGATIVE_SIGN';
+                if ($flags & VALIDATE_FLOAT_AS_STRING) {
+                    $f[] = 'VALIDATE_FLOAT_AS_STRING';
+                }
+                if ($flags & VALIDATE_FLOAT_FRACTION) {
+                    $f[] = 'VALIDATE_FLOAT_AS_FRACTION';
+                }
+                if ($flags & VALIDATE_FLOAT_SCIENTIFIC) {
+                    $f[] = 'VALIDATE_FLOAT_SCIENTIFIC';
+                }
+                if ($flags & VALIDATE_FLOAT_POSITIVE_SIGN) {
+                    $f[] = 'VALIDATE_FLOAT_POSITIVE_SIGN';
+                }
+                if ($flags & VALIDATE_FLOAT_NEGATIVE_SIGN) {
+                    $f[] = 'VALIDATE_FLOAT_NEGATIVE_SIGN';
+                }
                 $ret = $this->validateScalarSpecFlags($f, $flags, VALIDATE_FLOAT_LAST_BIT, $max_bit);
                 break;
             case VALIDATE_NULL:
-                if ($flags & VALIDATE_NULL_AS_STRING) $f[] = 'VALIDATE_NULL_AS_STRING';
+                if ($flags & VALIDATE_NULL_AS_STRING) {
+                    $f[] = 'VALIDATE_NULL_AS_STRING';
+                }
                 $ret = $this->validateScalarSpecFlags($f, $flags, VALIDATE_NULL_LAST_BIT, $max_bit);
                 break;
             case VALIDATE_BOOL:
-                if ($flags & VALIDATE_BOOL_AS_STRING) $f[] = 'VALIDATE_BOOL_AS_STRING';
-                if ($flags & VALIDATE_BOOL_01) $f[] = 'VALIDATE_BOOL_01';
-                if ($flags & VALIDATE_BOOL_TF) $f[] = 'VALIDATE_BOOL_TF';
-                if ($flags & VALIDATE_BOOL_TRUE_FALSE) $f[] = 'VALIDATE_BOOL_TRUE_FALSE';
-                if ($flags & VALIDATE_BOOL_ON_OFF) $f[] = 'VALIDATE_BOOL_ON_OFF';
-                if ($flags & VALIDATE_BOOL_YES_NO) $f[] = 'VALIDATE_BOOL_YES_NO';
+                if ($flags & VALIDATE_BOOL_AS_STRING) {
+                    $f[] = 'VALIDATE_BOOL_AS_STRING';
+                }
+                if ($flags & VALIDATE_BOOL_01) {
+                    $f[] = 'VALIDATE_BOOL_01';
+                }
+                if ($flags & VALIDATE_BOOL_TF) {
+                    $f[] = 'VALIDATE_BOOL_TF';
+                }
+                if ($flags & VALIDATE_BOOL_TRUE_FALSE) {
+                    $f[] = 'VALIDATE_BOOL_TRUE_FALSE';
+                }
+                if ($flags & VALIDATE_BOOL_ON_OFF) {
+                    $f[] = 'VALIDATE_BOOL_ON_OFF';
+                }
+                if ($flags & VALIDATE_BOOL_YES_NO) {
+                    $f[] = 'VALIDATE_BOOL_YES_NO';
+                }
                 $ret = $this->validateScalarSpecFlags($f, $flags, VALIDATE_BOOL_LAST_BIT, $max_bit);
                 if (!($flags & (VALIDATE_BOOL_01 | VALIDATE_BOOL_TF | VALIDATE_BOOL_TRUE_FALSE
                                | VALIDATE_BOOL_ON_OFF | VALIDATE_BOOL_YES_NO))) {
@@ -3786,16 +4080,36 @@ class Validate
             );
         }
 
-        if ($flags & VALIDATE_FLAG_RAW) $f[] = 'VALIDATE_FLAG_RAW';
-        if ($flags & VALIDATE_FLAG_REJECT) $f[] = 'VALIDATE_FLAG_REJECT';
-        if ($flags & VALIDATE_FLAG_UNDEFINED) $f[] = 'VALIDATE_FLAG_UNDEFINED';
-        if ($flags & VALIDATE_FLAG_UNDEFINED_TO_DEFAULT) $f[] = 'VALIDATE_FLAG_UNDEFINED_TO_DEFAULT';
-        if ($flags & VALIDATE_FLAG_EMPTY) $f[] = 'VALIDATE_FLAG_EMPTY';
-        if ($flags & VALIDATE_FLAG_EMPTY_TO_DEFAULT) $f[] = 'VALIDATE_FLAG_EMPTY_TO_DEFAULT';
-        if ($flags & VALIDATE_FLAG_ARRAY) $f[] = 'VALIDATE_FLAG_ARRAY';
-        if ($flags & VALIDATE_FLAG_ARRAY_KEY_ALNUM) $f[] = 'VALIDATE_FLAG_ARRAY_KEY_ALNUM';
-        if ($flags & VALIDATE_FLAG_WARNING) $f[] = 'VALIDATE_FLAG_WARNING';
-        if ($flags & VALIDATE_FLAG_PASSTHRU) $f[] = 'VALIDATE_FLAG_PASSTHRU';
+        if ($flags & VALIDATE_FLAG_RAW) {
+            $f[] = 'VALIDATE_FLAG_RAW';
+        }
+        if ($flags & VALIDATE_FLAG_REJECT) {
+            $f[] = 'VALIDATE_FLAG_REJECT';
+        }
+        if ($flags & VALIDATE_FLAG_UNDEFINED) {
+            $f[] = 'VALIDATE_FLAG_UNDEFINED';
+        }
+        if ($flags & VALIDATE_FLAG_UNDEFINED_TO_DEFAULT) {
+            $f[] = 'VALIDATE_FLAG_UNDEFINED_TO_DEFAULT';
+        }
+        if ($flags & VALIDATE_FLAG_EMPTY) {
+            $f[] = 'VALIDATE_FLAG_EMPTY';
+        }
+        if ($flags & VALIDATE_FLAG_EMPTY_TO_DEFAULT) {
+            $f[] = 'VALIDATE_FLAG_EMPTY_TO_DEFAULT';
+        }
+        if ($flags & VALIDATE_FLAG_ARRAY) {
+            $f[] = 'VALIDATE_FLAG_ARRAY';
+        }
+        if ($flags & VALIDATE_FLAG_ARRAY_KEY_ALNUM) {
+            $f[] = 'VALIDATE_FLAG_ARRAY_KEY_ALNUM';
+        }
+        if ($flags & VALIDATE_FLAG_WARNING) {
+            $f[] = 'VALIDATE_FLAG_WARNING';
+        }
+        if ($flags & VALIDATE_FLAG_PASSTHRU) {
+            $f[] = 'VALIDATE_FLAG_PASSTHRU';
+        }
         $tmp = $this->validateScalarSpecFlags($f, $flags, VALIDATE_FLAG_LAST_BIT, 32);
         $str_flags = join(' | ', $f);
         if (!$tmp) {
@@ -4163,7 +4477,7 @@ class Validate
             case VALIDATE_NULL:
             case VALIDATE_BOOL:
             case VALIDATE_RESOURCE:
-            if (isset($options['callback'])) {
+                if (isset($options['callback'])) {
                     $this->specWarning(
                         [
                             'message' => $vname.' has "callback" option that has no effect.',
@@ -4480,7 +4794,7 @@ class Validate
                 // fall through
             case VALIDATE_INT:
                 if (isset($options['values'])) {
-                    if  (!is_array($options['values'])) {
+                    if (!is_array($options['values'])) {
                         $this->specError(
                             [
                                 'message' => $vname.' "values" option is not an array.',
@@ -4531,7 +4845,7 @@ class Validate
                         ]
                     );
                     $ret = false;
-                } else if (!is_string($spec[VALIDATE_OPTIONS]['resource']) || $spec[VALIDATE_OPTIONS]['resource'] === '') {
+                } elseif (!is_string($spec[VALIDATE_OPTIONS]['resource']) || $spec[VALIDATE_OPTIONS]['resource'] === '') {
                     $this->specError(
                         [
                             'message' => $vname.' must have string $spec["resource"] option.',
