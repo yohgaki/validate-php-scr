@@ -1,5 +1,5 @@
 --TEST--
-validate() and array with reference
+validate() VALIDATE_ARRAY — nested reference + VALIDATE_FLAG_ARRAY_RECURSIVE
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -11,8 +11,9 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
-// In case of circular reference, "alimit" option protects against infinite recursion.
-// If "alimit" is not set, "amax" is used as "alimit"
+// 'alimit' caps the total number of elements traversed when descending into a
+// nested input, which is the safety net against circular references like the
+// $array2 below. If 'alimit' is absent, 'amax' is used as the cap.
 $array = ["12"];
 $array2 = [&$array];
 

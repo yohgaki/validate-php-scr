@@ -1,5 +1,5 @@
 --TEST--
-validate functions
+validate_* helper functions — logger, validate_error/warning/notice, error buckets
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -25,8 +25,9 @@ $spec = [
 
 $floats = [0, -1000, 1000, -1000.1, 1000.1];
 
+// Custom logger registered via validate_set_logger_function(). Called once
+// per error when VALIDATE_OPT_LOG_ERROR is set on the validate() call.
 $logger = function($ctx, $error) {
-    // Simply dump message.
     print("From logger:\n");
     var_dump($error['message']);
 };
@@ -76,9 +77,10 @@ try {
   echo $e->getMessage(), "\n\n"; // No exception
 }
 
-// User errors are simply message array
+// User errors are plain strings — safe to surface to end users / form UIs.
 var_dump(validate_get_user_errors($ctx));
-// System errors have more info related to error.
+// System errors carry the full structured record (type/param/spec/value/...)
+// for logging and debugging.
 var_dump(validate_get_system_errors($ctx));
 ?>
 --EXPECTF--

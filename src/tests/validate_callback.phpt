@@ -11,13 +11,17 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
-// NOTE: When VALIDATE_CALLBAK is used with validate(), it is usres' responsibility
-//      to raise proper exceptions when something goes wrong.
+// NOTE: With VALIDATE_CALLBACK, the user callback decides success/failure.
+//       Always return true/false explicitly and call validate_error() for any
+//       user-visible failure message.
 //
-// WARNING: This test code uses validate() as 'filter', but 'filtering' is NOT validation.
-//      Filtering is used only for testing purpose. Do not abuse.
+// WARNING: Some cases below use the callback to mutate $result (upper-case the
+//       input) — that is filtering, not validation. Production code should
+//       prefer the 'filter' option for transformations and keep the callback
+//       focused on accept/reject decisions.
 
 
+// Case 1: closure callback returning true (success path).
 echo "\n/* Simple callback function - closure*/\n";
 $f = function($ctx, &$result, $value) {
 	assert($ctx instanceof Validate);
@@ -38,6 +42,7 @@ foreach($str as $s) {
 }
 
 
+// Case 2: closure returning false — every entry should fail regardless of input.
 echo "\n/* Simple callback function - closure*/\n";
 $f = function($ctx, &$result, $value) {
 	assert($ctx instanceof Validate);
@@ -60,6 +65,7 @@ foreach($str as $s) {
 
 
 
+// Case 3: named global function as callback (string callable).
 echo "\n/* Simple callback function */\n";
 function test($ctx, &$result, $value) {
 	assert($ctx instanceof Validate);
@@ -81,6 +87,7 @@ foreach($str as $s) {
 }
 
 
+// Case 4: array callable [class, method] (static method).
 echo "\n/* Simple class method callback */\n";
 class test_class {
 	static function test($ctx, &$result, $value) {
@@ -103,6 +110,7 @@ foreach($str as $s) {
 }
 
 
+// Case 5: callback with no explicit return — implicit null is treated as failure.
 echo "\n/* empty function without return value */\n";
 function test1($ctx, &$result, $value) {
 	$result = strtoupper($value);
@@ -121,6 +129,7 @@ foreach($str as $s) {
 }
 
 
+// Case 6: callback raises a PHP notice via trigger_error() then returns false.
 echo "\n/* function raise error */\n";
 function test2($ctx, &$result, $value) {
 	$result = strtoupper($value);
@@ -142,6 +151,9 @@ foreach($str as $s) {
 
 
 
+// Case 7: callback unsets its $value parameter but returns true.
+// $value is a local copy here, so unsetting it does not affect $result —
+// the engine falls back to the original input.
 echo "\n/* unsetting data */\n";
 function test3($ctx, &$result, $value) {
 	unset($value);
@@ -161,6 +173,8 @@ foreach($str as $s) {
 }
 
 
+// Case 8: callback assigns to the by-ref $result so the engine returns 1
+// for every input regardless of what arrived.
 echo "\n/* unset data and return value */\n";
 function test4($ctx, &$result, $value) {
 	unset($value);

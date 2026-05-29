@@ -11,12 +11,17 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
+// Each entry is one options array fed to a VALIDATE_REGEXP spec. The driver
+// loop below applies it against the fixed input 'data' so each pattern's
+// match/non-match behaviour is exercised once.
 $opts = array(
-	array("min"=>0,"max"=>100,"regexp"=>'/.*/'),
-	array("min"=>0,"max"=>100,"regexp"=>'/^b(.*)/'),
-	array("min"=>0,"max"=>100,"regexp"=>'/^d(.*)/'),
-	array("min"=>0,"max"=>100,"regexp"=>'/blah/'),
-	array("min"=>0,"max"=>100,"regexp"=>'/\[/'),
+	array("min"=>0,"max"=>100,"regexp"=>'/.*/'),       // matches anything
+	array("min"=>0,"max"=>100,"regexp"=>'/^b(.*)/'),   // requires leading 'b' — fails on 'data'
+	array("min"=>0,"max"=>100,"regexp"=>'/^d(.*)/'),   // requires leading 'd' — succeeds
+	array("min"=>0,"max"=>100,"regexp"=>'/blah/'),     // literal not present — fails
+	array("min"=>0,"max"=>100,"regexp"=>'/\[/'),       // literal '[' not present — fails
+	// Commented-out forms exist as a reminder of inputs the spec validator should reject
+	// outright (empty options, NULL, non-array). Re-enable temporarily when adjusting validateSpec().
 	// array(),
 	// NULL,
 	// "foo",

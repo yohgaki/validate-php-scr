@@ -1,6 +1,5 @@
 --TEST--
-Test basic validate module features
-	All Test cases should pass
+validate() core features — happy-path examples for every validator type
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -21,55 +20,63 @@ ob_start(function($output) {
 });
 
 echo "**** VALIDATE_BOOL ****\n";
-// Value to be validated.
+// Input under test.
 $bool = 't';
 
-// Remember these simple "input type specs" can be reused as "array of specs" easily.
+// Per-field specs like the ones below can be nested inside an array spec to
+// validate whole structures — see the VALIDATE_REJECT block further down.
 
-// Example1 validation failure
+// Example 1 — failure: by default VALIDATE_BOOL only accepts true/false, no text forms.
 $bool_spec = [
     VALIDATE_BOOL,
-    VALIDATE_FLAG_NONE, // By default no text value is valid
+    VALIDATE_FLAG_NONE,
     []
 ];
 
 $result =validate($ctx, $bool, $bool_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation failure
+var_dump($result, $ctx->getStatus()); // false / failure.
 
 
-// Example2 Successful validation
+// Example 2 — success: opt in to the "t"/"f" form (matches "T"/"F" too).
 $bool_spec = [
     VALIDATE_BOOL,
-    VALIDATE_BOOL_TF, // Allow "t"/"f", "T"/"F" as valid bool
+    VALIDATE_BOOL_TF,
     []
 ];
 
 $result =validate($ctx, $bool, $bool_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation success
+var_dump($result, $ctx->getStatus()); // true / success.
 
-// OO API one liner
+// Equivalent OO one-liner (skips $ctx; throw on failure unless the OPT flag is set).
 $result = (new Validate)->validate($bool, $bool_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 
 
 
 echo "\n**** VALIDATE_CALLBACK ****\n";
-// Value to be validated.
-$salt = 'abcd12345678abcdX'; //Wrong HEX
+// Input under test — malformed HEX (odd length, plus the trailing 'X' is non-hex).
+$salt = 'abcd12345678abcdX';
 
-// Remember these simple "input type specs" can be reused as "array of specs" easily.
+// VALIDATE_CALLBACK lets you write the rule in plain PHP. The engine still
+// runs the flag whitelist (DIGIT) and the 'ascii' option ('abcdef') first,
+// so the callback only sees inputs whose characters are already accepted.
 
 $callback_spec = [
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_DIGIT,
     [
         'min' => 8, 'max' => 32, 'ascii' => 'abcdef', 'callback' =>
-        // Validate HEX and return binary. Useful with binary salt for CSRF protection with hash_hkdf() hash.
-        // IMPORTANT: Since there is noway to check success/failure other than return value, return value
-        //    must be true/false respectively. Update $input to return modified value.
+        // Validate HEX and return its binary form. Handy for binary salts /
+        // CSRF tokens consumed by hash_hkdf().
+        //
+        // Callback contract:
+        //   - Return true  on success; the engine takes the value from $result.
+        //   - Return false on failure; report a user message via validate_error()
+        //     and ALWAYS pair the call with `return false` — validate_error()
+        //     does not abort the callback on its own.
         function ($ctx, &$result, $input) {
             assert(is_string($input));
             assert($ctx instanceof Validate);
-            // When input is string min/max is already checked.
+            // Length is already inside min/max here; we only need to check parity.
 
             if (strlen($input) % 2) {
                 validate_error($ctx, 'Salt validation: HEX value must be even length.');
@@ -77,64 +84,60 @@ $callback_spec = [
             }
             $input = @hex2bin($input);
             if (!$input) {
-                // hex2bin() error. Malformed HEX
-                $input = null; // NULL is for unsuccessful validation.
-                // Please do not forget to pass $options and $func_opts.
+                // hex2bin() returned false — malformed HEX. Clear $result and bail.
+                $input = null;
                 validate_error($ctx, 'Salt validation: Malformed HEX value.');
-                return false; // Please add "return false" after validate_error(). Errors may be logged only. i.e. No Exception/Error.
+                return false;
             }
-            return true; // Return true for success.
+            return true;
         }
     ]
 ];
 
 
-// Example1 validation failure
+// Example 1 — failure: callback rejects the malformed input.
 $result =validate($ctx, $salt, $callback_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation failure with wrong HEX
+var_dump($result, $ctx->getStatus());
 
 
-// Value to be validated.
-$salt = 'abcd12345678abcd'; // Correct HEX
+// Input under test — valid HEX of an acceptable length.
+$salt = 'abcd12345678abcd';
 
-// Example2 Successful validation
+// Example 2 — success.
 $result =validate($ctx, $salt, $callback_spec);
-var_dump($result, $ctx->getStatus());// Validation success
+var_dump($result, $ctx->getStatus());
 
-// OO API one liner
+// Equivalent OO one-liner.
 $result = (new Validate)->validate($salt, $callback_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 
 
 
-echo "\n**** VALIDATE_FILTER ****\n";
-// Value to be validated.
+echo "\n**** VALIDATE_FILTER ****\n"; // Heading label only — demonstrates the 'filter' option on VALIDATE_BOOL.
+// Input under test — leading space breaks the strict "t"/"f" form below.
 $bool = ' t';
 
-// Remember these simple "input type specs" can be reused as "array of specs" easily.
-
-// Example1 validation failure
+// Example 1 — failure: VALIDATE_BOOL does not trim by default.
 $bool_spec = [
     VALIDATE_BOOL,
-    VALIDATE_BOOL_TF, // Allow "t"/"f", "T"/"F" as valid bool
+    VALIDATE_BOOL_TF,
     []
 ];
 
 
 $result =validate($ctx, $bool, $bool_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation failure. ' '(space) is not allowed nor trimmed by default.
+var_dump($result, $ctx->getStatus()); // failure — ' ' is not an accepted character.
 
 
-// Example2 Successful validation
+// Example 2 — success: add a 'filter' option that trims whitespace before validation.
 $bool_spec = [
   VALIDATE_BOOL,
-  VALIDATE_BOOL_TF, // Allow "t"/"f", "T"/"F" as valid bool
+  VALIDATE_BOOL_TF,
   ['filter' =>
-  // Unlike "callback" which reports status by return value.
-  // "filter" simply returns filtered value.
+  // Unlike VALIDATE_CALLBACK (which reports status via the return value),
+  // a 'filter' simply returns the transformed value. Set $error to a string
+  // to signal failure; otherwise the returned value replaces $input.
   function ($ctx, $input, &$error='') {
       assert($ctx instanceof Validate);
-      // If there error, you may set $error message as "string".
-      // Validate removes the offending element from result array. (Scalar cannot be removed).
       if (!is_string($input)) {
           $error = 'Input is not a string.';
       }
@@ -145,19 +148,17 @@ $bool_spec = [
 ];
 
 $result =validate($ctx, $bool, $bool_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation success. ' '(spaces) are trimmed.
+var_dump($result, $ctx->getStatus()); // success — the filter trimmed the leading space.
 
-// OO API one liner
+// Equivalent OO one-liner.
 $result = (new Validate)->validate($bool, $bool_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 
 
 echo "\n**** VALIDATE_FLOAT ****\n";
-// Value to be validated.
+// Input under test — outside the [1, PHP_INT_MAX] range.
 $float = -123;
 
-// Remember these simple "input type specs" can be reused as "array of specs" easily.
-
-// Example1 validation failure
+// Example 1 — failure: -123 < min.
 $float_spec = [
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
@@ -165,23 +166,22 @@ $float_spec = [
 ];
 
 $result =validate($ctx, $float, $float_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation failure
+var_dump($result, $ctx->getStatus());
 
 
-// Example2 Successful validation
+// Example 2 — success: float string in range.
 $float = '2134.234567';
 
 $result =validate($ctx, $float, $float_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation success
+var_dump($result, $ctx->getStatus());
 
-// OO API one liner
+// Equivalent OO one-liner.
 $result = (new Validate)->validate($float, $float_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 
 
 
 echo "\n**** VALIDATE_INT ****\n";
-// Example1 validation failure
-// Value to be validated.
+// Example 1 — failure: input is below min.
 $int = '-1234';
 
 $int_spec = [
@@ -191,22 +191,22 @@ $int_spec = [
 ];
 
 $result = validate($ctx, $int, $int_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->GetStatus()); // Validation failure
+var_dump($result, $ctx->GetStatus());
 
 
-// Example2 validation success
+// Example 2 — success.
 $int = 123;
 
 $result = validate($ctx, $int, $int_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation success
+var_dump($result, $ctx->getStatus());
 
-// OO API one liner
+// Equivalent OO one-liner.
 $result = (new Validate)->validate($int, $int_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 
 
 echo "\n**** VALIDATE_REGEXP *****\n";
 
-// Example1 validation failure
+// Example 1 — failure: pattern doesn't permit the space character.
 $str = 'test user';
 
 $str_spec = [
@@ -216,40 +216,40 @@ $str_spec = [
 ];
 
 $result =validate($ctx, $str, $str_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation failure
+var_dump($result, $ctx->getStatus());
 
 
-// Example2 Successful validation
+// Example 2 — success: same flags but pattern now matches the space too.
 $str_spec = [
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_SPACE | VALIDATE_REGEXP_LOWER_ALPHA,
-    ['min' => 1, 'max' => 120, 'regexp' => '/^[ a-z]*$/'] // Add space as valid char
+    ['min' => 1, 'max' => 120, 'regexp' => '/^[ a-z]*$/']
 ];
 
 $result =validate($ctx, $str, $str_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation success
+var_dump($result, $ctx->getStatus());
 
-// OO API one liner
+// Equivalent OO one-liner.
 $result = (new Validate)->validate($str, $str_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 
 
 
 echo "\n**** VALIDATE_REJECT ****\n";
-// Input that has 2 parameters
+// Two-field input — 'float' is required, 'debug' must NOT be present.
 $inputs = [
     'float' => 123,
     'debug' => 'true',
 ];
 
 
-// Parameter 1
+// Per-field spec — 'float'.
 $float = [
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
     ['min' => 1, 'max' => PHP_INT_MAX]
 ];
 
-// Parameter 2
+// Per-field spec — 'debug'. Promoted to a rejected parameter by reject() below.
 $debug = [
     VALIDATE_BOOL,
     VALIDATE_FLAG_NONE,
@@ -258,9 +258,11 @@ $debug = [
 
 
 /**
- *  Sometimes you would like to reject input values
- * such as "debug", "test", etc.
- * Following function add reject flag to spec.
+ * Add VALIDATE_FLAG_REJECT to an existing spec.
+ *
+ * Useful for sentinel parameters like 'debug', 'test', 'admin' that should
+ * never reach a production endpoint — the spec stays reusable, but presence
+ * of the field becomes a hard validation failure.
  */
 function reject($spec)
 {
@@ -268,7 +270,7 @@ function reject($spec)
     return $spec;
 }
 
-// Validation SPEC
+// Combined spec — declares both fields. reject($debug) marks 'debug' as forbidden.
 $specs = [
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
@@ -279,47 +281,45 @@ $specs = [
     ]
 ];
 
-// Example1 validation failure
+// Validation fails — the request includes 'debug', which is rejected.
 $result =validate($ctx, $inputs, $specs, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation failure by rejected parameter
+var_dump($result, $ctx->getStatus());
 
-// OO API one liner
+// Equivalent OO one-liner.
 $result = (new Validate)->validate($inputs, $specs, VALIDATE_OPT_DISABLE_EXCEPTION);
 
 
 echo "\n**** VALIDATE_STRING ****\n";
-// Value to be validated.
+// Input under test.
 $str = "test user";
 
-// Remember these simple "input type specs" can be reused as "array of specs" easily.
-
-// Example1 validation failure
+// Example 1 — failure: no character classes are whitelisted, so every char is rejected.
 $str_spec = [
     VALIDATE_STRING,
-    VALIDATE_FLAG_NONE, // String validator does not allow any char by default
+    VALIDATE_FLAG_NONE,
     ['min' => 1, 'max' => 120]
 ];
 
 $result =validate($ctx, $str, $str_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation failure
+var_dump($result, $ctx->getStatus());
 
 
-// Example2 Successful validation
+// Example 2 — success: opt in to lowercase letters and space.
 $str_spec = [
     VALIDATE_STRING,
-    VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_SPACE, // now allow lower alpha and space.
+    VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_SPACE,
     ['min' => 1, 'max' => 120]
 ];
 
 $result =validate($ctx, $str, $str_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump($result, $ctx->getStatus()); // Validation success
+var_dump($result, $ctx->getStatus());
 
-// OO API one liner
+// Equivalent OO one-liner.
 $result = (new Validate)->validate($str, $str_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 
 
 echo "\n**** VALIDATE_STRING - UTF-8 ****\n";
-// Value to be validated.
+// Multibyte input — rejected because VALIDATE_STRING_MB is not opted in.
 $utf8 = '第1位 入力をバリデーションする
 全ての信頼できないデータソースからの入力をバリデーションする。適切な入力バリデーション
 は非常に多くのソフトウェア脆弱性を排除できる。ほぼ全ての外部データソースに用心が必要で
@@ -331,15 +331,16 @@ $utf8 = '第1位 入力をバリデーションする
 採用する”とする簡潔な記述に更新された。）';
 
 
-// Example1 validation failure
+// Spec accepts ASCII letters/digits/space/LF only — no VALIDATE_STRING_MB,
+// so any multibyte byte in the Japanese text triggers a failure.
 $utf8_spec = [
     VALIDATE_STRING,
     VALIDATE_STRING_UPPER_ALPHA
     | VALIDATE_STRING_LOWER_ALPHA
     | VALIDATE_STRING_SPACE
     | VALIDATE_STRING_LF
-    | VALIDATE_STRING_DIGIT, // String validator does not allow any char by default
-    ['min' => 1, 'max' => 1000, 'ascii' => '-/'] // No encoding option
+    | VALIDATE_STRING_DIGIT,
+    ['min' => 1, 'max' => 1000, 'ascii' => '-/']
 ];
 
 try {
@@ -347,19 +348,18 @@ try {
 } catch (Exception $e) {
     var_dump($d->getMessage());
 }
-var_dump($result, $ctx->getStatus()); // Validation failure - Warning: String validation: Multibyte char detected.
+var_dump($result, $ctx->getStatus()); // failure — "Multibyte char detected." in the system error log.
 
 
 echo "\n**** VALIDATE_BOOL - array of bools ****\n";
-// Value to be validated.
+// Input under test — VALIDATE_FLAG_ARRAY applies the per-element spec to each entry.
 $bool = ['t', 'f', true, false];
 
-// Remember these simple "input type specs" can be reused as "array of specs" easily.
-
-// Example1 validation failure
+// amin/amax bound the element count (1..4). The element-level flags below
+// are still VALIDATE_FLAG_NONE, so 't'/'f' will fail like in the first example.
 $bool_spec = [
     VALIDATE_BOOL,
-    VALIDATE_FLAG_ARRAY, // By default no text value is valid
+    VALIDATE_FLAG_ARRAY,
     ['amin' => 1, 'amax' =>4]
 ];
 
@@ -373,10 +373,10 @@ echo "\n** Validate object **\n";
 var_dump($ctx);
 
 
-// Example2 Successful validation
+// Test #2 — opt in to VALIDATE_BOOL_TF so the textual entries pass too.
 $bool_spec = [
     VALIDATE_BOOL,
-    VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF, // Allow "t"/"f", "T"/"F" as valid bool
+    VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
     ['amin' => 1, 'amax' => 4]
 ];
 
@@ -392,7 +392,8 @@ var_dump($ctx);
 
 echo "\n**** VALIDATE_BOOL - multiple specs ****\n";
 
-// Example1 Successful validation - AND condition
+// VALIDATE_MULTI applies several sub-specs to the same value.
+// MULTI_AND requires every sub-spec to pass; MULTI_OR requires at least one.
 $bool_spec = [
     VALIDATE_MULTI,
     VALIDATE_MULTI_AND,
@@ -400,18 +401,18 @@ $bool_spec = [
     [
         [
             VALIDATE_BOOL,
-            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF, // By default no text value is valid
+            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
             ['amin' => 1, 'amax' =>4]
         ],
         [
             VALIDATE_BOOL,
-            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF, // By default no text value is valid
+            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
             ['amin' => 1, 'amax' =>4]
         ],
     ]
 ];
 
-// Value to be validated.
+// Test #1 — both sub-specs match, MULTI_AND succeeds.
 $bool = ['t', 'f', true, false];
 
 echo "**** test #1 *****\n";
@@ -424,14 +425,13 @@ echo "\n** Validate object **\n";
 var_dump($ctx);
 
 
-// Example2 Successful validation
+// Test #2 — single-spec baseline (no VALIDATE_MULTI wrapper), for comparison.
 $bool_spec = [
     VALIDATE_BOOL,
-    VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF, // Allow "t"/"f", "T"/"F" as valid bool
+    VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
     ['amin' => 1, 'amax' => 4]
 ];
 
-// Value to be validated.
 $bool = ['t', 'f', true, false];
 
 echo "**** test #2 *****\n";
@@ -446,7 +446,8 @@ var_dump($ctx);
 
 
 
-// Example3 Successful validation - AND condition
+// Test #3 — MULTI_OR: the first sub-spec rejects 't'/'f' (no BOOL_TF flag) but
+// the second accepts them, so the OR is satisfied.
 $bool_spec = [
     VALIDATE_MULTI,
     VALIDATE_MULTI_OR,
@@ -454,18 +455,17 @@ $bool_spec = [
     [
         [
             VALIDATE_BOOL,
-            VALIDATE_FLAG_ARRAY, // By default no text value is valid
+            VALIDATE_FLAG_ARRAY,
             ['amin' => 1, 'amax' =>4]
         ],
         [
             VALIDATE_BOOL,
-            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF, // By default no text value is valid
+            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
             ['amin' => 1, 'amax' =>4]
         ],
     ]
 ];
 
-// Value to be validated.
 $bool = ['t', 'f', true, false];
 
 echo "**** test #3 *****\n";

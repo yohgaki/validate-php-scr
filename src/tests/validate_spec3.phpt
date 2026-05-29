@@ -11,6 +11,9 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
+// Each check() runs validate_spec() against one intentionally-malformed spec
+// and prints the resulting status + errors. The --EXPECT-- block below pins
+// the exact message wording, so any regression in spec validation is caught.
 function check($label, $spec) {
     $ctx = validate_init();
     $ret = validate_spec($spec, $unvalidated, $ctx);

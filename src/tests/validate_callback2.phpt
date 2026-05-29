@@ -1,5 +1,5 @@
 --TEST--
-validate() and VALIDATE_CALLBACK
+validate() and VALIDATE_CALLBACK — reuse the same callback across many calls
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -11,11 +11,16 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
-// NOTE: When VALIDATE_CALLBACK is used with validate(), it is user's' responsibility
-//      to raise proper exceptions when something goes wrong.
+// NOTE: With VALIDATE_CALLBACK, the user callback decides success/failure.
+//       Always return true/false explicitly and call validate_error() for any
+//       user-visible failure message.
 //
-// WARNING: This test code uses validate() as 'filter', but 'filtering' is NOT validation.
-//      Filtering is used only for testing purpose. Do not abuse.
+// WARNING: The callback here mutates $result (upper-cases the input) — that
+//       is filtering, not validation. Production code should put transforms
+//       in the 'filter' option and keep the callback for accept/reject.
+//
+// The double loop hammers a single $ctx + $spec pair 400 times to verify
+// that repeated validate() calls do not corrupt context state.
 
 
 echo "/* Simple callback function - closure*/\n";

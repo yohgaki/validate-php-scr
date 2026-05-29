@@ -1,6 +1,5 @@
 --TEST--
-Test basic validate module features
-	All Test cases should pass
+validate() VALIDATE_STRING - flag/option matrix; every case should pass
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -12,6 +11,10 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
+# Each entry is [input, {flag-label => flag-bits}, {func-opts}, [spec-template]].
+# The driver loop at the bottom replaces spec[VALIDATE_FLAGS] with each flag
+# value and tries every func_opts combination, so a single test case fans out
+# into a flag x opts matrix of validate() calls.
 $test_cases = array(
 
 	'string_abc' => array(

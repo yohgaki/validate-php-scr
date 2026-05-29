@@ -1,5 +1,5 @@
 --TEST--
-Simple validate() and array tests
+validate() VALIDATE_ARRAY — same spec applied three times to fresh inputs/contexts
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -54,15 +54,16 @@ $spec =
 	);
 
 try {
-  // Input data is modified. i.e. Validated array elements are removed
-  // to validate "not validated values" if it is required.
+  // $data is passed by reference; validated keys are unset on success.
+  // We clone the input so the second and third calls start from the same shape.
 	$data3 = $data2 = $data;
-  // Needs distinct Validate objects. i.e. $v1, $v2, $v3 must be distinct.
-  var_dump('** 1st call **', validate($v1, $data, $spec)); // Should pass
+  // Distinct Validate contexts ($v1/$v2/$v3) ensure error/status state from
+  // one call cannot bleed into another.
+  var_dump('** 1st call **', validate($v1, $data, $spec)); // should pass; leaves $data == []
   var_dump($v1->getStatus(), $data);
-	var_dump('** 2nd call **', validate($v2, $data2, $spec)); // Should pass again
+	var_dump('** 2nd call **', validate($v2, $data2, $spec));
   var_dump($v2->getStatus(), $data2);
-	var_dump('** 3rd call **', validate($v3, $data3, $spec)); // Should pass again
+	var_dump('** 3rd call **', validate($v3, $data3, $spec));
   var_dump($v3->getStatus(), $data3);
 } catch (ValidException $e) {
 	var_dump($e->getMessage());

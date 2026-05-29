@@ -1,5 +1,5 @@
 --TEST--
-validate bool by array of specs (Multiple spec validation)
+validate() VALIDATE_MULTI — MULTI_AND / MULTI_OR over VALIDATE_BOOL[]
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -10,12 +10,14 @@ error_reporting=-1
 --FILE--
 <?php
 /**
- * Boolean value validation example.
+ * VALIDATE_MULTI lets a single value be validated by several sub-specs.
+ *   MULTI_AND: every sub-spec must pass.
+ *   MULTI_OR : at least one sub-spec must pass.
  */
 require_once __DIR__.'/../validate_func.php';
 
 
-// Example1 Successful validation - AND condition
+// Test #1 — both sub-specs accept VALIDATE_BOOL_TF, so MULTI_AND succeeds.
 $bool_spec = [
     VALIDATE_MULTI,
     VALIDATE_MULTI_AND,
@@ -23,12 +25,12 @@ $bool_spec = [
     [
         [
             VALIDATE_BOOL,
-            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF, // By default no text value is valid
+            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
             ['amin' => 1, 'amax' =>4]
         ],
         [
             VALIDATE_BOOL,
-            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF, // By default no text value is valid
+            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
             ['amin' => 1, 'amax' =>4]
         ],
     ]
@@ -49,10 +51,10 @@ echo "\n** \$status **\n";
 var_dump($ctx->getStatus());
 
 
-// Example2 Successful validation
+// Test #2 — single-spec baseline (no VALIDATE_MULTI), for comparison with #1.
 $bool_spec = [
     VALIDATE_BOOL,
-    VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF, // Allow "t"/"f", "T"/"F" as valid bool
+    VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
     ['amin' => 1, 'amax' => 4]
 ];
 
@@ -72,7 +74,8 @@ var_dump($ctx->getStatus());
 
 
 
-// Example3 Successful validation - AND condition
+// Test #3 — MULTI_OR: the first sub-spec rejects 't'/'f' (no BOOL_TF flag) but
+// the second accepts them, so the OR clause is satisfied.
 $bool_spec = [
     VALIDATE_MULTI,
     VALIDATE_MULTI_OR,
@@ -80,12 +83,12 @@ $bool_spec = [
     [
         [
             VALIDATE_BOOL,
-            VALIDATE_FLAG_ARRAY, // By default no text value is valid
+            VALIDATE_FLAG_ARRAY,
             ['amin' => 1, 'amax' =>4]
         ],
         [
             VALIDATE_BOOL,
-            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF, // By default no text value is valid
+            VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
             ['amin' => 1, 'amax' =>4]
         ],
     ]

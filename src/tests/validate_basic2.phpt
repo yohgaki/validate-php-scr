@@ -1,6 +1,5 @@
 --TEST--
-Test basic validate module features
-	All Test cases should fail
+validate() VALIDATE_STRING - flag/option matrix; every case should fail
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -12,6 +11,9 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
+# Same matrix shape as validate_basic1.phpt - see that file for the layout.
+# Inputs and flags here are deliberately mismatched, so every combination
+# in the driver loop is expected to fail validation.
 $test_cases = array(
 
 	'string_abcX' => array(

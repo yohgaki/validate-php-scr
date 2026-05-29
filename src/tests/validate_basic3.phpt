@@ -1,6 +1,5 @@
 --TEST--
-Test basic validate module features
-	All Test cases should pass
+validate() VALIDATE_ARRAY — nested array spec, mixed int/string keys
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -15,11 +14,11 @@ require_once __DIR__.'/bootstrap.php';
 $spec = [
 	VALIDATE_ARRAY,
 	VALIDATE_FLAG_NONE,
-	[ // min, max is allowed number of elements for the array
+	[ // 'min'/'max' bound the element count for VALIDATE_ARRAY (not byte length).
 		'min' => 0,
 		'max' => 10,
 	],
-	[ // 4th element is the VALIDATE_ARRAY's spec. Key is required.
+	[ // VALIDATE_PARAMS slot — sub-specs keyed by the expected input keys.
 		0 => [
 			VALIDATE_STRING,
 			VALIDATE_STRING_LOWER_ALPHA,
@@ -36,7 +35,7 @@ $spec = [
 				'max' => 20,
 			],
 		],
-		'nested_arr' => [ // Nested array is OK
+		'nested_arr' => [ // Nested VALIDATE_ARRAY sub-specs are allowed to any depth.
 			VALIDATE_ARRAY,
 			VALIDATE_FLAG_NONE,
 			[

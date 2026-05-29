@@ -1,5 +1,5 @@
 --TEST--
-validate_spec()
+validate_spec() — rejects malformed spec shapes (missing ID, wrong types, ...)
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -11,22 +11,29 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
+// Each block feeds a deliberately malformed value to validate_spec() and
+// dumps the system errors so the --EXPECT-- block can pin the wording.
+// Block 1: empty array — no VALIDATE_ID at all.
 $test_spec = array();
 var_dump(validate_spec($test_spec, $result, $ctx));
 var_dump(validate_get_system_errors($ctx));
 
-$test_spec = array(array());;
+// Block 2: ID slot holds an array instead of an int.
+$test_spec = array(array());
 var_dump(validate_spec($test_spec, $result, $ctx));
 var_dump(validate_get_system_errors($ctx));
 
+// Block 3: shape is right but the values are wrong types (flags/options must be int/array).
 $test_spec = array(1,2,3);
 var_dump(validate_spec($test_spec, $result, $ctx));
 var_dump(validate_get_system_errors($ctx));
 
+// Block 4: ID is array, flags is scalar — multiple errors reported in one pass.
 $test_spec = array(array(),2,array());
 var_dump(validate_spec($test_spec, $result, $ctx));
 var_dump(validate_get_system_errors($ctx));
 
+// Block 5: not an array at all — input is a bare int.
 $test_spec = 1;
 var_dump(validate_spec($test_spec, $result, $ctx));
 var_dump(validate_get_system_errors($ctx));

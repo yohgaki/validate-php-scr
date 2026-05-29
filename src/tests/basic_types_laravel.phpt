@@ -12,6 +12,10 @@ error_reporting=E_ALL & ~E_DEPRECATED
 require_once __DIR__.'/bootstrap.php';
 require_once __DIR__.'/../lib/basic_types.php';
 
+// Table-driven test: [$basicTypes key, input value, expected outcome].
+// Covers the Laravel-compatible single-value validators that don't need
+// network access. DNS-bound rules ('active_url', 'email_dns') live in
+// basic_types_laravel_dns.phpt.
 $cases = [
     // mac_address
     ['mac_address', '00:1A:2B:3C:4D:5E', 'pass'],

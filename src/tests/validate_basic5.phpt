@@ -1,6 +1,5 @@
 --TEST--
-Test basic validate module features
-	All Test cases should fail
+validate() VALIDATE_ARRAY — VALIDATE_FLAG_UNDEFINED + VALIDATE_OPT_UNVALIDATED tolerate missing/extra keys
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -15,12 +14,12 @@ require_once __DIR__.'/bootstrap.php';
 $spec = [
 	VALIDATE_ARRAY,
 	VALIDATE_FLAG_NONE,
-	[ // min, max is allowed number of elements for the array
+	[ // 'min'/'max' bound the element count for VALIDATE_ARRAY (not byte length).
 		'min' => 0,
 		'max' => 10,
 	],
-	[ // 4th element is the VALIDATE_ARRAY's spec. Key is required.
-		'missing' => [ // Missing in input data
+	[ // VALIDATE_PARAMS slot — sub-specs keyed by the expected input keys.
+		'missing' => [ // Absent in $input — VALIDATE_FLAG_UNDEFINED makes that OK.
 			VALIDATE_STRING,
 			VALIDATE_FLAG_UNDEFINED,
 			[
@@ -44,7 +43,7 @@ $spec = [
 				'max' => 30,
 			],
 		],
-		'nested_arr' => [ // Nested array is OK
+		'nested_arr' => [ // Nested VALIDATE_ARRAY sub-specs are allowed to any depth.
 			VALIDATE_ARRAY,
 			VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
 			[
@@ -67,6 +66,9 @@ $spec = [
 	],
 ];
 
+// $input has no 'missing' key, plus an 'extra' key not declared in $spec.
+// VALIDATE_OPT_UNVALIDATED tells validate() to leave undeclared keys in
+// $input rather than raising "Unvalidated value remains."
 $input = [
 	"key" => "abc日本語",
 	0 => "qwert",
