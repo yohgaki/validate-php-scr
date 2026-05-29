@@ -3758,6 +3758,16 @@ class Validate
                 if ($flags & VALIDATE_BOOL_ON_OFF) $f[] = 'VALIDATE_BOOL_ON_OFF';
                 if ($flags & VALIDATE_BOOL_YES_NO) $f[] = 'VALIDATE_BOOL_YES_NO';
                 $ret = $this->validateScalarSpecFlags($f, $flags, VALIDATE_BOOL_LAST_BIT, $max_bit);
+                if (!($flags & (VALIDATE_BOOL_01 | VALIDATE_BOOL_TF | VALIDATE_BOOL_TRUE_FALSE
+                               | VALIDATE_BOOL_ON_OFF | VALIDATE_BOOL_YES_NO))) {
+                    $this->specWarning(
+                        [
+                            'message' => 'VALIDATE_BOOL has no boolean format flags. No value can be accepted.',
+                            'spec'    => $spec,
+                            'flags'   => join(' | ', $f),
+                        ]
+                    );
+                }
                 break;
             case VALIDATE_RESOURCE:
             case VALIDATE_OBJECT:
@@ -3890,6 +3900,26 @@ class Validate
             case VALIDATE_STRING:
             case VALIDATE_REGEXP:
             case VALIDATE_CALLBACK:
+                if (isset($options['min']) && !is_int($options['min'])) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' "min" option must be int.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
+                }
+                if (isset($options['max']) && !is_int($options['max'])) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' "max" option must be int.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
+                }
                 if (!isset($options['values'])) {
                     if (!(isset($options['min']) && isset($options['max']))) {
                         $this->specError(
@@ -4003,11 +4033,30 @@ class Validate
                 */
                 break;
             case VALIDATE_INT:
-            case VALIDATE_FLOAT:
             case VALIDATE_NULL:
             case VALIDATE_BOOL:
             case VALIDATE_RESOURCE:
             case VALIDATE_OBJECT:
+                if (isset($options['encoding'])) {
+                    $this->specWarning(
+                        [
+                            'message' => $vname.' has "encoding" option that has no effect',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                }
+                if (isset($options['INF']) || isset($options['-INF']) || isset($options['length'])) {
+                    $this->specWarning(
+                        [
+                            'message' => $vname.' has "INF"/"-INF"/"length" options that have no effect.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                }
+                break;
+            case VALIDATE_FLOAT:
                 if (isset($options['encoding'])) {
                     $this->specWarning(
                         [
@@ -4043,6 +4092,26 @@ class Validate
                             'flags'   => $str_flags
                         ]
                     );
+                }
+                if (($flags & VALIDATE_FLAG_UNDEFINED_TO_DEFAULT) && !isset($options['default'])) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' has VALIDATE_FLAG_UNDEFINED_TO_DEFAULT but "default" option is missing.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
+                }
+                if (($flags & VALIDATE_FLAG_EMPTY_TO_DEFAULT) && !isset($options['default'])) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' has VALIDATE_FLAG_EMPTY_TO_DEFAULT but "default" option is missing.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
                 }
                 break;
             default:
@@ -4140,7 +4209,7 @@ class Validate
                         );
                         $ret = false;
                     }
-                    if ($options['amin'] >= $options['amax']) {
+                    if ($options['amin'] > $options['amax']) {
                         $this->specError(
                             [
                                 'message'=> $vname.'. "amin" option is larger than "amax" option.',
@@ -4177,6 +4246,44 @@ class Validate
                             'flags'   => $str_flags
                         ]
                     );
+                }
+                if (isset($options['alimit']) && !($flags & VALIDATE_FLAG_ARRAY)) {
+                    $this->specWarning(
+                        [
+                            'message' => $vname.' has "alimit" option but VALIDATE_FLAG_ARRAY is not set.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                }
+                if (($flags & VALIDATE_FLAG_ARRAY_RECURSIVE) && !($flags & VALIDATE_FLAG_ARRAY)) {
+                    $this->specWarning(
+                        [
+                            'message' => $vname.' has VALIDATE_FLAG_ARRAY_RECURSIVE but VALIDATE_FLAG_ARRAY is not set.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                }
+                if (isset($options['filter']) && !is_callable($options['filter'])) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' "filter" option is not callable.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
+                }
+                if (isset($options['key_callback']) && !is_callable($options['key_callback'])) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' "key_callback" option is not callable.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
                 }
                 break;
             default:
@@ -4258,6 +4365,27 @@ class Validate
         // Misc checks
         switch ($spec[VALIDATE_ID]) {
             case VALIDATE_STRING:
+                if (isset($options['ascii'])) {
+                    if (!is_string($options['ascii'])) {
+                        $this->specError(
+                            [
+                                'message' => $vname.' "ascii" option must be a string.',
+                                'spec'    => $spec,
+                                'flags'   => $str_flags
+                            ]
+                        );
+                        $ret = false;
+                    } elseif (!preg_match('/\A[\x00-\x7F]*\z/', $options['ascii'])) {
+                        $this->specError(
+                            [
+                                'message' => $vname.' "ascii" option must contain ASCII characters only.',
+                                'spec'    => $spec,
+                                'flags'   => $str_flags
+                            ]
+                        );
+                        $ret = false;
+                    }
+                }
                 if (isset($options['values'])) {
                     if (!is_array($options['values'])) {
                         $this->specError(
@@ -4286,6 +4414,27 @@ class Validate
                 }
                 break;
             case VALIDATE_REGEXP:
+                if (isset($options['ascii'])) {
+                    if (!is_string($options['ascii'])) {
+                        $this->specError(
+                            [
+                                'message' => $vname.' "ascii" option must be a string.',
+                                'spec'    => $spec,
+                                'flags'   => $str_flags
+                            ]
+                        );
+                        $ret = false;
+                    } elseif (!preg_match('/\A[\x00-\x7F]*\z/', $options['ascii'])) {
+                        $this->specError(
+                            [
+                                'message' => $vname.' "ascii" option must contain ASCII characters only.',
+                                'spec'    => $spec,
+                                'flags'   => $str_flags
+                            ]
+                        );
+                        $ret = false;
+                    }
+                }
                 if (!(isset($options['regexp'])) || !is_string($options['regexp'])) {
                     $this->specError(
                         [
@@ -4295,9 +4444,40 @@ class Validate
                         ]
                     );
                     $ret = false;
+                } elseif (@preg_match($options['regexp'], '') === false) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' "regexp" option is not a valid PCRE pattern: '.$options['regexp'],
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
                 }
                 break;
             case VALIDATE_CALLBACK:
+                if (isset($options['ascii'])) {
+                    if (!is_string($options['ascii'])) {
+                        $this->specError(
+                            [
+                                'message' => $vname.' "ascii" option must be a string.',
+                                'spec'    => $spec,
+                                'flags'   => $str_flags
+                            ]
+                        );
+                        $ret = false;
+                    } elseif (!preg_match('/\A[\x00-\x7F]*\z/', $options['ascii'])) {
+                        $this->specError(
+                            [
+                                'message' => $vname.' "ascii" option must contain ASCII characters only.',
+                                'spec'    => $spec,
+                                'flags'   => $str_flags
+                            ]
+                        );
+                        $ret = false;
+                    }
+                }
+                // fall through
             case VALIDATE_INT:
                 if (isset($options['values'])) {
                     if  (!is_array($options['values'])) {
