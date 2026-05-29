@@ -1,6 +1,57 @@
-image: docker:5000/esi/httpd-build
+stages:
+  - test
+  - lint
 
-test:app:
+default:
+  interruptible: true
+
+# ── テストジョブ共通定義 ─────────────────────────────────────────────────────
+.test:
+  stage: test
+  before_script:
+    - php -v
+    - apt-get update -qq
+    - apt-get install -y -qq libgmp-dev
+    - docker-php-ext-install -j$(nproc) bcmath gmp > /dev/null
+    - php -m | grep -E 'bcmath|gmp|mbstring'
   script:
-  - cd src && TEST_PHP_EXECUTABLE=/usr/bin/php php run-tests.php -q --show-diff
+    - cd src && php run-tests.php -p $(which php) --show-diff tests
+  artifacts:
+    when: on_failure
+    expire_in: 1 week
+    paths:
+      - src/tests/*.log
 
+# ── PHP バージョンマトリクス ─────────────────────────────────────────────────
+test:php8.0:
+  extends: .test
+  image: php:8.0-cli
+
+test:php8.1:
+  extends: .test
+  image: php:8.1-cli
+
+test:php8.2:
+  extends: .test
+  image: php:8.2-cli
+
+test:php8.3:
+  extends: .test
+  image: php:8.3-cli
+
+test:php8.4:
+  extends: .test
+  image: php:8.4-cli
+
+# ── lint ─────────────────────────────────────────────────────────────────────
+lint:phpcs:
+  stage: lint
+  image: php:8.3-cli
+  needs:
+    - test:php8.3
+  before_script:
+    - curl -sSfL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar -o /usr/local/bin/phpcs
+    - chmod +x /usr/local/bin/phpcs
+    - phpcs --version
+  script:
+    - phpcs --standard=src/phpcs.xml src/
