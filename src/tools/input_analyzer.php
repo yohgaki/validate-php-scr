@@ -249,7 +249,7 @@ function analyze_string_ascii_map(&$stat, $input)
     }
     $len = strlen($input);
     for ($i = 0; $i < $len; $i++) {
-        $ch = ord($input{$i});
+        $ch = ord($input[$i]);
         if ($ch >= 127) {
             $map[127]++; // Bucket every non-ASCII byte together.
         } else {
