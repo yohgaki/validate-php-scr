@@ -1168,3 +1168,265 @@ $basicTypes['cookie'] = $basicTypes['header4096'];
 
 // Networking aliases
 $basicTypes['port'] = $basicTypes['uint16'];
+
+
+// =============================================================================
+// Laravel-compatible basic validators
+// Single-value validators present in Laravel but missing here. No external deps.
+// Cross-field, DB, file, and control-flow rules are intentionally not included.
+// =============================================================================
+
+// MAC address - 6 octets of hex separated by ':' or '-'
+$basicTypes['mac_address'] = [
+    VALIDATE_REGEXP,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 17, 'max' => 17,
+        'ascii' => '0123456789abcdefABCDEF:-',
+        'regexp' => '/\A(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\z/',
+    ]
+];
+
+// ULID - 26 chars, Crockford Base32 (excludes I, L, O, U), case-insensitive
+$basicTypes['ulid'] = [
+    VALIDATE_REGEXP,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 26, 'max' => 26,
+        'ascii' => '0123456789ABCDEFGHJKMNPQRSTVWXYZabcdefghjkmnpqrstvwxyz',
+        'regexp' => '/\A[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}\z/',
+    ]
+];
+
+// HTML hex color: #RGB, #RGBA, #RRGGBB, #RRGGBBAA
+$basicTypes['hex_color'] = [
+    VALIDATE_REGEXP,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 4, 'max' => 9,
+        'ascii' => '#0123456789abcdefABCDEF',
+        'regexp' => '/\A#(?:[0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})\z/',
+    ]
+];
+
+// URL - filter_var based format validation (no DNS lookup)
+$basicTypes['url'] = [
+    VALIDATE_CALLBACK,
+    VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
+    [
+        'min' => 7, 'max' => 2048,
+        'callback' => function ($ctx, &$result, $input) {
+            if (!filter_var($input, FILTER_VALIDATE_URL)) {
+                validate_error($ctx, 'Invalid URL format.');
+                return false;
+            }
+            $result = $input;
+            return true;
+        },
+    ]
+];
+
+// URL with DNS resolution check on host (analogous to existing 'fqdn')
+$basicTypes['active_url'] = [
+    VALIDATE_CALLBACK,
+    VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
+    [
+        'min' => 7, 'max' => 2048,
+        'callback' => function ($ctx, &$result, $input) {
+            if (!filter_var($input, FILTER_VALIDATE_URL)) {
+                validate_error($ctx, 'Invalid URL format.');
+                return false;
+            }
+            $host = parse_url($input, PHP_URL_HOST);
+            if (!$host || !dns_get_record($host)) {
+                validate_error($ctx, 'Cannot resolve URL host by DNS.');
+                return false;
+            }
+            $result = $input;
+            return true;
+        },
+    ]
+];
+
+// Alpha-dash: alnum + dash + underscore (Laravel alpha_dash)
+$basicTypes['alpha_dash'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM,
+    ['min' => 0, 'max' => 0, 'ascii' => '-_']
+];
+$basicTypes['alpha_dash32'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM,
+    ['min' => 0, 'max' => 32, 'ascii' => '-_']
+];
+$basicTypes['alpha_dash64'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM,
+    ['min' => 0, 'max' => 64, 'ascii' => '-_']
+];
+$basicTypes['alpha_dash128'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM,
+    ['min' => 0, 'max' => 128, 'ascii' => '-_']
+];
+$basicTypes['alpha_dash256'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM,
+    ['min' => 0, 'max' => 256, 'ascii' => '-_']
+];
+
+// Printable ASCII only (no multibyte)
+$asciiFlags = VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL;
+$basicTypes['ascii'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 0]];
+$basicTypes['ascii32'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 32]];
+$basicTypes['ascii64'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 64]];
+$basicTypes['ascii128'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 128]];
+$basicTypes['ascii256'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 256]];
+$basicTypes['ascii512'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 512]];
+unset($asciiFlags);
+
+// Lowercase ASCII letters only
+$basicTypes['lowercase'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_LOWER_ALPHA,
+    ['min' => 0, 'max' => 0]
+];
+$basicTypes['lowercase32'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_LOWER_ALPHA,
+    ['min' => 0, 'max' => 32]
+];
+$basicTypes['lowercase64'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_LOWER_ALPHA,
+    ['min' => 0, 'max' => 64]
+];
+$basicTypes['lowercase128'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_LOWER_ALPHA,
+    ['min' => 0, 'max' => 128]
+];
+$basicTypes['lowercase256'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_LOWER_ALPHA,
+    ['min' => 0, 'max' => 256]
+];
+
+// Uppercase ASCII letters only
+$basicTypes['uppercase'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_UPPER_ALPHA,
+    ['min' => 0, 'max' => 0]
+];
+$basicTypes['uppercase32'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_UPPER_ALPHA,
+    ['min' => 0, 'max' => 32]
+];
+$basicTypes['uppercase64'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_UPPER_ALPHA,
+    ['min' => 0, 'max' => 64]
+];
+$basicTypes['uppercase128'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_UPPER_ALPHA,
+    ['min' => 0, 'max' => 128]
+];
+$basicTypes['uppercase256'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_UPPER_ALPHA,
+    ['min' => 0, 'max' => 256]
+];
+
+// Digit strings of exact length (Laravel digits:n)
+for ($n = 1; $n <= 10; $n++) {
+    $basicTypes['digits' . $n] = [
+        VALIDATE_STRING,
+        VALIDATE_STRING_DIGIT,
+        ['min' => $n, 'max' => $n]
+    ];
+}
+unset($n);
+
+// Digit string with range 1-10 (Laravel digits_between:1,10)
+$basicTypes['digits_between_1_10'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_DIGIT,
+    ['min' => 1, 'max' => 10]
+];
+
+// Laravel accepted: yes/on/1/true (any case is filter_var-style). Result is bool true.
+$basicTypes['accepted'] = [
+    VALIDATE_CALLBACK,
+    VALIDATE_CALLBACK_ALNUM,
+    [
+        'min' => 1, 'max' => 5,
+        'callback' => function ($ctx, &$result, $input) {
+            if (in_array($input, [true, 1, '1', 'on', 'yes', 'true'], true)) {
+                $result = true;
+                return true;
+            }
+            validate_error($ctx, 'Value must be accepted (yes/on/1/true).');
+            return false;
+        },
+    ]
+];
+
+// Laravel declined: no/off/0/false. Result is bool false.
+$basicTypes['declined'] = [
+    VALIDATE_CALLBACK,
+    VALIDATE_CALLBACK_ALNUM,
+    [
+        'min' => 1, 'max' => 5,
+        'callback' => function ($ctx, &$result, $input) {
+            if (in_array($input, [false, 0, '0', 'off', 'no', 'false'], true)) {
+                $result = false;
+                return true;
+            }
+            validate_error($ctx, 'Value must be declined (no/off/0/false).');
+            return false;
+        },
+    ]
+];
+
+// IANA timezone identifier (e.g., "Asia/Tokyo", "UTC")
+$basicTypes['timezone'] = [
+    VALIDATE_CALLBACK,
+    VALIDATE_CALLBACK_ALNUM,
+    [
+        'min' => 1, 'max' => 64,
+        'ascii' => '/_+-',
+        'callback' => function ($ctx, &$result, $input) {
+            if (!in_array($input, DateTimeZone::listIdentifiers(), true)) {
+                validate_error($ctx, 'Invalid timezone identifier.');
+                return false;
+            }
+            $result = $input;
+            return true;
+        },
+    ]
+];
+
+// Email with DNS lookup on domain part (Laravel 'email:dns')
+$basicTypes['email_dns'] = [
+    VALIDATE_CALLBACK,
+    VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
+    [
+        'min' => 6, 'max' => 254,
+        'callback' => function ($ctx, &$result, $input) {
+            if (!filter_var($input, FILTER_VALIDATE_EMAIL)) {
+                validate_error($ctx, 'Invalid email address format.');
+                return false;
+            }
+            $at = strrpos($input, '@');
+            $domain = $at === false ? '' : substr($input, $at + 1);
+            if ($domain === '' || (!checkdnsrr($domain, 'MX') && !checkdnsrr($domain, 'A'))) {
+                validate_error($ctx, 'Email domain does not resolve.');
+                return false;
+            }
+            $result = $input;
+            return true;
+        },
+    ]
+];
