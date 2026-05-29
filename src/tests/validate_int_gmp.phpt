@@ -1,5 +1,5 @@
 --TEST--
-validate()  INT validation with GMP
+validate() INT validation with GMP
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';

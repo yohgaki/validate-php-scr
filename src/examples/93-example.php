@@ -1,36 +1,41 @@
 <?php
-// Simple "username" and "email" form validation example.
-// "Validate" is suitable for "From Validations" also.
+/**
+ * Example #3: Form validation with multiple fields + a custom callback.
+ *
+ * "Validate" is well suited for form validation. The username spec is purely
+ * declarative; the email spec adds a PHP callback for the parts that can't be
+ * expressed with flags alone (one '@' and a DNS MX record).
+ */
 require_once __DIR__.'/../validate_func.php';
-require_once __DIR__.'/../lib/basic_types.php'; // Defines $basicTypes (basic type) array
+require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array.
 
-// In practice, you would define all inputs specifications at central repository.
-// If your web app does not have strict client side validations, you will need
-// "Input validation spec" AND "Business logic(Form) validation spec".
+// In practice, define all input specifications in a central repository.
+// If your web app does not have strict client-side validation, you will need
+// BOTH an INPUT validation spec AND a BUSINESS LOGIC (form) validation spec.
 
-// If client JavaScript has validation
+// Username spec — relies on the client form to do basic length/character checks.
 $username = [
-    VALIDATE_STRING,        // "username" is string
-    VALIDATE_STRING_ALNUM,  // "username" has only alphanumeric chars.
-    ['min'=> 6, 'max'=> 40, // "username" can be 6 to 40 chars.
+    VALIDATE_STRING,        // "username" is a string.
+    VALIDATE_STRING_ALNUM,  // Only alphanumeric characters are allowed.
+    ['min'=> 6, 'max'=> 40, // Length must be between 6 and 40 chars.
     'error_message'=>'Username is 6 to 40 chars. Alphanumeric char only.']
 ];
 
-// "Validate" can be extend by callbacks.
+// "Validate" can be extended with callbacks for rules that don't fit flags.
 $email = [
-    VALIDATE_CALLBACK, // "email" is complex, so write PHP script for it.
-    VALIDATE_CALLBACK_ALNUM, // Allow alpha numeric chars.
-    ['min'=> 6, 'max'=> 256, 'ascii'=>'@._-', // Allow 6 to 256 chars and additional '@._-'
-    'error_message'=>'Please enter valid email address. We only accepts address with DNS MX record.',
-    'callback'=> function($ctx, &$result, $input) {     // Let's define rules by PHP function.
+    VALIDATE_CALLBACK, // Email is complex, so we write a PHP callback.
+    VALIDATE_CALLBACK_ALNUM, // Allow alphanumeric characters.
+    ['min'=> 6, 'max'=> 256, 'ascii'=>'@._-', // 6 to 256 chars plus the symbols '@._-'.
+    'error_message'=>'Please enter a valid email address. We only accept addresses with a DNS MX record.',
+    'callback'=> function($ctx, &$result, $input) {     // Custom rule in plain PHP.
         $parts = explode('@', $input);
-        if (count($parts) > 2) {         // Chars/min/max is already validated.
-            $err =  "Only one '@' is allowed."; // This could be i18n function for multilingual sites.
+        if (count($parts) > 2) {         // Character set, min, and max are already validated.
+            $err =  "Only one '@' is allowed."; // This could be an i18n function for multilingual sites.
             validate_error($ctx, $err);
             return false;
         }
-        if (!dns_get_mx($parts[1], $mx)) {
-            $err = "Sorry, we only allow hosts with MX record.";
+        if (!getmxrr($parts[1], $mx)) {
+            $err = "Sorry, we only allow hosts with an MX record.";
             validate_error($ctx, $err);
             return false;
         }
@@ -58,8 +63,8 @@ $inputs = [
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // Disable exception, to check errors, etc.
 $results = validate($ctx, $inputs, $spec, $func_opts); // Now, let's validate and done.
 
-// Check results
-var_dump(validate_get_status($ctx));        // $results is NULL when error. validate_get_status() can be used also.
-var_dump($results, $inputs);                // $inputs contains unvalidated values.
-var_dump(validate_get_user_errors($ctx));   // Get user errors.
-var_dump(validate_get_system_errors($ctx)); // Get system errors.
+// Inspect results.
+var_dump(validate_get_status($ctx));        // $results is null on failure; validate_get_status() is the reliable check.
+var_dump($results, $inputs);                // $inputs holds only the values that were NOT validated.
+var_dump(validate_get_user_errors($ctx));   // User-facing errors (from 'error_message' / validate_error()).
+var_dump(validate_get_system_errors($ctx)); // System-level errors (bad types, oversized strings, etc.).

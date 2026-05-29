@@ -1,26 +1,33 @@
 <?php
+/**
+ * Example: pre-flight spec validation.
+ *
+ * In production you typically disable VALIDATE_OPT_CHECK_SPEC for speed.
+ * During development, call validate_spec() once on the assembled spec
+ * to catch typos and structural mistakes before any request data arrives.
+ */
 
 // Define validate(), etc.
 require_once __DIR__.'/../validate_func.php';
 
-// Load specs
+// Load per-field specs ($username, $email, $age, ...).
 require_once __DIR__.'/99-web-specs.php';
 
-// Make complex spec
+// Assemble the per-request spec from those field specs.
 $spec = [
-    VALIDATE_ARRAY,           // 1st should be Validator type.
-    VALIDATE_FLAG_NONE,       // 2nd should be validator flags.
-    ['min' => 3, 'max' => 3], // 3rd should be validator options.
-    [                         // 4th is "Array" parameter definition.
-        'get' => [            // GET parameter may have 0 to 2 parameters.
+    VALIDATE_ARRAY,           // [0] validator type
+    VALIDATE_FLAG_NONE,       // [1] flag bitfield
+    ['min' => 3, 'max' => 3], // [2] options — exactly three top-level groups
+    [                         // [3] sub-specs (this is the VALIDATE_PARAMS slot)
+        'get' => [            // Query string: 0..2 declared parameters.
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
             ['min' => 0, 'max' => 2],
             [
-                'debug' => $debug, // Rejected parameter
+                'debug' => $debug, // VALIDATE_REJECT — fails if 'debug' is present.
             ]
         ],
-        'post' => [           // POST parameters
+        'post' => [           // Form body fields.
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
             ['min' => 6, 'max' => 7],
@@ -33,9 +40,11 @@ $spec = [
                 'comment'  => $comment,
             ],
         ],
-        'header' => [         // HTTP headers (This example validates $_SERVER)
-            // Not a good header validation example. Stricter validation is always better/good/recommended.
-            // This spec simply validate HTTP headers as "Array of Strings".
+        'header' => [         // HTTP headers (read from $_SERVER in real apps).
+            // NOTE: this header check is intentionally loose — it treats the
+            // header set as a generic "array of strings". Production code
+            // should declare a per-header spec ($basicTypes['user-agent'],
+            // $basicTypes['content-length'], etc.) instead.
             VALIDATE_STRING,
             VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM
              | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_SPACE,

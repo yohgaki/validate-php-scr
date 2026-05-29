@@ -2,64 +2,65 @@
 //namespace Validate;
 
 /**
- * Simple yet flexible, powerful and reasonably fast input validator
- * that provides basic validation framework form simple to fancy/complex
- * validations.
+ * Simple yet flexible, powerful and reasonably fast input validator that
+ * provides a basic validation framework for everything from simple to
+ * complex validations.
  *
- * Name space is not used intentionally. This function is
- * designed to be compatible with "validate" PHP module
- * written by C.
- * i.e. Intentionally NOT OO nor PHP optimized.
- * e.g. Validate State could be private class, but in C module there is
- *      not much merit make it a private class. In C module, code is
- *      easier/shorter and faster without class. Encapsulation by C
- *      style is good enough.
+ * Namespaces are intentionally NOT used. This class is designed to be
+ * source-compatible with the planned "validate" PHP C extension; the
+ * structure, naming, and procedural-flavored shape make the future port
+ * trivial. As a consequence:
+ *   - The code is intentionally not OO-optimized. Validate is a single
+ *     class because PHP needs one, but the C version will keep the same
+ *     state in a struct and skip the class entirely.
+ *   - Please do not submit OO-style refactor PRs.
  *
- * This code is intentionally optimized for C module.
- * Therefore, please do not send OO optimized PR.
+ * ============================================================
+ * Callback signatures used by spec options
+ * ============================================================
  *
+ *   VALIDATE_CALLBACK "callback" option
+ *   ----------------------------------
+ *   Run user PHP code to validate a value. Only VALIDATE_CALLBACK accepts
+ *   this option. The engine has already enforced flag-based character
+ *   whitelisting and min/max before the callback runs.
  *
- * Callback function signatures:
+ *     function (Validate $ctx, mixed &$result, mixed $input): bool
+ *       $ctx    - validation context (created by validate_init() / validate()).
+ *       $result - assign here to publish the validated (possibly normalized) value.
+ *       $input  - the input value already passed by the pre-filter and whitelist.
+ *     Returns true on success, false on failure.
  *
- * VALIDATE_CALLBACK "callback" option.
- * "callback" is used to validate input values by your PHP script.
- *
- *   bool function(&$validated, $value, $context)
- *     $validated - Validated value.
- *     $value     - Input value
- *     $context  - context created by validate_init() and/or validate(). Users should not touch this.
- *   Return value:
- *     Must return true for successful validation, false otherwise.
- *   Note:
- *     Only VALIDATE_CALLBACK validator can have "callback" option.
- *     You can call validate() inside from VALIDATE_CALLBACK function. Make sure you pass correct $context variable.
- *
- *
- * Validator "filter" option.
- * Changes input value for pre filtering input. e.g. trim() string.
- * VALIDATE_FLAG_UNDEFINED*, VALIDATE_FLAG_EMPTY*, VALIDATE_REJECT is checked, but "min" and "max" options are not.
- *
- *   bool function(&$input, &$error)
- *     $input - The input value. Modify $input if you need to do something for it.
- *     $error - Error message. Set error message string when error. Leave it null otherwise.
- *   Return value:
- *     Must return true for successful validation, false otherwise.
- *   Note:
- *     All validators can have "filter" option.
+ *     A callback MAY call validate() recursively — pass the same $ctx.
  *
  *
- * Array of scalars "key_callback" option.
- * Checks array key value. Input values' array key can have dangerous chars!!
- *   bool function($key, &$error)
- *     $key - The key value.
- *     $error - Error message. Set error message string when error. Leave it null otherwise.
- *   Return value:
- *     Must return true for successful validation, false otherwise.
- *   Note:
- *     All validators can have "key_callback" option with VALIDATE_FLAG_ARRAY flag.
+ *   "filter" option
+ *   ---------------
+ *   Pre-process the input before the validator examines it (e.g. trim() a
+ *   string). VALIDATE_FLAG_UNDEFINED*, VALIDATE_FLAG_EMPTY*, and
+ *   VALIDATE_FLAG_REJECT are already enforced when the filter runs; 'min'
+ *   and 'max' are NOT yet enforced (the filter may change the length).
+ *
+ *     function (Validate $ctx, mixed $input, string &$error): mixed
+ *       $ctx   - validation context.
+ *       $input - the input value (read-only here; return the modified value).
+ *       $error - assign a string to flag a filter failure; leave null otherwise.
+ *     Returns the (possibly modified) value. Available on every validator.
  *
  *
- * PHP Version 7.0 or up
+ *   "key_callback" option (only with VALIDATE_FLAG_ARRAY)
+ *   -----------------------------------------------------
+ *   Validate the keys of an array-of-scalars input. Untrusted input arrays
+ *   can carry dangerous characters in their keys, so a key check is often
+ *   as important as a value check.
+ *
+ *     function (Validate $ctx, mixed $key): bool
+ *       $ctx - validation context.
+ *       $key - the array key under inspection.
+ *     Returns true to accept the key, false to reject the element.
+ *
+ *
+ * PHP Version 8.0 or higher.
  *
  * @category Validation
  * @package  Validate
@@ -72,116 +73,121 @@ require_once __DIR__.'/validate_defs.php';
 
 
 /**
- * Exceptions
+ * Exception thrown when validate_spec() finds a structural problem in a spec
+ * (wrong type ID, missing min/max, malformed sub-spec, ...). Subclass of
+ * InvalidArgumentException so existing handlers continue to work.
  */
 class ValidateInvalidSpecException extends InvalidArgumentException
 {
 }
+
+/**
+ * Exception thrown when validate() rejects an input value at runtime. Raised
+ * unless VALIDATE_OPT_DISABLE_EXCEPTION is set on the call.
+ */
 class ValidateInvalidValueException extends InvalidArgumentException
 {
 }
 
 /**
- * Code is trying to keep common structure/name with C module.
- * Users are not supposed to use this class directly!
+ * Validate engine — implements every rule that the procedural API delegates to.
+ *
+ * Internal layout deliberately mirrors what the planned C extension will use:
+ * the same private fields, the same recursion shape, the same option keys.
+ * Application code should prefer the procedural API (validate(),
+ * validate_spec(), validate_error(), ...) and treat this class as opaque.
  */
 class Validate
 {
     /**
-     * validate() / validate_spec() params checked by procedural API.
+     * Flags toggled by the procedural wrapper functions in validate_func.php
+     * after they have validated their own arguments. This lets the engine
+     * skip a second round of argument checking when entered through the API.
      */
     public $validate_params_checked;
     public $spec_params_checked;
 
     /**
-     * This is stack array and keeps track current element name.
-     *
-     * @var array $currentElem is used to keep track current element for recursive calls.
+     * Stack of element names representing the path from the root to the value
+     * currently being validated (e.g. ['ROOT', 'POST', 'address', 'zip']).
+     * Pushed before recursion, popped after. Used to build error paths and
+     * to key error storage under VALIDATE_OPT_ERROR_FULL/SQUASH.
      */
     private $currentElem;
 
     /**
-     * Current processing element context.
-     *
-     * @var Validate
+     * Current per-call context. $context is the active Validate instance
+     * (this == $context except during nested calls). $context_vars carries
+     * scratch state across helpers within a single validate() invocation —
+     * the current spec, the func_opts bitmask, and so on.
      */
-    private $context; // Validate object
+    private $context;
     private $context_vars;
 
     /**
-     * Error level for VALIDATE_OPT_RAISE_ERROR
-     * E_USER_ERROR is too severe for debugging.
+     * PHP error level used when VALIDATE_OPT_RAISE_ERROR is set.
+     * Defaults to a less severe level than E_USER_ERROR to keep debugging
+     * sessions interactive — adjust via setErrorLevel().
      */
     private $error_level;
 
-    /**
-     * Keeps track system error messages.
+    /*
+     * Error buckets — system vs user.
      *
-     * @var array $errors System error messages.
+     * System messages come from the engine itself (broken types, length
+     * violations, illegal characters); they are meant for logging, not for
+     * showing to end users.
+     *
+     * User messages come from spec 'error_message' options or
+     * validate_error/_warning/_notice() calls in user callbacks; they are
+     * safe to show in form UIs.
      */
+
+    /** @var array $errors      System-side error messages. */
     private $errors;
-
-    /**
-     * Keeps track system warning messages.
-     *
-     * @var array $warnings System warning messages.
-     */
+    /** @var array $warnings    System-side warning messages. */
     private $warnings;
-
-    /**
-     * Keeps track system warning messages.
-     *
-     * @var array $notices System warning messages.
-     */
+    /** @var array $notices     System-side notice messages. */
     private $notices;
 
-    /**
-     * Keeps track user error messages.
-     *
-     * @var array $userErrors User defined error message. i.e. validate_error($ctx, $message), $options['error_message']
-     */
+    /** @var array $userErrors  User-facing errors (spec 'error_message' / validate_error()). */
     private $userErrors;
-
-    /**
-     * Keeps track user warning messages.
-     *
-     * @var array $userWarnings User defined warning message. i.e. validate_warning($ctx, $message)
-     */
+    /** @var array $userWarnings User-facing warnings (validate_warning()). */
     private $userWarnings;
-
-    /**
-     * Keeps track user notice messages.
-     *
-     * @var array $userNotices User defined warning message. i.e. validate_warning($ctx, $message)
-     */
+    /** @var array $userNotices User-facing notices (validate_notice()). */
     private $userNotices;
 
     /**
-     * Keeps track validated result. It contains values as far as Validate is checked.
-     * i.e. Partial validation result.
+     * Running validation result. Holds every value validated so far, so the
+     * caller can inspect partial results even when later fields fail.
      *
-     * @var mixed Validated result.
+     * @var mixed
      */
     private $validated;
 
     /**
-     * Keeps track validation status.
+     * Overall pass/fail status of the most recent validation call.
+     * null = validate() has not been called yet.
      *
-     * @var bool $status Validation status
+     * @var bool|null
      */
     private $status;
 
     /**
-     * validate() or validateSepc()
+     * Mode flag: true while validate() walks input values, false while
+     * validateSpec() walks the spec structure. A few helpers share code
+     * between the two modes and use this to behave differently.
      *
      * @var bool
      */
     private $value_validation;
 
     /**
-     * Logger function
+     * Optional user logger callback, registered via setLoggerFunction().
+     * Invoked once per error when VALIDATE_OPT_LOG_ERROR is set on the
+     * validate() call. Falls back to trigger_error() when unset.
      *
-     * @var callable $loggerFunction
+     * @var callable|null
      */
     private $loggerFunction = null;
 
@@ -189,11 +195,10 @@ class Validate
     /************** public methods ****************/
 
     /**
-     * Validate constructor
+     * Validate constructor.
      *
-     * @param string $root_name Root variable name.
-     *
-     * @return object
+     * @param string $root_name Label shown for the top-level value in error
+     *                          reports (e.g. "ROOT", "POST", "request").
      */
     public function __construct($root_name = 'ROOT')
     {
@@ -211,16 +216,18 @@ class Validate
         $this->userWarnings = array();
         $this->userNotices = array();
 
+        // Seed the path stack with the user-supplied root label; nested
+        // values are pushed/popped during recursion.
         $this->currentElem = array();
-        array_push($this->currentElem, $root_name); // Root variable name is unknown to program.
+        array_push($this->currentElem, $root_name);
 
         $this->setContext(
-            $this, // Register itself
-            $root_name, // Param name
-            null, // Root variable defined or not is unknown
-            null, // Input is unknown
-            null, // Spec is unknown
-            null // $func_opt is unknwon
+            $this,       // Self-register as the active context.
+            $root_name,  // Param name for the root.
+            null,        // Defined-ness of the root is not yet known.
+            null,        // Input is not yet known.
+            null,        // Spec is not yet known.
+            null         // func_opts is not yet known.
         );
     }
 
@@ -296,14 +303,22 @@ class Validate
     }
 
     /**
-     * Validate inputs and removes validated values from $inputs.
-     * So $validated contains validated values and $inputs has unvalidated value.
+     * Validate inputs against a spec.
      *
-     * @param mixed $inputs    Scalar or array values.
-     * @param array $specs     Spec array.
-     * @param int   $func_opts Bit function flags controls function behaviors.
+     * $inputs is passed by reference: each key that passes validation is
+     * unset by the engine, so on return $inputs contains only the leftover
+     * (unvalidated) input. Pass VALIDATE_OPT_KEEP_INPUTS to keep it intact.
      *
-     * @return mixed Validated values.
+     * On failure either an InvalidArgumentException is thrown (default) or
+     * null is returned (VALIDATE_OPT_DISABLE_EXCEPTION). Partial validation
+     * results remain reachable via getValidated().
+     *
+     * @param mixed $inputs    Scalar or array of inputs.
+     * @param array $specs     Spec array. See validate_spec() for format.
+     * @param int   $func_opts Bitmask of VALIDATE_OPT_* function options.
+     *
+     * @return mixed Validated value(s) on success, null on failure when
+     *               exceptions are disabled.
      */
     public function validate(&$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
     {
@@ -368,13 +383,16 @@ class Validate
 
 
     /**
-     * Validate validate()'s input spec array.
+     * Verify the structure of a spec array (without applying it to any input).
      *
-     * @param array    $spec        Validate's value specification.
-     * @param mixed    $unvalidated Optional. Sets unvalidated specs.
-     * @param Validate $ctx    Optional. Instance of Validate object.
+     * Run during validate() when VALIDATE_OPT_CHECK_SPEC is set, and exposed
+     * for explicit pre-flight checks during development.
      *
-     * @return bool TRUE for success, FALSE otherwise.
+     * @param array    $spec        Spec array to verify.
+     * @param mixed    $unvalidated Output. Receives sub-specs that could not be checked.
+     * @param Validate $ctx         Optional context (fresh one created when null).
+     *
+     * @return bool true if the spec is well-formed, false otherwise.
      */
     public function validateSpec($spec, &$unvalidated = null, $ctx = null)
     {
@@ -440,10 +458,11 @@ class Validate
 
 
     /**
-     * Set VALIDATE_OPT_RAISE_ERROR error level.
-     * E_USER_ERROR is too severe for debugging.
+     * Choose which PHP error level VALIDATE_OPT_RAISE_ERROR uses.
+     * E_USER_ERROR aborts execution, which is usually too aggressive during
+     * development — drop to E_USER_WARNING or E_USER_NOTICE there.
      *
-     * @param int E_USER_*
+     * @param int $level E_USER_ERROR / E_USER_WARNING / E_USER_NOTICE.
      */
     public function setErrorLevel($level)
     {
@@ -453,11 +472,12 @@ class Validate
 
 
     /**
-     * Get system error messages.
-     * If Validate object is used multiple validate() calls,
-     * all error are stored.
+     * Return system-side errors recorded by the engine (broken types,
+     * length violations, illegal characters, ...). When the same Validate
+     * instance is reused across multiple validate() calls, errors from
+     * every call accumulate here.
      *
-     * @return array System errors.
+     * @return array ['error' => [...], 'warning' => [...], 'notice' => [...]]
      */
     public function getSystemErrors()
     {
@@ -466,11 +486,11 @@ class Validate
 
 
     /**
-     * Get user error messages.
-     * If Validate object is used multiple validate() calls,
-     * all error are stored.
+     * Return user-facing messages reported via validate_error/_warning/_notice()
+     * or via the spec 'error_message' option. These are safe to surface in
+     * form UIs; system errors should stay internal.
      *
-     * @return array
+     * @return array ['error' => [...], 'warning' => [...], 'notice' => [...]]
      */
     public function getUserErrors()
     {
@@ -479,12 +499,15 @@ class Validate
 
 
     /**
-     * Set logger function. It should accept a string parameter for error message.
+     * Register a logger callback used by VALIDATE_OPT_LOG_ERROR.
+     * The callback is invoked once per recorded error during validate();
+     * if no logger is registered the engine falls back to trigger_error().
      *
-     * @param callable $func Logger function. function void my_logger(Validate $ctx, array $error)
-     *                       $error contains full error info as array.
+     * Signature: function (Validate $ctx, array $error): void
+     *   $error is the full structured error record (message, param, value,
+     *   spec, ...) — match the shape of getSystemErrors() entries.
      *
-     * @return null
+     * @param callable $func Logger callback.
      */
     public function setLoggerFunction($func)
     {
@@ -497,11 +520,10 @@ class Validate
 
 
     /**
-     * Handle external validation errors as system error.
+     * Record a user-side error. Backs validate_error() — meant to be called
+     * from inside a 'callback' validator to report a user-facing message.
      *
-     * @param string   $error     Error message.
-     *
-     * @return null
+     * @param string $message Error message.
      */
     public function error($message)
     {
@@ -511,11 +533,9 @@ class Validate
 
 
     /**
-     * Handle external validation warnings as system warning.
+     * Record a user-side warning. Backs validate_warning(). See error().
      *
-     * @param string   $error     Error message.
-     *
-     * @return null
+     * @param string $message Warning message.
      */
     public function warning($message)
     {
@@ -525,11 +545,9 @@ class Validate
 
 
     /**
-     * Handle external validation warnings as system warning.
+     * Record a user-side notice. Backs validate_notice(). See error().
      *
-     * @param string   $error     Error message.
-     *
-     * @return null
+     * @param string $message Notice message.
      */
     public function notice($message)
     {
@@ -541,10 +559,14 @@ class Validate
     /************** private methods - validator helpers ****************/
 
     /**
-     * Compare two integer values (or integer strings for large ints).
-     * Uses bccomp if available, GMP if available, or pure PHP fallback.
+     * Compare two integers safely beyond PHP_INT_MAX.
      *
-     * @return int -1, 0, or 1
+     * Returns -1, 0, or 1 like the spaceship operator. Used when an int
+     * spec is in AS_STRING mode and the numeric values may overflow PHP_INT.
+     * Prefers bccomp / GMP when available; otherwise falls back to a hand-
+     * rolled string compare so 32-bit and 64-bit builds give identical results.
+     *
+     * @return int -1 if $a < $b, 0 if equal, 1 if $a > $b.
      */
     private static function compareBigInt($a, $b): int
     {
@@ -639,12 +661,14 @@ class Validate
 
 
     /**
-     * Validator function map.
-     * private property is exposed by var_dump(), so hide this.
+     * Look up the method name that implements a validator type.
      *
-     * @param int $id Validator ID
+     * Kept inside a method (rather than a class property) so it doesn't
+     * leak into var_dump() output of a Validate instance.
      *
-     * @return string Validator name string
+     * @param int $id Validator ID (VALIDATE_INT, VALIDATE_STRING, ...).
+     *
+     * @return string Method name on this class.
      */
     private function getValidator($id)
     {
@@ -673,9 +697,13 @@ class Validate
 
 
     /**
-     * Get validator name.
+     * Map a validator type ID to its human-readable label (used in error
+     * messages). Returns false for IDs not in the map so callers can detect
+     * "unknown ID" without bailing on a missing-array-key warning.
      *
-     * @return string
+     * @param int $id Validator ID.
+     *
+     * @return string|false Label like "VALIDATE_INT", or false when unknown.
      */
     private function getValidatorName($id)
     {
@@ -704,9 +732,13 @@ class Validate
 
 
     /**
-     * Replace empty string to defined default value
+     * Substitute the spec's 'default' option for empty input.
      *
-     * @return bool
+     * Triggered when VALIDATE_FLAG_EMPTY_TO_DEFAULT is set and the value is
+     * '' or null. Records a system error and returns false if the flag is
+     * set without a 'default' option (the spec is broken in that case).
+     *
+     * @return bool true on success or when the flag does not apply; false when the spec is broken.
      */
     private function applyDefaultIfEmpty(&$value, $id, $flags, $options, $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION)
     {
@@ -736,11 +768,15 @@ class Validate
 
 
     /**
-     * Handles special cases for validate()
+     * Decide what to do when a parameter is present/absent in $inputs.
      *
-     * Process special/tricky logic here.
+     * Handles the cross-cutting flags before per-type validation runs:
+     *   - VALIDATE_FLAG_REJECT : presence = error.
+     *   - VALIDATE_FLAG_UNDEFINED / *_TO_DEFAULT : absence = OK (default applied).
+     *   - otherwise            : absence = required-parameter error.
      *
-     * @return bool  4 patterns. 0:OK. 1:ignore. 2:error No undefined flag. 3: error Rejected.
+     * @return bool true if the value should proceed to type validation,
+     *              false if presence/absence has already been resolved.
      */
     private function checkParamPresence(&$validated, &$inputs, $param, $id, $flags, $options, $func_opts)
     {
@@ -771,15 +807,22 @@ class Validate
 
 
     /**
-     * User should not call this method.
-     * Use validate() wrapper function instead.
+     * Recursive core of validate(). Dispatches on the spec's validator type:
+     *   - VALIDATE_MULTI  -> validateMulti() (one value vs. multiple specs)
+     *   - VALIDATE_ARRAY  -> recurse into sub-specs, walk each declared key
+     *   - everything else -> validateScalar() for per-type rules
      *
-     * @param mixed $validated    Validated values. Bool/Int/Float types may be converted to native types.
-     * @param mixed $inputs    Input values.
-     * @param array $specs     Validation specification array
-     * @param int   $func_opts Bit mask function options.
+     * Drives the $currentElem path stack so error messages and context
+     * always reflect the field currently under validation. Internal — call
+     * the procedural validate() / Validate::validate() wrapper instead.
      *
-     * @return bool  Return true for successful validation, false otherwise.
+     * @param mixed $validated By-ref output: validated values are written here.
+     *                         Native types may be normalized (string ints -> int, etc.).
+     * @param mixed $inputs    By-ref input: validated keys are unset (unless KEEP_INPUTS).
+     * @param array $specs     Validation spec node ([type, flags, options, sub-specs]).
+     * @param int   $func_opts VALIDATE_OPT_* bitmask for this call.
+     *
+     * @return bool true on success, false otherwise.
      */
     private function runValidation(&$validated, &$inputs, $specs, $func_opts)
     {
@@ -860,7 +903,7 @@ class Validate
         if ($min > $cnt || $max < $cnt) {
             $this->reportError(
                 [
-                   'message' => 'VALIDATE_ARRAY: Count out of rage. '.
+                   'message' => 'VALIDATE_ARRAY: Count out of range. '.
                                 'min: '. $min .' max: '. $max . ' count '. $cnt,
                    'value' => null
                 ],
@@ -925,9 +968,12 @@ class Validate
 
 
     /**
-     * Apply filter before validation
+     * Run the spec's 'filter' option over $input before any validator looks
+     * at it. When VALIDATE_FLAG_ARRAY is set, the filter is applied to each
+     * element. A filter failure (filter returns with $error set) records
+     * a system error and returns false so the caller can skip validation.
      *
-     * @return bool
+     * @return bool true if no filter is set or the filter accepted the input.
      */
     private function applyInputFilter(&$input, $id, $flags, $options, $func_opts = 0)
     {
@@ -1121,7 +1167,7 @@ class Validate
             }
         }
 
-        // TODO Not a optimal way to get validator name here
+        // TODO Not an optimal way to get validator name here
         $validatorName = $this->getValidatorName($id);
         if (is_scalar($inputs)) {
             $this->reportError(
@@ -1135,7 +1181,7 @@ class Validate
             return false;
         }
 
-        // TODO Not a optimal way to get validator, amin and amax here
+        // TODO Not an optimal way to get validator, amin and amax here
         $validator = $this->getValidator($id);
         $amin = $options['amin'];
         $amax = $options['amax'];
@@ -3354,10 +3400,11 @@ class Validate
 
 
     /**
-     * Handle external validation errors.
+     * Dispatch a system-level message (error/warning/notice) to the
+     * appropriate bucket and optionally trigger a PHP error.
      *
-     * @param string   $error     Error message.
-     * @param int      $type      Error type.
+     * @param string   $message   Message text.
+     * @param int      $type      Severity. One of E_USER_ERROR / E_USER_WARNING / E_USER_NOTICE.
      *
      * @return null
      */
@@ -3627,14 +3674,25 @@ class Validate
 
 
     /************** private methods - spec validation ****************/
+    /*
+     * Backs validateSpec(). Walks the spec recursively and reports every
+     * structural problem it finds via specError(). The same helpers used
+     * for value validation are reused to validate the type IDs/flags/
+     * option types in the spec itself.
+     */
 
 
     /**
-     * Validate validate()'s input spec array.
+     * Validate one node of the spec tree (a single [id, flags, options, sub-specs] entry).
      *
-     * @param array $spec Validation spec array.
+     * Reports problems through specError() and continues recursing so the
+     * caller can see every error in one pass.
      *
-     * @return bool TRUE for success, FALSE otherwise.
+     * @param array $spec Spec node to check (passed by reference because
+     *                    successfully-checked entries are stripped to mark
+     *                    progress for the caller's $unvalidated output).
+     *
+     * @return bool true if the node is well-formed, false otherwise.
      */
     private function checkSpecEntry(&$spec)
     {

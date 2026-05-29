@@ -1,5 +1,5 @@
 --TEST--
-validate() simple scalars - all tests should success
+validate() simple scalars - all tests should succeed
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';

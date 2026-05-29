@@ -1,36 +1,46 @@
 # What is this?
 
-These simple PHP scripts are for generating Validate PHP spec and validate inputs
-automatically.
+A small set of PHP scripts that auto-generate a Validate PHP spec from real
+request traffic and apply it on every subsequent request. Useful for retrofitting
+input validation onto an existing application that has no specs yet.
 
 ## How to use
 
-There are 3 steps.
+Three steps:
 
-  1. Add 'input_logger.php' to php.ini's 'auto_prepend_file', and log application inputs. (Make sure enough requests are logged.)
-  1. Generate spec by executing 'input_analyzer.php'. e.g. php input_analyzer.php
-  1. Add 'input_validator.php' to php.ini's 'auto_prepend_file'. (Replace 'input_logger.php' to 'input_validator.php'.)
+  1. Set `input_logger.php` as `auto_prepend_file` in `php.ini` and replay
+     enough representative traffic so every legitimate code path is recorded.
+  2. Generate the spec by running `input_analyzer.php` against the log
+     directory: `php input_analyzer.php [/path/to/log_dir]`.
+  3. Swap `auto_prepend_file` from `input_logger.php` to `input_validator.php`
+     so each request is validated against the generated spec.
 
-Then validation is performed. By default, input logs and spec.php/stat.php are logged in '/var/tmp/validate'.
-Alternatively, you may require_once() 'input_logger.php' and 'input_validator.php'.
+By default the input logs, `stat.php` and `spec.php` are written under
+`/var/tmp/validate/`. Override the path inside each script if you need to.
+If `auto_prepend_file` is not available (e.g. shared hosting), `require_once`
+the scripts manually from a bootstrap file instead.
 
-*IMPORTANT:* By default, input_validator.php will not raise error for validation errors, but
-logs errors by error_log().
+*IMPORTANT:* `input_validator.php` does NOT throw on validation failure by
+default. Errors are sent to `error_log()` and stashed in
+`$GLOBALS['_validate_errors_']`. Flip the `$exception` switch inside the
+script to make failures raise `InvalidArgumentException`.
 
 ## Status and Limitations
 
-Since it is impossible to determine precise input value specification, it cannot
-generate strict validation spec. However, it is useful because Validate PHP and
-generated spec does not allow
+Inferring an input spec from observed traffic is necessarily approximate — a
+generated spec is a lower bound (rules every recorded request satisfies),
+not a true specification. It still gives a meaningful safety net, because
+Validate PHP rejects:
 
  * Broken UTF-8 encoding
- * Symbols unless symbol is learned
- * Too long inputs
+ * Any symbol that did not appear during logging
+ * Inputs longer than the recorded maximum (with a small slack)
 
-Validation SPEC optimization - work in progress. Optimization is poor. Followings are TODOs.
+Spec optimization is still rough. Outstanding TODOs:
 
- * Default validation rule that excludes control chars.
- Optional parameters detection. 10 extra parameters are allowed by default currently.
- * Data type detection. (int/float/bool)
- * Parameter hint definition support.
- * It does not raise exception by default.
+ * Add a default rule that excludes control characters.
+ * Detect which parameters are optional (today the generator simply allows
+   10 extra parameters per array as headroom).
+ * Detect numeric inputs as int/float/bool instead of treating them as strings.
+ * Honor parameter hints from key names (email, password, sessid, ...).
+ * Switch the default to raising exceptions on validation failure.

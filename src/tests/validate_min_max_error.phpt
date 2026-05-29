@@ -154,7 +154,7 @@ string(74) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' va
 bool(false)
 string(73) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: ''"
 bool(false)
-string(89) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of rage. min: 2 max: 3 count 0' val: 'N;'"
+string(90) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of range. min: 2 max: 3 count 0' val: 'N;'"
 bool(false)
 string(92) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: 'O:8:"stdClass":0:{}'"
 bool(false)
@@ -166,7 +166,7 @@ string(73) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' va
 bool(false)
 string(77) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: 'abcd'"
 bool(false)
-string(89) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of rage. min: 2 max: 3 count 1' val: 'N;'"
+string(90) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of range. min: 2 max: 3 count 1' val: 'N;'"
 bool(false)
-string(89) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of rage. min: 2 max: 3 count 4' val: 'N;'"
+string(90) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of range. min: 2 max: 3 count 4' val: 'N;'"
 bool(false)

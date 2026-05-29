@@ -1,16 +1,18 @@
 <?php
 /**
+ * Multiple-input validation example.
  *
- * Multiple inputs example.
- *
- * Relatively realistic input validation example.
- * All web apps must validate all inputs including HTTP headers.
- *
+ * A realistic shape: a request with $_POST, $_GET and HTTP headers, all
+ * validated in a single validate() call. Shows how to:
+ *   - compose reusable per-field specs into an array spec,
+ *   - validate top-level + nested arrays in one pass,
+ *   - apply a "default" pass to catch extra/optional parameters,
+ *   - and use VALIDATE_FLAG_ARRAY / VALIDATE_FLAG_ARRAY_KEY_ALNUM to keep
+ *     unknown keys controlled.
  */
 
 require_once __DIR__.'/../validate_func.php';
-// Example basic type definition
-require_once __DIR__.'/../lib/basic_types.php';
+require_once __DIR__.'/../lib/basic_types.php'; // Predefined spec presets.
 
 /******************* Sample input data ***********************/
 $POST = [
@@ -36,91 +38,105 @@ $HEADER = [
 
 
 
-/******************** Example input parameter validation specs. *************************/
+/******************** Per-field validation specs *********************/
 
-// In practice, you should define these reusable standard specs
-// some thing similar to these as input definition PHP script.
+// In a real codebase, declare reusable specs in a central file and
+// require_once it from each endpoint so every input has a single source of
+// truth (and audits or changes touch one place).
 
-// "min" and "max" options are required options for all inputs. (White listing)
+// 'min'/'max' are mandatory for every spec — the framework refuses to make
+// guesses on the caller's behalf. This is the whitelist principle in action:
+// the caller must state the exact range they expect.
 $id = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
     ['min' => 1, 'max' => PHP_INT_MAX]
 ];
 
-// Any chars are rejected by default. Developer must explicitly define allowed chars. (White listing)
+// Strings reject every character by default. Opt characters in explicitly
+// via VALIDATE_STRING_* flags (whole classes) or the 'ascii' option
+// (individual extra characters).
 $name = [
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_SPACE,
     ['min' => 4, 'max' => 64]
 ];
 
-// For convenience, you can use -INF/INF as min/max.
+// For floats you may use -INF/INF as min/max as a shorthand for "unbounded".
+// min/max are still required — there is no implicit default.
 $float = [
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
     ['min' => 4, 'max' => INF]
-    // INF is not included as valid float unless explicitly allowed by Float validator option.
-    // i.e. 「"INF" => true」 to allow INF max, 「"-INF" => true」to allow -INF as min.
-    // NAN is always invalid.
+    // Even with max => INF, an actual INF input is still rejected unless
+    // explicitly allowed via 'INF' => true (and likewise '-INF' => true for
+    // negative infinity). NAN is always rejected.
 ];
 
-// Use "encoding" option to allow multibyte chars.
+// VALIDATE_STRING_MB opens up UTF-8 multibyte characters. The 'encoding'
+// option is informational — only UTF-8 is supported, so it can be omitted.
 $utf8 = [
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_SPACE | VALIDATE_STRING_MB,
-    ['min' => 4, 'max' => 64, 'encoding' => 'UTF-8'] // Only UTF-8 is supported and option may be omitted.
+    ['min' => 4, 'max' => 64, 'encoding' => 'UTF-8']
 ];
 
-// Any chars are rejected by default. Developer must explicitly define allowed chars. (White listing)
+// Same whitelist principle as $name above: VALIDATE_STRING_LF must be set
+// explicitly to permit '\n' inside the value.
 $string = [
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_LF,
     ['min' => 4, 'max' => 128]
 ];
 
-// Accept has more chars
+// The Accept HTTP header contains commas, slashes, semicolons and other
+// punctuation. The flag-based whitelist would be too coarse, so we list the
+// extra individual characters via the 'ascii' option.
 $accept = [
     VALIDATE_STRING,
     VALIDATE_FLAG_UNDEFINED_TO_DEFAULT | VALIDATE_STRING_DIGIT | VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_SPACE,
-    ['min' => 0, 'max' => 1024, 'ascii' => '=/,.;+()*', 'default' => ''] // You can allow additional ASCII chars as option.
+    ['min' => 0, 'max' => 1024, 'ascii' => '=/,.;+()*', 'default' => '']
 ];
 
 
-// Complex validations can be defined as "callback" that is plain/simple PHP code.
+// Anything the built-in flags cannot express goes through VALIDATE_CALLBACK,
+// where the rules are plain PHP. The callback receives an already pre-filtered
+// input — only the characters allowed by the flags below ever reach it.
 $user_agent = [
-    VALIDATE_CALLBACK, // You can use any "callable"
+    VALIDATE_CALLBACK, // Any PHP callable is accepted.
     VALIDATE_CALLBACK_SPACE | VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_MB,
     ['min' => 10, 'max' => 128,
     'callback' =>
-    // Params: Validate $ctx, mixed $result, mixed $input
-    // Return: TRUE/FALSE for success/failure.
+    // Signature: function (Validate $ctx, mixed &$result, mixed $input): bool
     //
-    // Update $input if you need modified value.
-    // Never try to "sanitize" (remove bad from input), but
-    // validate value is legitimate as the input. Be restrictive.
+    // - Assign $result to publish the validated (possibly normalized) value.
+    // - Return true on success, false on failure.
+    // - Never *sanitize* untrusted input by stripping bad characters; instead,
+    //   verify that the input is legitimate as-is. Be restrictive.
     function ($ctx, &$result, $input) {
-        // DbC style type check is better than type def in signature
-        // in many respects. Thus DbC style type check is recommended.
+        // Design-by-contract assertions document and enforce preconditions
+        // without affecting production code (PHP assertions are zero-cost when
+        // disabled), and are easier to maintain than parameter type hints.
         assert($ctx instanceof Validate);
 
-        // In general, you must check data type, then length.
-        // Complex check must be done later for security reasons.
-        // You must use strict "white-listing" unless strict "white-listing" is not feasible.
-        // Note that even "an additional char", e.g. space/newline/etc, could be dangerous for
-        // many logical/output context.
+        // Order matters: check type first, then length, then content. Heavy
+        // or complex checks come last — short-circuiting earlier saves CPU
+        // and avoids passing malformed data into deeper logic.
+        // Always whitelist; even "one extra harmless character" (space, LF, ...)
+        // can be dangerous depending on the downstream output context.
         if (!is_string($input)) {
             validate_error($ctx, 'User-Agent validation: User-Agent must be string.');
-            return false; // Make sure this returns. validate_error() could be user error and return here.
+            return false; // Always return after validate_error(); it does not abort the callback.
         }
 
         $len = strlen($input);
-        // This check can be done by String validator with "ascii" option. This is an example.
+        // This length+charset check could be expressed via VALIDATE_STRING
+        // with an 'ascii' option; doing it manually here is purely illustrative.
         if ($len !== strspn($input, ' 1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ()_.,/;"')) {
             validate_error($ctx, 'User-Agent validation: Invalid char detected.');
             return false;
         }
-        // Make sure return "valid" value for successful validation.
+        // Publish the validated value on success.
         $result = $input;
         return true;
     }]
@@ -128,21 +144,25 @@ $user_agent = [
 
 
 
-/******************** Example combined validation spec ****************************/
+/******************** Combined validation spec ****************************/
 
-// Now you can combine above predefined parameter specs to validation spec.
+// Compose the per-field specs above into a single top-level spec. Each spec
+// array follows the [type, flags, options, sub-specs] layout — see
+// validate_spec() in validate_func.php for the formal grammar.
 $specs = [
-    VALIDATE_ARRAY, // 1st should be Validator type
-    VALIDATE_FLAG_NONE, // 2nd should be validator flags
-    ['min' => 3, 'max' => 3], // 3rd should be validator options.
+    VALIDATE_ARRAY,           // [0] validator type
+    VALIDATE_FLAG_NONE,       // [1] flag bitfield
+    ['min' => 3, 'max' => 3], // [2] options: exactly three top-level keys
     [
         'post' => [
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
             ['min' => 4, 'max' => 5],
-            // min/max options are required for array to handle stupid attack efficiently.
-            // It's silly to perform costly validations for obvious attacks.
-            // NOTE: Any inputs could be optional by VALIDATE_FLAG_OPTIONAL.
+            // min/max on arrays cap the *element count*, not byte length. This
+            // rejects unexpectedly large or empty payloads up front, before any
+            // per-element rule runs.
+            // Mark an individual element optional with VALIDATE_FLAG_UNDEFINED
+            // (or VALIDATE_FLAG_UNDEFINED_TO_DEFAULT if a default is needed).
             [
                 'id'    => $id,
                 'name'  => $name,
@@ -163,7 +183,7 @@ $specs = [
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
             ['min' => 0, 'max' => 4],
-            [] // Allow upto 4 optional parameters
+            [] // No declared keys; the default-spec pass below handles them.
         ],
         'header' => [
             VALIDATE_ARRAY,
@@ -178,60 +198,66 @@ $specs = [
     ],
 ];
 
-// Web apps often have extra parameters.
-// Validate PHP can validate these by loose array spec
-$post_default = $basicTypes['text128']; // UTF-8 char text upto 128 bytes
+// Real-world web apps often see extra (optional, unforeseen) parameters.
+// Build a second pass with a loose array spec to validate whatever remains.
+// VALIDATE_FLAG_ARRAY makes every element validated under the same spec;
+// VALIDATE_FLAG_ARRAY_KEY_ALNUM restricts the allowed key names to alnum+'_'.
+$post_default = $basicTypes['text128']; // UTF-8 text, up to 128 bytes.
 $post_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
-                                 | VALIDATE_FLAG_ARRAY            // Validate post values as array.
-                                 | VALIDATE_FLAG_ARRAY_KEY_ALNUM; // Allow only alnum keys.
-$post_default[VALIDATE_OPTIONS]['amin'] = 0;     // At least 1 extra post parameter.
-$post_default[VALIDATE_OPTIONS]['amax'] = 2;     // At most 2 extra post parameters.
-$post_default[VALIDATE_OPTIONS]['default'] = []; // Empty array by default.
+                                 | VALIDATE_FLAG_ARRAY
+                                 | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
+$post_default[VALIDATE_OPTIONS]['amin'] = 0;     // At least 0 extra POST keys.
+$post_default[VALIDATE_OPTIONS]['amax'] = 2;     // At most 2 extra POST keys.
+$post_default[VALIDATE_OPTIONS]['default'] = []; // Substitute [] when entirely absent.
 
-$get_default = $basicTypes['alnum128']; // Alnum char text up to 128 bytes
+$get_default = $basicTypes['alnum128']; // Alnum text, up to 128 bytes.
 $get_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
-                                 | VALIDATE_FLAG_ARRAY            // Validate post values as array.
-                                 | VALIDATE_FLAG_ARRAY_KEY_ALNUM; // Allow only alnum keys.
-$get_default[VALIDATE_OPTIONS]['amin'] = 0;     // At least 0 extra query parameter.
-$get_default[VALIDATE_OPTIONS]['amax'] = 5;     // At most 5 extra query parameters.
-$get_default[VALIDATE_OPTIONS]['default'] = []; // Empty array by default.
+                                 | VALIDATE_FLAG_ARRAY
+                                 | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
+$get_default[VALIDATE_OPTIONS]['amin'] = 0;     // At least 0 extra query params.
+$get_default[VALIDATE_OPTIONS]['amax'] = 5;     // At most 5 extra query params.
+$get_default[VALIDATE_OPTIONS]['default'] = [];
 
-$header_default = $basicTypes['header1024u']; // UTF-8 text with HTTP header special chars.
+$header_default = $basicTypes['header1024u']; // UTF-8 HTTP header value, up to 1024 bytes.
 $header_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
-                                 | VALIDATE_FLAG_ARRAY            // Validate headers as array.
-                                 | VALIDATE_FLAG_ARRAY_KEY_ALNUM; // Allow only alnum keys.
+                                 | VALIDATE_FLAG_ARRAY
+                                 | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
 $header_default[VALIDATE_OPTIONS]['amin'] = 0;     // At least 0 extra headers.
 $header_default[VALIDATE_OPTIONS]['amax'] = 10;    // At most 10 extra headers.
-$header_default[VALIDATE_OPTIONS]['default'] = []; // Empty array by default.
+$header_default[VALIDATE_OPTIONS]['default'] = [];
 
 
 $default_specs = [
-    VALIDATE_ARRAY, // 1st should be Validator type
-    VALIDATE_FLAG_NONE, // 2nd should be validator flags
-    ['min' => 0, 'max' => 3], // 3rd should be validator options.
+    VALIDATE_ARRAY,
+    VALIDATE_FLAG_NONE,
+    ['min' => 0, 'max' => 3],
     [
-        'post' => $post_default,
-        'get' => $get_default,
+        'post'   => $post_default,
+        'get'    => $get_default,
         'header' => $header_default,
     ]
 ];
 
 
-// You should validate ALL inputs. i.e. $_POST/$_GET/$_COOKIE/$_FILES/$_SERVER or apache_get_headers().
+// You should validate ALL request inputs — $_POST/$_GET/$_COOKIE/$_FILES,
+// the relevant $_SERVER entries, and apache_request_headers() — not just the
+// fields your business logic happens to read this minute.
 $my_inputs = ['post' => $POST, 'get' => $GET, 'header' => $HEADER];
 
-// Let's validate them all at once!
-// OO API one liner
-// $result = (new Validate)->validate($my_input, $specs, VALIDATE_OPT_DISABLE_EXCEPTION);
+// Validate the full request in a single call.
+// Equivalent OO one-liner (no need to keep a $ctx):
+//   $result = (new Validate)->validate($my_inputs, $specs, VALIDATE_OPT_DISABLE_EXCEPTION);
 $inputs = validate($ctx, $my_inputs, $specs, 0);
-var_dump($inputs, $ctx->getStatus()); // Validation success!
+var_dump($inputs, $ctx->getStatus()); // true on success.
 
-// Unvalidated inputs remains in $my_inputs
+// Any keys NOT consumed by $specs remain in $my_inputs (validate() unsets
+// keys as it validates them). Pass VALIDATE_OPT_KEEP_INPUTS to disable this.
 var_dump($my_inputs);
 
-// You may validate extra values by default validation spec
+// Second pass — validate the leftover, optional parameters with looser rules.
 $extras = validate($ctx, $my_inputs, $default_specs, 0);
 
 
-// Developers MUST log errors from validation Exception and/or Errors.
-// If action, such as force user to logout, is possible, you should do it.
+// Always log validation failures. A failed input validation almost always
+// indicates a misbehaving client or an attacker — when a stronger response
+// is appropriate (forcing logout, throttling, blocking an IP), take it.

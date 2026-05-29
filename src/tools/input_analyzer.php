@@ -1,18 +1,28 @@
 #!/usr/bin/env php
 <?php
 /**
- * Simple input analyzer.
+ * Spec generator: consumes the per-request logs written by input_logger.php
+ * and emits a Validate PHP spec covering the observed traffic.
  *
- * Execute script, "php input_analyzer.php /path/to/log_dir"
+ * Pipeline:
+ *   1. analyze_log()      — walk every *-log.php, fold each request into $stat
+ *   2. create_stat()      — dump the raw $stat array to stat.php (debug aid)
+ *   3. optimize_stat()    — turn observation counters into final flag/range hints
+ *   4. create_spec()      — translate $stat into spec.php for input_validator.php
+ *
+ * Usage: php input_analyzer.php [/path/to/log_dir]
+ *        log_dir defaults to /var/tmp/validate
  */
 require_once __DIR__.'/../Validate.php';
 
 $spec_path = '/var/tmp/validate';
 
+// Stat-array keys live in their own namespace so they cannot collide with
+// VALIDATE_ID / VALIDATE_FLAGS / VALIDATE_OPTIONS used by real specs.
 define('VALIDATE_VALUES', 'values');
 define('VALIDATE_TYPES', 'types');
 define('VALIDATE_COUNT', 'count');
-define('VALIDATE_MAX_VALUES', 999); // Max number of values keep in log analysis.
+define('VALIDATE_MAX_VALUES', 999); // Distinct sample values kept per node (caps memory growth).
 define('VALIDATE_ASCII_MAP', 'ascii_map');
 
 $log_dir = $argv[1] ?? $spec_path ;
@@ -61,7 +71,7 @@ Usage: {$argv[0]} [/path/to/log_dir]
 }
 
 
-/* Log Aanalyzer */
+/* Log Analyzer */
 
 /**
  * Log analyzer wrapper
@@ -89,7 +99,8 @@ function analyze_log($log_dir)
 
 
 /**
- * Recursively analyze input data.
+ * Walk one request's input tree, folding it into the running $stat node.
+ * Tracks min/max element count, then descends into each child key.
  */
 function analyze_log_impl(&$stat, $inputs)
 {
@@ -219,12 +230,20 @@ function analyze_string_log(&$stat, $input)
 }
 
 
+/**
+ * Build per-byte frequency map for a string value.
+ *
+ * Slot 0..126 = exact ASCII byte counts (used by optimize_string_stat() to
+ *               decide which VALIDATE_STRING_* flags to enable).
+ * Slot 127    = bucket for any non-ASCII byte (>= 0x7F). Presence here later
+ *               triggers VALIDATE_STRING_MB.
+ */
 function analyze_string_ascii_map(&$stat, $input)
 {
     assert(is_string($input));
 
     $map = array_fill(0, 128, 0);
-    $tmp = $stat[VALIDATE_ASCII_MAP] ?? array(); // Set previously found chars
+    $tmp = $stat[VALIDATE_ASCII_MAP] ?? array(); // Carry forward the counts from earlier samples.
     foreach ($tmp as $key => $val) {
         $map[$key] = $val;
     }
@@ -232,7 +251,7 @@ function analyze_string_ascii_map(&$stat, $input)
     for ($i = 0; $i < $len; $i++) {
         $ch = ord($input{$i});
         if ($ch >= 127) {
-            $map[127]++;
+            $map[127]++; // Bucket every non-ASCII byte together.
         } else {
             $map[$ch]++;
         }
@@ -241,9 +260,16 @@ function analyze_string_ascii_map(&$stat, $input)
 }
 
 
+/**
+ * Record the type and value seen at this node so optimize_*_stat() can
+ * later choose ranges and flags. Distinct values are capped at
+ * VALIDATE_MAX_VALUES to keep memory and the dumped stat.php finite.
+ */
 function analyze_store_values(&$stat, $input)
 {
     if (is_array($input)) {
+        // For arrays, fold the key set into a single "shape" key so we still
+        // count distinct array-shapes without storing every nested value.
         $in = join("\b", array_keys($input));
     } else {
         $in = $input;
@@ -258,7 +284,8 @@ function analyze_store_values(&$stat, $input)
     $stat[VALIDATE_VALUES][$in]++;
     $stat[VALIDATE_COUNT]++;
 
-    // Remove excessive values
+    // Cap stored distinct values. array_pop drops an arbitrary entry, which is
+    // fine: the goal is bounded memory, not a representative sample.
     if (count($stat[VALIDATE_VALUES]) > VALIDATE_MAX_VALUES) {
         array_pop($stat[VALIDATE_VALUES]);
     }
@@ -266,7 +293,13 @@ function analyze_store_values(&$stat, $input)
 
 
 
-/* Stat optimizer */
+/* ============================================================
+ * Stat optimizer
+ *
+ * Translates raw observation counters (lmin/lmax, ascii_map, ...) into the
+ * final per-node values (omin/omax/oflags) that create_*_spec() will copy
+ * into the generated spec.
+ * ============================================================ */
 
 function optimize_stat(&$stat)
 {
@@ -290,6 +323,11 @@ function optimize_stat_recursive(&$stat)
 }
 
 
+/**
+ * Increment heuristic "hint" counters from the parameter name and observed
+ * values. These hints are reported in stat.php as a debugging aid; they do
+ * not yet feed back into the generated spec (see README TODO list).
+ */
 function optimize_stat_hint(&$stat, $key)
 {
     if (preg_match('/mail/i', $key)) {
@@ -398,13 +436,14 @@ function optimize_scalar_stat(&$stat)
     return;
 }
 
-/**
- * Do some optimization
- * TODO Add real optimization
+/*
+ * Range optimizers — pick min/max for the generated spec from the observed
+ * range. Currently very conservative: ints and floats fall back to the full
+ * domain because traffic alone can't safely bound them. TODO: tighten this
+ * once the generator is confident the observed range is representative.
  */
 function optimize_int_stat(&$stat)
 {
-    // Cannot automatically set reliable range
     $stat[VALIDATE_OPTIONS]['omin'] = PHP_INT_MIN;
     $stat[VALIDATE_OPTIONS]['omax'] = PHP_INT_MAX;
 }
@@ -412,15 +451,23 @@ function optimize_int_stat(&$stat)
 
 function optimize_float_stat(&$stat)
 {
-    // Cannot automatically set reliable range
     $stat[VALIDATE_OPTIONS]['omin'] = -INF;
     $stat[VALIDATE_OPTIONS]['omax'] = INF;
 }
 
 
+/**
+ * Choose length bounds and character flags for a string node.
+ *
+ * Length: bucketed by the longest observed value, giving headroom over the
+ * largest seen sample (a strict max would cause false rejects on natural
+ * variance after deployment).
+ * Flags : derived from VALIDATE_ASCII_MAP — only character classes that
+ *         actually appeared in traffic are enabled, so the generated spec
+ *         stays as restrictive as the data allows.
+ */
 function optimize_string_stat(&$stat)
 {
-    // Cannot automatically set reliable length
     $stat[VALIDATE_OPTIONS]['omin'] = 0;
     if ($stat[VALIDATE_OPTIONS]['lmax'] > 300) {
         $stat[VALIDATE_OPTIONS]['omax'] = 1024*256;
@@ -448,7 +495,10 @@ function optimize_string_stat(&$stat)
 
 
 /**
- * Create stat file
+ * Persist the raw $stat tree as PHP source.
+ *
+ * The file is for human inspection and rerunning the optimizer; it is NOT
+ * consumed at validation time (input_validator.php only loads spec.php).
  */
 function create_stat($stat_file, $stat)
 {
@@ -461,10 +511,15 @@ function create_stat($stat_file, $stat)
 }
 
 
-/* Create SPEC */
+/* ============================================================
+ * Spec emitter
+ *
+ * Translates the optimized $stat tree into a Validate PHP spec and writes
+ * it to disk as PHP source. input_validator.php loads this file directly.
+ * ============================================================ */
 
 /**
- * Create SPEC file
+ * Walk every endpoint in $stat, build a matching spec, and dump as PHP source.
  */
 function create_spec($spec_file, $stat)
 {
@@ -499,7 +554,9 @@ function create_spec_recursive(&$spec, $stat)
     $spec[VALIDATE_ID] = VALIDATE_ARRAY;
     $spec[VALIDATE_FLAGS] = VALIDATE_FLAG_NONE;
     $spec[VALIDATE_OPTIONS]['min'] = $stat[VALIDATE_OPTIONS]['lmin'];
-    // Allow 10 more extra vars because number of elements is not reliable.
+    // +10 slack on the upper element count: real traffic almost never sees
+    // every optional parameter, so a strict max would cause false rejects.
+    // See README TODO list — replace with proper optional-param detection.
     $spec[VALIDATE_OPTIONS]['max'] = $stat[VALIDATE_OPTIONS]['lmax'] + 10;
     $params = [];
     foreach ($stat[VALIDATE_PARAMS] as $key => $val) {
@@ -510,7 +567,7 @@ function create_spec_recursive(&$spec, $stat)
 }
 
 /**
- * Create spec from stat data
+ * Dispatch a scalar stat node to the matching per-type spec builder.
  */
 function create_scalar_spec($spec, $stat)
 {

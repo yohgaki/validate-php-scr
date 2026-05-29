@@ -1,17 +1,16 @@
 <?php
 /**
- * Simple yet flexible, powerful and reasonably fast input validator
- * that provides basic validation framework for fancy/complex validations.
+ * Simple yet flexible, powerful, and reasonably fast input validator that
+ * provides a basic validation framework for complex validations.
  *
- * Name space is not used intentionally. This function is
- * designed to be compatible with "validate" PHP module
- * written by C.
+ * Namespaces are intentionally NOT used. These procedural wrappers mirror
+ * the API of the planned "validate" PHP C extension; keeping the same
+ * structure/naming makes the future port to C easier.
  *
- * This code is trying to keep common structure/name with C module.
- * Therefore, this code is not aim to have optimal OO design, but
- * optimal Procedural design that has full access to module globals.
+ * The code optimizes for a procedural shape (with full access to module
+ * globals) rather than an idiomatic OO design.
  *
- * PHP Version 7.0 or up
+ * PHP Version 8.0 or higher.
  *
  * https://github.com/yohgaki/validate-php-scr
  *
@@ -25,11 +24,11 @@ require_once __DIR__.'/Validate.php';
 
 
 /**
- * Initialize validate object(it may be resource in C module)
+ * Initialize a Validate context. (Will be a resource handle in the future C module.)
  *
- * @param mixed $root_name Root variable name. Root variable name is unknown to program.
+ * @param string $root_name Root variable name shown in error reports.
  *
- * @return array The context for Validate.
+ * @return Validate Fresh Validate context object.
  */
 function validate_init($root_name = 'ROOT')
 {
@@ -40,14 +39,23 @@ function validate_init($root_name = 'ROOT')
 
 
 /**
- * This function expect correct $specs array for maximum efficiency.
+ * Validate inputs against a spec.
  *
- * @param array    $ctx  Validate context.
- * @param mixed    $inputs    Scalar or array values. Validated elements are removed.
- * @param array    $specs     Spec array.
- * @param int      $func_opts Bit function flags controls function behaviors.
+ * Primary entry point of the framework. By default this also checks the spec
+ * format itself (VALIDATE_OPT_CHECK_SPEC) — leave that on while developing,
+ * then drop it in production for speed once the specs are known to be correct.
  *
- * @return mixed Validated values.
+ * $inputs is passed by reference: keys that pass validation are unset, so
+ * after the call $inputs holds only the leftover (unvalidated) input. This
+ * lets a caller validate a request in multiple stages or detect unexpected
+ * extra parameters. Pass VALIDATE_OPT_KEEP_INPUTS to keep $inputs untouched.
+ *
+ * @param Validate|null $ctx       Validate context. If null, a fresh one is created and assigned back.
+ * @param mixed         $inputs    Scalar or array of inputs. Validated elements are removed by reference.
+ * @param array         $specs     Spec array. See validate_spec() for the format.
+ * @param int           $func_opts Bitmask of VALIDATE_OPT_* flags controlling function behavior.
+ *
+ * @return mixed Validated value(s), or null on failure when exceptions are disabled.
  */
 function validate(&$ctx, &$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
 {
@@ -79,9 +87,12 @@ function validate(&$ctx, &$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
 
 
 /**
- * Get validation status
+ * Get the overall validation status of a context.
  *
- * @param array $ctx  The context.
+ * @param Validate $ctx The Validate context.
+ *
+ * @return bool|null True if all validations passed, false on failure,
+ *                   null if validate() has not been called yet.
  */
 function validate_get_status($ctx)
 {
@@ -91,10 +102,12 @@ function validate_get_status($ctx)
 
 
 /**
- * Set error level.
+ * Set the PHP error level used when a hard validation error is dispatched.
  *
- * @param array $ctx  The context.
- * @param int   $level     Error level. E_USER_*
+ * @param Validate $ctx   The Validate context.
+ * @param int      $level Error level constant. One of E_USER_ERROR / E_USER_WARNING / E_USER_NOTICE.
+ *
+ * @return null
  */
 function validate_set_error_level($ctx, $level)
 {
@@ -104,11 +117,10 @@ function validate_set_error_level($ctx, $level)
 
 
 /**
- * This function provides user land validation error handling.
- * This function should be used with "callback" validator.
+ * Report a user-land validation error. Intended for use from "callback" validators.
  *
- * @param array  $ctx  The context.
- * @param string $message   Error message.
+ * @param Validate $ctx     The Validate context.
+ * @param string   $message Error message to record.
  *
  * @return null
  */
@@ -122,11 +134,10 @@ function validate_error($ctx, $message)
 
 
 /**
- * This function provides user land validation error handling.
- * This function should be used with "callback" validator.
+ * Report a user-land validation warning. Intended for use from "callback" validators.
  *
- * @param array  $ctx  The context.
- * @param string $message   Error message.
+ * @param Validate $ctx     The Validate context.
+ * @param string   $message Warning message to record.
  *
  * @return null
  */
@@ -140,11 +151,10 @@ function validate_warning($ctx, $message)
 
 
 /**
- * This function provides user land validation error handling.
- * This function should be used with "callback" validator.
+ * Report a user-land validation notice. Intended for use from "callback" validators.
  *
- * @param array  $ctx  The context.
- * @param string $message   Error message.
+ * @param Validate $ctx     The Validate context.
+ * @param string   $message Notice message to record.
  *
  * @return null
  */
@@ -158,11 +168,12 @@ function validate_notice($ctx, $message)
 
 
 /**
- * Get system error messages.
+ * Get system error messages recorded by the validator itself
+ * (broken types, length violations, illegal characters, etc.).
  *
- * @param $validate Validate object
+ * @param Validate $ctx The Validate context.
  *
- * @return array
+ * @return array Bucketed errors: ['error' => [...], 'warning' => [...], 'notice' => [...]].
  */
 function validate_get_system_errors($ctx)
 {
@@ -172,9 +183,13 @@ function validate_get_system_errors($ctx)
 
 
 /**
- * Get user defined error messages.
+ * Get user-defined messages reported via validate_error/_warning/_notice()
+ * or via the 'error_message' spec option. Use these for interactive form
+ * feedback while system errors stay internal.
  *
- * @return array
+ * @param Validate $ctx The Validate context.
+ *
+ * @return array Bucketed messages: ['error' => [...], 'warning' => [...], 'notice' => [...]].
  */
 function validate_get_user_errors($ctx)
 {
@@ -184,12 +199,12 @@ function validate_get_user_errors($ctx)
 
 
 /**
- * Set error logger function. To use this logger,
- * $func_opts should have VALIDATE_OPT_LOG_ERROR.
- * Default logger function is trigger_error().
+ * Set the error-logger callback. The logger is only invoked when
+ * VALIDATE_OPT_LOG_ERROR is set in $func_opts on the validate() call.
+ * Default behavior (with no custom logger registered) is trigger_error().
  *
- * @param array    $ctx    Validate context.
- * @param callable $logger_func Logger function must accept a string parameter for error message.
+ * @param Validate $ctx         The Validate context.
+ * @param callable $logger_func Callback taking a single string argument (the error message).
  *
  * @return null
  */
@@ -202,42 +217,44 @@ function validate_set_logger_function($ctx, $logger_func)
 
 
 /**
- * Check validate() function's input data specification array. ($specs)
+ * Validate the structure of a spec array itself (not the input data).
  *
- * Specs must have following structure:
-$specs =
-[
-    'POST' => [
-        VALIDATE_ARRAY, // int Validator ID
-        VALIDATE_FLAG_NONE, // int Validator Flags (Bit Mask)
-        ['min' => 0, 'max' => 20], // array Validator options. (string keys only)
-        [
-            'scalar_param' => [
-                VALIDATE_STRING, // Use Validator type int constant for ID
-                $flags, // Validator flags. e.g. VALIDATE_STRING_ALNUM | VALIDATE_STRING_LF
-                $options, // Validator options array. e.g. ['min' => 0, 'max' => 125]
-            ],
-            'array_param' => [ // Array parameter is allowed as nested spec.
-                VALIDATE_ARRAY,
-                $flags,
-                $options,
-                $params => [
-                    'scalar_param' => [
-                        VALIDATE_BOOL, // Define scalar param spec here
-                        $flags,
-                        $options,
-                    ],
-                ],
-            ],
-        ],
-    ],
-];
+ * Called automatically by validate() when VALIDATE_OPT_CHECK_SPEC is set
+ * (the default). Call it directly during development to surface spec errors
+ * before any input is touched.
  *
- * @param array $specs       Validation spec array.
- * @param array $unvalidated Optional. Sets not validated specs.
- * @param array $ctx    Optional context.
+ * A spec array uses integer offsets (VALIDATE_ID / VALIDATE_FLAGS /
+ * VALIDATE_OPTIONS / VALIDATE_PARAMS) so it can compile to a fixed-shape
+ * struct in the future C extension:
  *
- * @return bool TRUE for success, FALSE otherwise.
+ *   $specs = [
+ *       'POST' => [
+ *           VALIDATE_ARRAY,                  // [0] validator type
+ *           VALIDATE_FLAG_NONE,              // [1] bitmask of flags
+ *           ['amin' => 0, 'amax' => 20],     // [2] options (string keys)
+ *           [                                // [3] sub-specs for ARRAY/MULTI
+ *               'scalar_param' => [
+ *                   VALIDATE_STRING,
+ *                   VALIDATE_STRING_ALNUM | VALIDATE_STRING_LF,
+ *                   ['min' => 0, 'max' => 125],
+ *               ],
+ *               'array_param' => [           // Nested arrays are allowed.
+ *                   VALIDATE_ARRAY,
+ *                   VALIDATE_FLAG_NONE,
+ *                   [],
+ *                   [
+ *                       'flag' => [VALIDATE_BOOL, VALIDATE_BOOL_01, []],
+ *                   ],
+ *               ],
+ *           ],
+ *       ],
+ *   ];
+ *
+ * @param array         $specs       Validation spec array to check.
+ * @param array|null    $unvalidated Output. Receives entries from $specs that could not be checked.
+ * @param Validate|null $ctx         Optional context. A fresh one is created if null.
+ *
+ * @return bool true if the spec is well-formed, false otherwise.
  */
 function validate_spec($specs, &$unvalidated = null, &$ctx = null)
 {

@@ -1,10 +1,12 @@
 <?php
 /**
  * Somewhat realistic web app input validation example.
- * e.g. Start CLI web server like "php -S 127.0.0.1:8888", then
- * access http://127.0.0.1:8888/00-validate-web.php with your browser.
  *
- * All web apps must validate all inputs including HTTP headers.
+ * To try it: start the CLI web server with
+ *     php -S 127.0.0.1:8888 -t src/examples
+ * then open http://127.0.0.1:8888/99-web.php in your browser.
+ *
+ * Every web app must validate every input, including HTTP headers.
  */
 
 // Define validate(), etc.
@@ -13,21 +15,22 @@ require_once __DIR__.'/../validate_func.php';
 // Load parameter spec definitions
 require_once __DIR__.'/99-web-specs.php';
 
-// Now you can combine above predefined parameter specs to a request validation spec.
+// Compose the per-field specs (loaded above) into a request-level spec.
+// Each spec array follows the [type, flags, options, sub-specs] layout.
 $spec1 = [
-    VALIDATE_ARRAY,           // 1st should be Validator type.
-    VALIDATE_FLAG_NONE,       // 2nd should be validator flags.
-    ['min' => 3, 'max' => 3], // 3rd should be validator options.
-    [                         // 4th is "Array" parameter definition.
-        'get' => [            // GET parameter may have 0 to 2 parameters.
+    VALIDATE_ARRAY,           // [0] validator type
+    VALIDATE_FLAG_NONE,       // [1] flag bitfield
+    ['min' => 3, 'max' => 3], // [2] options — exactly three top-level groups
+    [                         // [3] sub-specs (VALIDATE_PARAMS slot)
+        'get' => [            // Query string: 0..2 declared params.
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
             ['min' => 0, 'max' => 2],
             [
-                'debug' => $debug, // Rejected parameter
+                'debug' => $debug, // VALIDATE_FLAG_REJECT — request fails if 'debug' is present.
             ]
         ],
-        'post' => [           // POST parameters
+        'post' => [           // Form body — 6..7 declared fields.
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
             ['min' => 6, 'max' => 7],
@@ -40,7 +43,8 @@ $spec1 = [
                 'comment'  => $comment,
             ],
         ],
-        'header' => [ // Headers are validated by multi phase validations.
+        'header' => [ // HTTP headers — stage 1 only handles the known ones.
+                      // Stage 2 ($spec2 below) catches everything else.
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
             ['min' => 2, 'max' => 50],
@@ -52,11 +56,14 @@ $spec1 = [
     ],
 ];
 
-// 2nd validation for headers. Just check RFC conformance w/o UTF chars.
+// Stage 2: catch-all spec for headers that $spec1 did not consume.
+// VALIDATE_FLAG_ARRAY applies $basicTypes['header1024'] to every leftover
+// entry; VALIDATE_FLAG_ARRAY_KEY_ALNUM bounds the allowed key names.
+// Accepts ASCII RFC-conformant header values (no UTF-8 multibyte).
 $tmp = $basicTypes['header1024'];
-$tmp[VALIDATE_FLAGS] |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM; // Validate headers as array.
-$tmp[VALIDATE_OPTIONS]['amin'] = 10; // At least 10 headers.
-$tmp[VALIDATE_OPTIONS]['amax'] = 50;  // At most 50 headers.
+$tmp[VALIDATE_FLAGS] |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
+$tmp[VALIDATE_OPTIONS]['amin'] = 10; // Require at least 10 leftover headers (realistic browser baseline).
+$tmp[VALIDATE_OPTIONS]['amax'] = 50; // Reject obviously bloated header sets.
 $spec2 = $tmp;
 
 ?>
@@ -74,14 +81,15 @@ $spec2 = $tmp;
         "Form/Logic and Output" validations and works perfectly well with them.
     </p>
     <p>
-        This is an form validation example, but it also validates any other inputs for
-        apps. i.e. HTTP headers, GET parameters. Try adding "?debug=1" to query(URL/GET) parameter
-        and more than 3 parameters.
+        This is a form validation example, but it also validates everything
+        else a web app receives (HTTP headers, GET parameters, ...). Try
+        appending "?debug=1" to the URL, or adding more than 3 GET parameters,
+        to see those validations fire.
     </p>
     <p>
         <ul>
         <li><a href="https://github.com/yohgaki/validate-php-scr">Validate PHP - Script Version</a></li>
-        <li><a href="https://github.com/yohgaki/validate-php-scr/blob/master/src/examples/00-validate-web.php">Source Code</a></li>
+        <li><a href="https://github.com/yohgaki/validate-php-scr/blob/master/src/examples/99-web.php">Source Code</a></li>
         </ul>
     </p>
     </div>
@@ -103,23 +111,28 @@ $spec2 = $tmp;
      <pre>
 <?php
 if (!empty($_POST)):
-    // Unset some sensitive vars so that this can be exposed to internet.
+    // Strip the noisier $_SERVER entries so the rendered page is safe to share.
     unset($_SERVER['DOCUMENT_ROOT'], $_SERVER['SERVER_SOFTWARE'], $_SERVER['SCRIPT_FILENAME'], $_SERVER['CONTEXT_DOCUMENT_ROOT']);
 
-    // You should validate ALL inputs. i.e. $_POST/$_GET/$_COOKIE/$_FILES/$_SERVER or apache_request_headers().
+    // Validate ALL inputs the request brings in — $_POST, $_GET, $_COOKIE,
+    // $_FILES, the $_SERVER HTTP_* entries, apache_request_headers(). This
+    // example covers GET / POST / headers; cookies and files would be added
+    // the same way.
     $inputs = ['get' => $_GET, 'post' => $_POST, 'header' => $_SERVER];
 
-    // Let's validate them with multiple validations.
-    // At first, validate as script as possible.
-    $result1 =validate($ctx, $inputs, $spec1, VALIDATE_OPT_DISABLE_EXCEPTION);
+    // Two-stage validation pattern.
+    // Stage 1: enforce the strict $spec1. Validated values are removed from
+    // $inputs (the engine unsets them by reference).
+    $result1 = validate($ctx, $inputs, $spec1, VALIDATE_OPT_DISABLE_EXCEPTION);
     $status1 = $ctx->getStatus();
     $partial_result1 = $ctx->getValidated();
-    // Secondary, validate remaining headers with loose spec.
-    $result2 =validate($ctx, $inputs['header'], $spec2, VALIDATE_OPT_DISABLE_EXCEPTION);
+    // Stage 2: catch headers $spec1 left behind using the loose $spec2.
+    // Without this, unexpected headers would slip past the trust boundary.
+    $result2 = validate($ctx, $inputs['header'], $spec2, VALIDATE_OPT_DISABLE_EXCEPTION);
     $status2 = $ctx->getStatus();
     $partial_result2 = $ctx->getValidated();
-    // OO API one liner
-    //$result = (new Validate)->validate($inputs, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
+    // Equivalent OO one-liner (no separate $ctx):
+    //   $result = (new Validate)->validate($inputs, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 ?>
 
 <hr />
@@ -144,26 +157,22 @@ if (!empty($_POST)):
 <?php echo htmlspecialchars(print_r(['get' => $_GET, 'post' => $_POST, 'header' => $_SERVER], true)); ?>
 <br />
 <h1>UNVALIDATED INPUTS</h1>
-NOTE: You should try to <b>validate all inputs as strict as possible</b>.
-This example is bad because it does not validate "submit" and "GET"
-parameters.
+NOTE: You should always <b>validate every input as strictly as possible</b>.
+This example is intentionally a bit loose — it skips strict validation of
+the "submit" button and miscellaneous GET parameters.
 <br />
 <?php echo htmlspecialchars(print_r($inputs, true)); ?>
 <br />
 <h1>VALIDATED RESULTS</h1>
-TIP: HTTP headers are most problematic inputs because you cannot be
-sure what HTTP headers will be set.
+TIP: HTTP headers are awkward inputs because you can't be certain which
+headers any given client will send.
 
-Since validate() removes validated inputs, you can perform strict
-validation for "Headers always exist" by preceding spec. Then, you may
-validate the rest by non strict validation spec applied later at once.
+Since validate() removes validated inputs, the recommended pattern is:
+1) strictly validate the headers you expect ("always-present" ones) first,
+2) then catch any remaining headers with a loose validation spec.
 
-Or simply ignore unneeded headers at 1st validate call, then check the
-rest by 2nd validate() call.
-
-Latter is my recommendation because you are better off if "<b>You only have
-strictly validated inputs that are needed for the processing code, and
-validate all inputs</b>".
+This way, downstream code <b>only ever sees strictly validated values for
+the inputs it needs</b>, while every other input still gets validated.
 <br />
 <h3> Validation #1 </h3>
 <h4> Validation result: (Empty when validation error)</h4>
