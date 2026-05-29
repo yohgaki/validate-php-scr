@@ -1,14 +1,17 @@
 language: php
 php:
-  - '8.4'
-  - '8.3'
-  - '8.2'
-  - '8.1'
   - '8.0'
-  - nightly
+  - '8.1'
+  - '8.2'
+  - '8.3'
+  - '8.4'
+
+addons:
+  apt:
+    packages:
+      - libgmp-dev
 
 before_script:
-  - curl -sSfL -o run-tests.php https://raw.githubusercontent.com/php/php-src/master/run-tests.php
-  - chmod 755 run-tests.php
+  - php -m | grep -E 'bcmath|gmp|mbstring'
 
-script: cd src; ../run-tests.php -p `which php` --show-diff tests
+script: cd src && php run-tests.php -p $(which php) --show-diff tests
