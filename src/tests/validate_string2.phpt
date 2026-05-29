@@ -113,5 +113,4 @@ Array
         )
 
 )
-
-Fatal error: Invalid validation spec detected. Fix spec errors first. in %s/src/validate_func.php on line %d
+Invalid validation spec detected. Fix spec errors first.

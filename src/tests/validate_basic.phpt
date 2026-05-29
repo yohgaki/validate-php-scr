@@ -12,6 +12,14 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
+ob_start(function($output) {
+    return preg_replace(
+        '/object\(Closure\)#(\d+) \(\d+\) \{\n(?:[ ]+\["(?:name|file|line)"\]=>\n[ ]+[^\n]+\n){3}/',
+        "object(Closure)#$1 (1) {\n",
+        $output
+    );
+});
+
 echo "**** VALIDATE_BOOL ****\n";
 // Value to be validated.
 $bool = 't';
@@ -540,7 +548,7 @@ array(4) {
 bool(false)
 
 ** Validate object **
-object(Validate)#1 (17) {
+object(Validate)#2 (16) {
   ["validate_params_checked"]=>
   bool(false)
   ["spec_params_checked"]=>
@@ -652,7 +660,7 @@ object(Validate)#1 (17) {
             ["ascii"]=>
             string(6) "abcdef"
             ["callback"]=>
-            object(Closure)#3 (1) {
+            object(Closure)#4 (1) {
               ["parameter"]=>
               array(3) {
                 ["$ctx"]=>
@@ -1047,8 +1055,6 @@ object(Validate)#1 (17) {
   bool(true)
   ["loggerFunction":"Validate":private]=>
   NULL
-  ["params_checked"]=>
-  bool(true)
 }
 **** test #2 *****
 
@@ -1064,7 +1070,7 @@ array(2) {
 bool(true)
 
 ** Validate object **
-object(Validate)#1 (17) {
+object(Validate)#2 (16) {
   ["validate_params_checked"]=>
   bool(false)
   ["spec_params_checked"]=>
@@ -1177,7 +1183,7 @@ object(Validate)#1 (17) {
             ["ascii"]=>
             string(6) "abcdef"
             ["callback"]=>
-            object(Closure)#3 (1) {
+            object(Closure)#4 (1) {
               ["parameter"]=>
               array(3) {
                 ["$ctx"]=>
@@ -1568,8 +1574,6 @@ object(Validate)#1 (17) {
   bool(true)
   ["loggerFunction":"Validate":private]=>
   NULL
-  ["params_checked"]=>
-  bool(true)
 }
 
 **** VALIDATE_BOOL - multiple specs ****
@@ -1591,7 +1595,7 @@ array(4) {
 bool(true)
 
 ** Validate object **
-object(Validate)#1 (17) {
+object(Validate)#2 (16) {
   ["validate_params_checked"]=>
   bool(false)
   ["spec_params_checked"]=>
@@ -1712,7 +1716,7 @@ object(Validate)#1 (17) {
             ["ascii"]=>
             string(6) "abcdef"
             ["callback"]=>
-            object(Closure)#3 (1) {
+            object(Closure)#4 (1) {
               ["parameter"]=>
               array(3) {
                 ["$ctx"]=>
@@ -2107,8 +2111,6 @@ object(Validate)#1 (17) {
   bool(true)
   ["loggerFunction":"Validate":private]=>
   NULL
-  ["params_checked"]=>
-  bool(true)
 }
 **** test #2 *****
 
@@ -2128,7 +2130,7 @@ array(4) {
 bool(true)
 
 ** Validate context **
-object(Validate)#1 (17) {
+object(Validate)#2 (16) {
   ["validate_params_checked"]=>
   bool(false)
   ["spec_params_checked"]=>
@@ -2249,7 +2251,7 @@ object(Validate)#1 (17) {
             ["ascii"]=>
             string(6) "abcdef"
             ["callback"]=>
-            object(Closure)#3 (1) {
+            object(Closure)#4 (1) {
               ["parameter"]=>
               array(3) {
                 ["$ctx"]=>
@@ -2644,8 +2646,6 @@ object(Validate)#1 (17) {
   bool(true)
   ["loggerFunction":"Validate":private]=>
   NULL
-  ["params_checked"]=>
-  bool(true)
 }
 **** test #3 *****
 
@@ -2665,7 +2665,7 @@ array(4) {
 bool(true)
 
 ** Validate object **
-object(Validate)#1 (17) {
+object(Validate)#2 (16) {
   ["validate_params_checked"]=>
   bool(false)
   ["spec_params_checked"]=>
@@ -2786,7 +2786,7 @@ object(Validate)#1 (17) {
             ["ascii"]=>
             string(6) "abcdef"
             ["callback"]=>
-            object(Closure)#3 (1) {
+            object(Closure)#4 (1) {
               ["parameter"]=>
               array(3) {
                 ["$ctx"]=>
@@ -3267,6 +3267,4 @@ object(Validate)#1 (17) {
   bool(true)
   ["loggerFunction":"Validate":private]=>
   NULL
-  ["params_checked"]=>
-  bool(true)
 }

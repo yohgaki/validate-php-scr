@@ -200,6 +200,7 @@ class Validate
         assert(is_string($root_name));
 
         $this->validate_params_checked = false;
+        $this->spec_params_checked = false;
         $this->status = null;
         $this->validated = null;
         $this->error_level = E_USER_ERROR;
@@ -538,6 +539,52 @@ class Validate
 
 
     /************** private methods - validator helpers ****************/
+
+    /**
+     * Compare two integer values (or integer strings for large ints).
+     * Uses bccomp if available, GMP if available, or pure PHP fallback.
+     *
+     * @return int -1, 0, or 1
+     */
+    private static function bigintCmp($a, $b): int
+    {
+        if (is_int($a) && is_int($b)) {
+            return $a <=> $b;
+        }
+        if (function_exists('bccomp')) {
+            return bccomp((string)$a, (string)$b);
+        }
+        if (extension_loaded('gmp')) {
+            return gmp_cmp((string)$a, (string)$b);
+        }
+        // Pure PHP fallback for integer string comparison
+        $a = (string)$a;
+        $b = (string)$b;
+        $aneg = ($a !== '' && $a[0] === '-');
+        $bneg = ($b !== '' && $b[0] === '-');
+        if ($aneg !== $bneg) {
+            return $aneg ? -1 : 1;
+        }
+        if ($aneg) {
+            $a = ltrim(substr($a, 1), '0') ?: '0';
+            $b = ltrim(substr($b, 1), '0') ?: '0';
+            $la = strlen($a);
+            $lb = strlen($b);
+            if ($la !== $lb) {
+                return $la < $lb ? 1 : -1;
+            }
+            return strcmp($b, $a) <=> 0;
+        }
+        $a = ltrim($a, '0') ?: '0';
+        $b = ltrim($b, '0') ?: '0';
+        $la = strlen($a);
+        $lb = strlen($b);
+        if ($la !== $lb) {
+            return $la < $lb ? -1 : 1;
+        }
+        return strcmp($a, $b) <=> 0;
+    }
+
 
     /**
      * Check scalar.
@@ -1561,8 +1608,7 @@ class Validate
         assert(is_numeric($options['min']) || is_int($options['min']));
         assert(is_numeric($options['max']) || is_int($options['max']));
         assert($options['min'] <= $options['max']
-               || bccomp($options['min'], $options['max']) === -1
-               || bccomp($options['min'], $options['max']) === 0);
+               || self::bigintCmp($options['min'], $options['max']) <= 0);
 
         // Normal validation
         if (extension_loaded('gmp') && $value instanceof GMP) {
@@ -1629,7 +1675,7 @@ class Validate
 
         // Int type conversion is problematic with large values, especially on 32 bit platforms.
         if ($flags & VALIDATE_INT_AS_STRING) {
-            if (bccomp($ret, $min) === -1 || bccomp($ret, $max) === 1) {
+            if (self::bigintCmp($ret, $min) < 0 || self::bigintCmp($ret, $max) > 0) {
                 $this->internalError(
                     [
                         'message' => 'VALIDATE_INT: Out of defined range. min: "'. $min .'" max: "'. $max .'"',
@@ -3878,7 +3924,7 @@ class Validate
                             ]
                         );
                         $ret = false;
-                    } elseif (bccomp($options['min'], $options['max']) === 1) {
+                    } elseif (self::bigintCmp($options['min'], $options['max']) > 0) {
                         $this->specError(
                             [
                                 'message' => $vname.' must have valid "min" and "max" options. min: "'

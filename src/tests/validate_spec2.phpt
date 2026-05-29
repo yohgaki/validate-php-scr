@@ -230,4 +230,8 @@ array(3) {
   }
 }
 
-Fatal error: 1st parameter must be validation spec array. in %s/src/validate_func.php on line %d
+Fatal error: Uncaught InvalidArgumentException: 1st parameter must be validation spec array. in %s/src/validate_func.php:%d
+Stack trace:
+#0 %s/tests/validate_spec2.php(%d): validate_spec(%a)
+#1 {main}
+  thrown in %s/src/validate_func.php on line %d

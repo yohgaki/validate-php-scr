@@ -52,21 +52,17 @@ function validate_init($root_name = 'ROOT')
 function validate(&$ctx, &$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
 {
     if (!(is_null($ctx) || ($ctx instanceof Validate))) {
-        trigger_error('1st parameter is not a Validate context.', E_USER_ERROR);
-        return false;
+        throw new InvalidArgumentException('1st parameter is not a Validate context.');
     }
     if (!is_array($specs)) {
-        trigger_error('Spec must be array.', E_USER_ERROR);
-        return false;
+        throw new InvalidArgumentException('Spec must be array.');
     } elseif (($func_opts & VALIDATE_OPT_CHECK_SPEC)
          && !validate_spec($specs, $r, $tmp)) {
         print_r($tmp->getSystemErrors());
-        trigger_error('Invalid validation spec detected. Fix spec errors first.', E_USER_ERROR);
-        return false;
+        throw new InvalidArgumentException('Invalid validation spec detected. Fix spec errors first.');
     }
     if (!is_int($func_opts)) {
-        trigger_error('Function option must be int.', E_USER_ERROR);
-        return false;
+        throw new InvalidArgumentException('Function option must be int.');
     }
 
     //assert(validate_spec($specs));
@@ -75,7 +71,7 @@ function validate(&$ctx, &$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
         $ctx = new Validate();
     }
 
-    $ctx->params_checked = true;
+    $ctx->validate_params_checked = true;
     $validated = $ctx->validate($inputs, $specs, $func_opts);
 
     return $validated;
@@ -246,17 +242,15 @@ $specs =
 function validate_spec($specs, &$unvalidated = null, &$ctx = null)
 {
     if (!is_array($specs)) {
-        trigger_error('1st parameter must be validation spec array.', E_USER_ERROR);
-        return false;
+        throw new InvalidArgumentException('1st parameter must be validation spec array.');
     }
     if (is_null($ctx)) {
         $ctx = new Validate;
     } elseif (!($ctx instanceof Validate)) {
-        trigger_error('3rd parameter must be instance of Validate object.', E_USER_ERROR);
-        return false;
+        throw new InvalidArgumentException('3rd parameter must be instance of Validate object.');
     }
-    $ctx->params_checked = true;
+    $ctx->spec_params_checked = true;
     $ret = $ctx->validateSpec($specs, $unvalidated, $ctx);
-    $ctx->params_checked = false;
+    $ctx->spec_params_checked = false;
     return $ret;
 }

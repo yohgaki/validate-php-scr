@@ -81,7 +81,7 @@ var_dump(validate_get_user_errors($ctx));
 // System errors have more info related to error.
 var_dump(validate_get_system_errors($ctx));
 ?>
---EXPECT--
+--EXPECTF--
 float(0)
 bool(true)
 float(-1000)
@@ -179,8 +179,8 @@ array(3) {
             ["max"]=>
             int(1000)
             ["filter"]=>
-            object(Closure)#1 (1) {
-              ["parameter"]=>
+            object(Closure)#%d (%d) {
+%a              ["parameter"]=>
               array(3) {
                 ["$ctx"]=>
                 string(10) "<required>"
