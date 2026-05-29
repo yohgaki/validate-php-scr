@@ -239,6 +239,148 @@ var_dump($request_headers, $request_headers_orig);
 
 [OWASP TOP 10 A10:2017](https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring) requires to validate all inputs. Although you are better to do stricter validations against headers, this validation is OWASP TOP 10 A10:2017 compliant HTTP request header validation.
 
+## Example #5: Validate all HTTP inputs ($_GET / $_POST / $_COOKIE / $_FILES) at once
+
+A realistic user-registration form receives data from multiple superglobals: a CSRF token in `$_GET`, the form fields in `$_POST`, a session identifier in `$_COOKIE`, and an avatar upload in `$_FILES`. All of them are untrusted and must be validated. "Validate" can verify the entire request in a single `validate()` call by nesting per-source specs under one `VALIDATE_ARRAY` spec.
+
+```php
+<?php
+require_once __DIR__.'/../validate_func.php';
+require_once __DIR__.'/../lib/basic_types.php'; // Defines $basicTypes
+
+// ---- Per-source specs -------------------------------------------------------
+
+// $_GET: only a CSRF token is expected (64-char lowercase hex, SHA-256).
+$getSpec = [
+    VALIDATE_ARRAY,
+    VALIDATE_FLAG_NONE,
+    ['min' => 1, 'max' => 1], // exactly 1 element
+    [
+        'csrf' => $basicTypes['hex64'],
+    ]
+];
+
+// $_POST: a registration form.
+$postSpec = [
+    VALIDATE_ARRAY,
+    VALIDATE_FLAG_NONE,
+    ['min' => 5, 'max' => 5],
+    [
+        'username' => [
+            VALIDATE_STRING, VALIDATE_STRING_ALNUM,
+            ['min' => 3, 'max' => 32, 'ascii' => '-_',
+             'error_message' => 'Username must be 3-32 chars (alnum, "-", "_").']
+        ],
+        'email'    => $basicTypes['email'],
+        'age'      => [
+            VALIDATE_INT, VALIDATE_FLAG_NONE,
+            ['min' => 13, 'max' => 120,
+             'error_message' => 'Age must be between 13 and 120.']
+        ],
+        'country'  => [
+            VALIDATE_REGEXP, VALIDATE_FLAG_NONE,
+            ['min' => 2, 'max' => 2,
+             'ascii' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+             'regexp' => '/\A(?:JP|US|GB|DE|FR)\z/', // ISO 3166-1 alpha-2 whitelist
+             'error_message' => 'Country must be one of: JP, US, GB, DE, FR.']
+        ],
+        'accepted_tos' => $basicTypes['accepted'], // "yes"/"on"/"1"/"true"
+    ]
+];
+
+// $_COOKIE: session id (PHP session.sid_length default is 32; tolerate 32-128).
+$cookieSpec = [
+    VALIDATE_ARRAY,
+    VALIDATE_FLAG_NONE,
+    ['min' => 1, 'max' => 4], // session + optional UX cookies
+    [
+        'PHPSESSID' => $basicTypes['sessid'],
+        'lang'      => array_replace($basicTypes['alpha_dash32'],
+                                     [VALIDATE_FLAGS => VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED]),
+        'theme'     => array_replace($basicTypes['alpha_dash32'],
+                                     [VALIDATE_FLAGS => VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED]),
+    ]
+];
+
+// $_FILES: single avatar upload. Each $_FILES[<name>] is itself an array of 5
+// keys: name, type, tmp_name, error, size. Validate every key.
+$uploadSpec = [
+    VALIDATE_ARRAY,
+    VALIDATE_FLAG_NONE,
+    ['min' => 5, 'max' => 5],
+    [
+        'name'     => [VALIDATE_STRING, VALIDATE_STRING_ALNUM,
+                       ['min' => 1, 'max' => 255, 'ascii' => '._-']],
+        'type'     => [VALIDATE_REGEXP, VALIDATE_FLAG_NONE,
+                       ['min' => 6, 'max' => 32,
+                        'ascii' => 'abcdefghijklmnopqrstuvwxyz/',
+                        'regexp' => '/\Aimage\/(?:jpeg|png|gif|webp)\z/']],
+        'tmp_name' => [VALIDATE_STRING, VALIDATE_STRING_ALNUM,
+                       ['min' => 1, 'max' => 4096, 'ascii' => '/_.-']],
+        'error'    => [VALIDATE_INT, VALIDATE_FLAG_NONE,
+                       ['min' => 0, 'max' => 8]], // UPLOAD_ERR_OK..UPLOAD_ERR_EXTENSION
+        'size'     => [VALIDATE_INT, VALIDATE_FLAG_NONE,
+                       ['min' => 1, 'max' => 5 * 1024 * 1024]], // up to 5 MiB
+    ]
+];
+
+$filesSpec = [
+    VALIDATE_ARRAY,
+    VALIDATE_FLAG_NONE,
+    ['min' => 1, 'max' => 1],
+    [
+        'avatar' => $uploadSpec,
+    ]
+];
+
+// ---- Top-level spec: validate every HTTP input source at once ---------------
+
+$spec = [
+    VALIDATE_ARRAY,
+    VALIDATE_FLAG_NONE,
+    ['min' => 4, 'max' => 4],
+    [
+        'get'    => $getSpec,
+        'post'   => $postSpec,
+        'cookie' => $cookieSpec,
+        'files'  => $filesSpec,
+    ]
+];
+
+// Bundle the four superglobals under matching keys.
+$inputs = [
+    'get'    => $_GET,
+    'post'   => $_POST,
+    'cookie' => $_COOKIE,
+    'files'  => $_FILES,
+];
+
+$func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // interactive form: collect errors
+$result = validate($ctx, $inputs, $spec, $func_opts);
+
+if (!validate_get_status($ctx)) {
+    // One or more inputs are invalid. Show user-facing errors back to the form.
+    $errors = validate_get_user_errors($ctx);
+    // $inputs now contains only the values that did NOT validate.
+    // Re-render the form with $errors.
+    // FAIL FAST for APPLICATION INPUT validation errors that no honest client
+    // would ever produce (broken types, oversized strings, etc.).
+    var_dump($errors);
+    exit;
+}
+
+// $result is a fully-typed, fully-validated nested array. Hand it to the
+// business-logic layer (model) without further input-shape checks.
+var_dump($result);
+```
+
+Key points:
+
+* **One call per request.** Nesting `VALIDATE_ARRAY` specs lets you validate every HTTP source in a single `validate()` call, so no input bypasses the trust boundary.
+* **`min`/`max` reject extra and missing keys.** Unknown `$_POST` fields or extra cookies become validation errors instead of being silently passed through.
+* **`$_FILES` is just a nested array.** Each upload's 5 keys (`name`, `type`, `tmp_name`, `error`, `size`) are validated like any other parameter; whitelist `type` against allowed MIME types and bound `size` explicitly. **Do not trust `type` for security decisions** — always re-check the uploaded file's content with `finfo_file()` before storing or serving it.
+* **Use `validate_get_user_errors($ctx)` for the form**, and let the application reject "impossible" inputs (wrong types, oversized strings) fast with no user-facing message, per the "FAIL FAST" principle.
+
 ## "APPLICATION INPUT" and "BUSINESS LOGIC" Data Validation Basics
 
 APPLICATION INPUT data validation and BUSINESS LOGIC data validation are **2 different validations**.
