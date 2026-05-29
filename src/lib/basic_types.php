@@ -3,74 +3,74 @@
 require_once __DIR__.'/../validate_defs.php';
 
 // Integers
-$B['int8'] = [
+$basicTypes['int8'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
     ['min' => -128, 'max' => 127]
 ];
 
-$B['uint8'] = [
+$basicTypes['uint8'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
     ['min' => 0, 'max' => 255]
 ];
 
-$B['int16'] = [
+$basicTypes['int16'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
     ['min' => -32768, 'max' => 32767]
 ];
 
-$B['uint16'] = [
+$basicTypes['uint16'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
     ['min' => 0, 'max' => 65535]
 ];
 
-$B['int32'] = [
+$basicTypes['int32'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
     ['min' => -2147483648, 'max' => 2147483647]
 ];
 
-$B['uint32'] = [
+$basicTypes['uint32'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
     ['min' => 0, 'max' => '4294967295']
 ];
 
 // int53 is max range that both 32/64 CPU can compute int correctly.
-$B['int53'] = [
+$basicTypes['int53'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
     ['min' => '-4503599627370496', 'max' => '4503599627370495']
 ];
 
-$B['uint53'] = [
+$basicTypes['uint53'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
     ['min' => 0, 'max' => '9007199254740992']
 ];
 
-$B['int64'] = [
+$basicTypes['int64'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
     ['min' => '-9223372036854775808', 'max' => '9223372036854775807']
 ];
 
-$B['uint64'] = [
+$basicTypes['uint64'] = [
     VALIDATE_INT,
     VALIDATE_INT_AS_STRING,
     ['min' => 0, 'max' => '73786976294838206463']
 ];
 
-$B['int128'] = [
+$basicTypes['int128'] = [
     VALIDATE_INT,
     VALIDATE_INT_AS_STRING,
     ['min' => '-170141183460469231731687303715884105728', 'max' => '170141183460469231731687303715884105727']
 ];
 
-$B['uint128'] = [
+$basicTypes['uint128'] = [
     VALIDATE_INT,
     VALIDATE_INT_AS_STRING,
     ['min' => 0, 'max' => '340282366920938463463374607431768211455']
@@ -78,18 +78,18 @@ $B['uint128'] = [
 
 // Adjust flags for 32 bit CPUs
 if (PHP_INT_SIZE === 4) {
-    $B['uint32'][2] = VALIDATE_INT_AS_STRING;
-    $B['int53'][2] = VALIDATE_INT_AS_STRING;
-    $B['uint53'][2] = VALIDATE_INT_AS_STRING;
-    $B['int64'][2] = VALIDATE_INT_AS_STRING;
-    $B['uint64'][2] = VALIDATE_INT_AS_STRING;
+    $basicTypes['uint32'][2] = VALIDATE_INT_AS_STRING;
+    $basicTypes['int53'][2] = VALIDATE_INT_AS_STRING;
+    $basicTypes['uint53'][2] = VALIDATE_INT_AS_STRING;
+    $basicTypes['int64'][2] = VALIDATE_INT_AS_STRING;
+    $basicTypes['uint64'][2] = VALIDATE_INT_AS_STRING;
 }
 
 // TEXT specs
 // Some of them assumes client side validation.
 
 // Password
-$B['password'] = [
+$basicTypes['password'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_SPACE,
     [
@@ -100,7 +100,7 @@ $B['password'] = [
 // Single line texts
 // Alphabets only line
 // You should set min/max by yourself to use 'alpha'.
-$B['alpha'] =  [
+$basicTypes['alpha'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALPHA,
     [
@@ -108,7 +108,7 @@ $B['alpha'] =  [
     ]
 ];
 
-$B['alpha32'] =  [
+$basicTypes['alpha32'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALPHA,
     [
@@ -116,7 +116,7 @@ $B['alpha32'] =  [
     ]
 ];
 
-$B['alpha64'] =  [
+$basicTypes['alpha64'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALPHA,
     [
@@ -124,7 +124,7 @@ $B['alpha64'] =  [
     ]
 ];
 
-$B['alpha128'] =  [
+$basicTypes['alpha128'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALPHA,
     [
@@ -132,7 +132,7 @@ $B['alpha128'] =  [
     ]
 ];
 
-$B['alpha256'] =  [
+$basicTypes['alpha256'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALPHA,
     [
@@ -142,7 +142,7 @@ $B['alpha256'] =  [
 
 // Alnum only line
 // You should set min/max by yourself to use 'alnum'.
-$B['alnum'] =  [
+$basicTypes['alnum'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -150,7 +150,7 @@ $B['alnum'] =  [
     ]
 ];
 
-$B['alnum32'] =  [
+$basicTypes['alnum32'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -158,7 +158,7 @@ $B['alnum32'] =  [
     ]
 ];
 
-$B['alnum64'] =  [
+$basicTypes['alnum64'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -166,7 +166,7 @@ $B['alnum64'] =  [
     ]
 ];
 
-$B['alnum128'] =  [
+$basicTypes['alnum128'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -174,7 +174,7 @@ $B['alnum128'] =  [
     ]
 ];
 
-$B['alnum256'] =  [
+$basicTypes['alnum256'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -185,7 +185,7 @@ $B['alnum256'] =  [
 
 // Multibyte UTF-8 text line - Includes all SYMBOLS(Space and Symbols except newlines), so this could be dangerous.
 // You should set min/max by yourself to use 'line'.
-$B['line'] =  [
+$basicTypes['line'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -193,7 +193,7 @@ $B['line'] =  [
     ]
 ];
 
-$B['line_s'] =  [
+$basicTypes['line_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -201,7 +201,7 @@ $B['line_s'] =  [
     ]
 ];
 
-$B['line32'] =  [
+$basicTypes['line32'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -209,7 +209,7 @@ $B['line32'] =  [
     ]
 ];
 
-$B['line32_s'] =  [
+$basicTypes['line32_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -217,7 +217,7 @@ $B['line32_s'] =  [
     ]
 ];
 
-$B['line64'] =  [
+$basicTypes['line64'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -225,7 +225,7 @@ $B['line64'] =  [
     ]
 ];
 
-$B['line64_s'] =  [
+$basicTypes['line64_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -233,7 +233,7 @@ $B['line64_s'] =  [
     ]
 ];
 
-$B['line128'] =  [
+$basicTypes['line128'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -241,7 +241,7 @@ $B['line128'] =  [
     ]
 ];
 
-$B['line128_s'] =  [
+$basicTypes['line128_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -249,7 +249,7 @@ $B['line128_s'] =  [
     ]
 ];
 
-$B['line256'] =  [
+$basicTypes['line256'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -257,7 +257,7 @@ $B['line256'] =  [
     ]
 ];
 
-$B['line256_s'] =  [
+$basicTypes['line256_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -265,7 +265,7 @@ $B['line256_s'] =  [
     ]
 ];
 
-$B['line512'] =  [
+$basicTypes['line512'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -273,7 +273,7 @@ $B['line512'] =  [
     ]
 ];
 
-$B['line512_s'] =  [
+$basicTypes['line512_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -284,7 +284,7 @@ $B['line512_s'] =  [
 // Multiline texts - Includes all SYMBOLS, so this could be dangerous.
 // NOTE: textarea normalizes newline to NL
 // You should set min/max by yourself to use 'text'.
-$B['text'] =  [
+$basicTypes['text'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -292,7 +292,7 @@ $B['text'] =  [
     ]
 ];
 
-$B['text_s'] =  [
+$basicTypes['text_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -300,7 +300,7 @@ $B['text_s'] =  [
     ]
 ];
 
-$B['text128'] =  [
+$basicTypes['text128'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -308,7 +308,7 @@ $B['text128'] =  [
     ]
 ];
 
-$B['text128_s'] =  [
+$basicTypes['text128_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -316,7 +316,7 @@ $B['text128_s'] =  [
     ]
 ];
 
-$B['text256'] =  [
+$basicTypes['text256'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -324,7 +324,7 @@ $B['text256'] =  [
     ]
 ];
 
-$B['text256_s'] =  [
+$basicTypes['text256_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -332,7 +332,7 @@ $B['text256_s'] =  [
     ]
 ];
 
-$B['text512'] =  [
+$basicTypes['text512'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -340,7 +340,7 @@ $B['text512'] =  [
     ]
 ];
 
-$B['text512_s'] =  [
+$basicTypes['text512_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -348,7 +348,7 @@ $B['text512_s'] =  [
     ]
 ];
 
-$B['text1024'] =  [
+$basicTypes['text1024'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -356,7 +356,7 @@ $B['text1024'] =  [
     ]
 ];
 
-$B['text1024_s'] =  [
+$basicTypes['text1024_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -364,7 +364,7 @@ $B['text1024_s'] =  [
     ]
 ];
 
-$B['text2048'] =  [
+$basicTypes['text2048'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -372,7 +372,7 @@ $B['text2048'] =  [
     ]
 ];
 
-$B['text2048_s'] =  [
+$basicTypes['text2048_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -380,7 +380,7 @@ $B['text2048_s'] =  [
     ]
 ];
 
-$B['text4096'] =  [
+$basicTypes['text4096'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -388,7 +388,7 @@ $B['text4096'] =  [
     ]
 ];
 
-$B['text4096_s'] =  [
+$basicTypes['text4096_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -396,7 +396,7 @@ $B['text4096_s'] =  [
     ]
 ];
 
-$B['text8192'] =  [
+$basicTypes['text8192'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -404,7 +404,7 @@ $B['text8192'] =  [
     ]
 ];
 
-$B['text8192_s'] =  [
+$basicTypes['text8192_s'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
     [
@@ -415,7 +415,7 @@ $B['text8192_s'] =  [
 // SQL Identifiers
 // Many chars are allowed, but restrict only alnum.
 // SQL standards max is 127 chars, but PostgreSQL max is 63.
-$B['sqlident63'] =  [
+$basicTypes['sqlident63'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -424,7 +424,7 @@ $B['sqlident63'] =  [
     ]
 ];
 
-$B['sqlident127'] =  [
+$basicTypes['sqlident127'] =  [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -437,7 +437,7 @@ $B['sqlident127'] =  [
 // PHP Session ID
 // NOTE: PHP session module ignores bad chars w/o errors.
 // Following assumes default setting. It allows longer ID also.
-$B['sessid'] = [
+$basicTypes['sessid'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -450,7 +450,7 @@ $B['sessid'] = [
 // Base64
 // https://en.wikipedia.org/wiki/Base64
 // You should set min/max by yourself to use 'base64'.
-$B['base64'] = [
+$basicTypes['base64'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -459,7 +459,7 @@ $B['base64'] = [
     ]
 ];
 
-$B['base64_32'] = [
+$basicTypes['base64_32'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -468,7 +468,7 @@ $B['base64_32'] = [
     ]
 ];
 
-$B['base64_64'] = [
+$basicTypes['base64_64'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -477,7 +477,7 @@ $B['base64_64'] = [
     ]
 ];
 
-$B['base64_128'] = [
+$basicTypes['base64_128'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -486,7 +486,7 @@ $B['base64_128'] = [
     ]
 ];
 
-$B['base64_256'] = [
+$basicTypes['base64_256'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -498,7 +498,7 @@ $B['base64_256'] = [
 
 // URL encode
 // You should set min/max by yourself to use 'urle'.
-$B['urle'] = [
+$basicTypes['urle'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -507,7 +507,7 @@ $B['urle'] = [
     ]
 ];
 
-$B['urle32'] = [
+$basicTypes['urle32'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -516,7 +516,7 @@ $B['urle32'] = [
     ]
 ];
 
-$B['urle64'] = [
+$basicTypes['urle64'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -525,7 +525,7 @@ $B['urle64'] = [
     ]
 ];
 
-$B['urle128'] = [
+$basicTypes['urle128'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -534,7 +534,7 @@ $B['urle128'] = [
     ]
 ];
 
-$B['urle256'] = [
+$basicTypes['urle256'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -549,7 +549,7 @@ $B['urle256'] = [
 // LF newline, ENT_QUOTES assumed.
 
 // You should set min/max by yourself to use 'header'.
-$B['htmle'] = [
+$basicTypes['htmle'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -558,7 +558,7 @@ $B['htmle'] = [
     ]
 ];
 
-$B['htmle32'] = [
+$basicTypes['htmle32'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -567,7 +567,7 @@ $B['htmle32'] = [
     ]
 ];
 
-$B['htmle64'] = [
+$basicTypes['htmle64'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -576,7 +576,7 @@ $B['htmle64'] = [
     ]
 ];
 
-$B['htmle128'] = [
+$basicTypes['htmle128'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -585,7 +585,7 @@ $B['htmle128'] = [
     ]
 ];
 
-$B['htmle256'] = [
+$basicTypes['htmle256'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -594,7 +594,7 @@ $B['htmle256'] = [
     ]
 ];
 
-$B['htmle512'] = [
+$basicTypes['htmle512'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -603,7 +603,7 @@ $B['htmle512'] = [
     ]
 ];
 
-$B['htmle1024'] = [
+$basicTypes['htmle1024'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
@@ -616,7 +616,7 @@ $B['htmle1024'] = [
 
 // HEX
 // You should set min/max by yourself to use 'hex'.
-$B['hex'] = [
+$basicTypes['hex'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
     [
@@ -625,7 +625,7 @@ $B['hex'] = [
     ]
 ];
 
-$B['hex8'] = [
+$basicTypes['hex8'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
     [
@@ -635,7 +635,7 @@ $B['hex8'] = [
 ];
 
 // MD5 or like
-$B['hex16'] = [
+$basicTypes['hex16'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
     [
@@ -645,7 +645,7 @@ $B['hex16'] = [
 ];
 
 // SHA-1
-$B['hex24'] = [
+$basicTypes['hex24'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
     [
@@ -655,7 +655,7 @@ $B['hex24'] = [
 ];
 
 // SHA256 / SHA3-256
-$B['hex32'] = [
+$basicTypes['hex32'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
     [
@@ -665,7 +665,7 @@ $B['hex32'] = [
 ];
 
 // SHA512 / SHA3-512
-$B['hex64'] = [
+$basicTypes['hex64'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
     [
@@ -674,7 +674,7 @@ $B['hex64'] = [
     ]
 ];
 
-$B['hex128'] = [
+$basicTypes['hex128'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
     [
@@ -686,7 +686,7 @@ $B['hex128'] = [
 
 // UUID
 // https://en.wikipedia.org/wiki/Universally_unique_identifier
-$B['uuid'] = [
+$basicTypes['uuid'] = [
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
     [
@@ -704,7 +704,7 @@ $B['uuid'] = [
 ];
 
 // IP Address
-$B['ipv4'] = [
+$basicTypes['ipv4'] = [
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
     [
@@ -714,7 +714,7 @@ $B['ipv4'] = [
     ]
 ];
 
-$B['ipv6'] = [
+$basicTypes['ipv6'] = [
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
     [
@@ -726,7 +726,7 @@ $B['ipv6'] = [
 ];
 
 // Domain name
-$B['fqdn'] = [
+$basicTypes['fqdn'] = [
     VALIDATE_CALLBACK,
     VALIDATE_STRING_ALNUM,
     [
@@ -747,7 +747,7 @@ $B['fqdn'] = [
 ];
 
 // Hostname only
-$B['hostname'] = [
+$basicTypes['hostname'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
@@ -770,7 +770,7 @@ $vtrim = function($ctx, $input, &$error) {
 
 // SYMBOL is allowed, so risk mitigation is minimum!!
 // You should set min/max by yourself to use 'header'.
-$B['header'] = [
+$basicTypes['header'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
@@ -780,8 +780,8 @@ $B['header'] = [
 ];
 
 // You should do strict validation to get most benefits from validation.
-// e.g. Use $B['uint32'] for Content-Length.
-$B['header64'] = [
+// e.g. Use $basicTypes['uint32'] for Content-Length.
+$basicTypes['header64'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
@@ -791,7 +791,7 @@ $B['header64'] = [
 ];
 
 // UTF-8 is allowed by RFC, but it's not used often.
-$B['header64u'] = [
+$basicTypes['header64u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -800,7 +800,7 @@ $B['header64u'] = [
     ]
 ];
 
-$B['header128'] = [
+$basicTypes['header128'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
@@ -809,7 +809,7 @@ $B['header128'] = [
     ]
 ];
 
-$B['header128u'] = [
+$basicTypes['header128u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -818,7 +818,7 @@ $B['header128u'] = [
     ]
 ];
 
-$B['header256'] = [
+$basicTypes['header256'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
@@ -827,7 +827,7 @@ $B['header256'] = [
     ]
 ];
 
-$B['header256u'] = [
+$basicTypes['header256u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -836,7 +836,7 @@ $B['header256u'] = [
     ]
 ];
 
-$B['header512'] = [
+$basicTypes['header512'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
@@ -845,7 +845,7 @@ $B['header512'] = [
     ]
 ];
 
-$B['header512u'] = [
+$basicTypes['header512u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -854,7 +854,7 @@ $B['header512u'] = [
     ]
 ];
 
-$B['header1024'] = [
+$basicTypes['header1024'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
@@ -863,7 +863,7 @@ $B['header1024'] = [
     ]
 ];
 
-$B['header1024u'] = [
+$basicTypes['header1024u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -872,7 +872,7 @@ $B['header1024u'] = [
     ]
 ];
 
-$B['header2048'] = [
+$basicTypes['header2048'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
@@ -881,7 +881,7 @@ $B['header2048'] = [
     ]
 ];
 
-$B['header2048u'] = [
+$basicTypes['header2048u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -890,7 +890,7 @@ $B['header2048u'] = [
     ]
 ];
 
-$B['header4096'] =
+$basicTypes['header4096'] =
 [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
@@ -900,7 +900,7 @@ $B['header4096'] =
     ]
 ];
 
-$B['header4096u'] =
+$basicTypes['header4096u'] =
 [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
@@ -910,7 +910,7 @@ $B['header4096u'] =
     ]
 ];
 
-$B['header8192'] = [
+$basicTypes['header8192'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
@@ -919,7 +919,7 @@ $B['header8192'] = [
     ]
 ];
 
-$B['header8192u'] = [
+$basicTypes['header8192u'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -928,7 +928,7 @@ $B['header8192u'] = [
     ]
 ];
 
-$B['header32k'] = [
+$basicTypes['header32k'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
@@ -937,7 +937,7 @@ $B['header32k'] = [
     ]
 ];
 
-$B['header32ku'] = [
+$basicTypes['header32ku'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
     [
@@ -947,7 +947,7 @@ $B['header32ku'] = [
 ];
 
 // Some HTTP header aliases
-$B['content-length'] = $B['uint32'];
-$B['content-type'] = $B['header128'];
-$B['user-agent'] = $B['header512'];
-$B['cookie'] = $B['header4096'];
+$basicTypes['content-length'] = $basicTypes['uint32'];
+$basicTypes['content-type'] = $basicTypes['header128'];
+$basicTypes['user-agent'] = $basicTypes['header512'];
+$basicTypes['cookie'] = $basicTypes['header4096'];

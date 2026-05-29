@@ -1,13 +1,13 @@
 <?php
 require_once __DIR__.'/../validate_func.php';
-require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
+require_once __DIR__.'/../lib/basic_types.php'; // Defines $basicTypes (basic type) array
 
 $request_headers_orig = ['a'=>'abc', 'b'=>'456']; //apache_request_headers(); // Get request headers
 
 // Check cookie and user agent. Allow undefined and extra headers.
-$cookie_spec = $B['cookie'];
+$cookie_spec = $basicTypes['cookie'];
 $cookie_spec[VALIDATE_FLAGS]                 |= VALIDATE_FLAG_UNDEFINED;
-$useragent_spec = $B['user-agent'];
+$useragent_spec = $basicTypes['user-agent'];
 $useragent_spec[VALIDATE_FLAGS]             |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT;
 $useragent_spec[VALIDATE_OPTIONS]['default'] = '';
 $useragent_spec[VALIDATE_OPTIONS]['min']     = 0; // Allow 0 length(empty)
@@ -26,7 +26,7 @@ $request_headers = validate($ctx, $request_headers_orig, $spec1);
 
 // Check the rest of headers.
 // Allow array 'header512' strings and ALNUM + '_' + '-' keys
-$spec2 = $B['header512'];
+$spec2 = $basicTypes['header512'];
 $spec2[VALIDATE_FLAGS]   |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
 $spec2[VALIDATE_OPTIONS]['min'] = 0; // Allow 0 length(empty) headers
 $spec2[VALIDATE_OPTIONS]['amin'] = 0; // Allow 0 extra headers

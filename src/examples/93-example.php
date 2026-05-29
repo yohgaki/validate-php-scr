@@ -2,7 +2,7 @@
 // Simple "username" and "email" form validation example.
 // "Validate" is suitable for "From Validations" also.
 require_once __DIR__.'/../validate_func.php';
-require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
+require_once __DIR__.'/../lib/basic_types.php'; // Defines $basicTypes (basic type) array
 
 // In practice, you would define all inputs specifications at central repository.
 // If your web app does not have strict client side validations, you will need

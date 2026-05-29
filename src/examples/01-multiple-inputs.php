@@ -180,7 +180,7 @@ $specs = [
 
 // Web apps often have extra parameters.
 // Validate PHP can validate these by loose array spec
-$post_default = $B['text128']; // UTF-8 char text upto 128 bytes
+$post_default = $basicTypes['text128']; // UTF-8 char text upto 128 bytes
 $post_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
                                  | VALIDATE_FLAG_ARRAY            // Validate post values as array.
                                  | VALIDATE_FLAG_ARRAY_KEY_ALNUM; // Allow only alnum keys.
@@ -188,7 +188,7 @@ $post_default[VALIDATE_OPTIONS]['amin'] = 0;     // At least 1 extra post parame
 $post_default[VALIDATE_OPTIONS]['amax'] = 2;     // At most 2 extra post parameters.
 $post_default[VALIDATE_OPTIONS]['default'] = []; // Empty array by default.
 
-$get_default = $B['alnum128']; // Alnum char text up to 128 bytes
+$get_default = $basicTypes['alnum128']; // Alnum char text up to 128 bytes
 $get_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
                                  | VALIDATE_FLAG_ARRAY            // Validate post values as array.
                                  | VALIDATE_FLAG_ARRAY_KEY_ALNUM; // Allow only alnum keys.
@@ -196,7 +196,7 @@ $get_default[VALIDATE_OPTIONS]['amin'] = 0;     // At least 0 extra query parame
 $get_default[VALIDATE_OPTIONS]['amax'] = 5;     // At most 5 extra query parameters.
 $get_default[VALIDATE_OPTIONS]['default'] = []; // Empty array by default.
 
-$header_default = $B['header1024u']; // UTF-8 text with HTTP header special chars.
+$header_default = $basicTypes['header1024u']; // UTF-8 text with HTTP header special chars.
 $header_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
                                  | VALIDATE_FLAG_ARRAY            // Validate headers as array.
                                  | VALIDATE_FLAG_ARRAY_KEY_ALNUM; // Allow only alnum keys.

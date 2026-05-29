@@ -53,7 +53,7 @@ $spec1 = [
 ];
 
 // 2nd validation for headers. Just check RFC conformance w/o UTF chars.
-$tmp = $B['header1024'];
+$tmp = $basicTypes['header1024'];
 $tmp[VALIDATE_FLAGS] |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM; // Validate headers as array.
 $tmp[VALIDATE_OPTIONS]['amin'] = 10; // At least 10 headers.
 $tmp[VALIDATE_OPTIONS]['amax'] = 50;  // At most 50 headers.
