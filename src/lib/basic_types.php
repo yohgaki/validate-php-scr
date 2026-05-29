@@ -691,7 +691,7 @@ $B['uuid'] = [
     VALIDATE_FLAG_NONE,
     [
         'min' => 36, 'max' => 36,
-        'filter' => function($input, &$error) {
+        'filter' => function($ctx, $input, &$error) {
             if (!is_string($input)) {
                 $error = 'UUID Filter error: UUID must be string.';
                 return;
@@ -733,7 +733,7 @@ $B['fqdn'] = [
         'min' => 3, 'max' => 253,
         'ascii' => '.-_',
         'callback' => function($ctx, &$result, $input) {
-            if (!strpos($input, '.') || $input{strlen($input)-1} === '.') {
+            if (!strpos($input, '.') || $input[strlen($input)-1] === '.') {
                 validate_error($ctx, 'Invalid FQDN');
                 return false;
             }
@@ -820,7 +820,7 @@ $B['header128u'] = [
 
 $B['header256'] = [
     VALIDATE_STRING,
-    VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
+    VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
         'min' => 1, 'max' => 256,
         'filter' => $vtrim,

@@ -343,17 +343,17 @@ class Validate
         $this->status = true;
         $this->validated = null;
         $this->value_validation = true;
-        $ret = $this->validateImpl($this->validated, $inputs, $specs, $func_opts);
+        $ret = $this->runValidation($this->validated, $inputs, $specs, $func_opts);
         assert(is_bool($ret));
 
         if (!($func_opts & VALIDATE_OPT_UNVALIDATED) && !$scalar_validation && is_array($inputs)) {
             if (count($inputs)) {
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => 'Validate: Unvalidated value remains.',
                         'value' => $inputs,
                     ],
-                    // internalError() is supposed to be used by validator. Set invalid here.
+                    // reportError() is supposed to be used by validator. Set invalid here.
                     [VALIDATE_UNVALIDATED, VALIDATE_FLAG_NONE, []],
                     $func_opts
                 );
@@ -397,7 +397,7 @@ class Validate
         $unvalidated = $spec;
         $ctx->status = true;
         $this->value_validation = false;
-        $ctx->validateSpecImpl($unvalidated);
+        $ctx->checkSpecEntry($unvalidated);
         // if (!$this->status) {
         //     trigger_error('SPEC Validation is failed! Check spec and result.', E_USER_WARNING);
         // }
@@ -461,7 +461,7 @@ class Validate
      */
     public function getSystemErrors()
     {
-        return $this->getErrorAndWarning(E_ERROR);
+        return $this->collectErrors(E_ERROR);
     }
 
 
@@ -474,7 +474,7 @@ class Validate
      */
     public function getUserErrors()
     {
-        return $this->getErrorAndWarning(E_USER_ERROR);
+        return $this->collectErrors(E_USER_ERROR);
     }
 
 
@@ -506,7 +506,7 @@ class Validate
     public function error($message)
     {
         assert(is_string($message));
-        $this->errorImpl($message, E_USER_ERROR);
+        $this->dispatchError($message, E_USER_ERROR);
     }
 
 
@@ -520,7 +520,7 @@ class Validate
     public function warning($message)
     {
         assert(is_string($message));
-        $this->errorImpl($message, E_USER_WARNING);
+        $this->dispatchError($message, E_USER_WARNING);
     }
 
 
@@ -534,7 +534,7 @@ class Validate
     public function notice($message)
     {
         assert(is_string($message));
-        $this->errorImpl($message, E_USER_NOTICE);
+        $this->dispatchError($message, E_USER_NOTICE);
     }
 
 
@@ -546,7 +546,7 @@ class Validate
      *
      * @return int -1, 0, or 1
      */
-    private static function bigintCmp($a, $b): int
+    private static function compareBigInt($a, $b): int
     {
         if (is_int($a) && is_int($b)) {
             return $a <=> $b;
@@ -591,7 +591,7 @@ class Validate
      *
      * @return bool
      */
-    private function checkScalar($val, $specs, $func_opts)
+    private function assertScalarType($val, $specs, $func_opts)
     {
         assert(is_array($specs) && is_int($specs[VALIDATE_ID]));
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
@@ -603,10 +603,10 @@ class Validate
                 case VALIDATE_FLOAT:
                 case VALIDATE_STRING:
                 case VALIDATE_REGEXP:
-                    $vname = $this->getValidatorName($id);
-                    $this->internalError(
+                    $validatorName = $this->getValidatorName($id);
+                    $this->reportError(
                         [
-                            'message' => $vname.': Bool value cannot be treated as valid value for this validator.',
+                            'message' => $validatorName.': Bool value cannot be treated as valid value for this validator.',
                             'value' => $val,
                         ],
                         $specs,
@@ -625,10 +625,10 @@ class Validate
             return true;
         }
 
-        $vname = $this->getValidatorName($id);
-        $this->internalError(
+        $validatorName = $this->getValidatorName($id);
+        $this->reportError(
             [
-                'message' => $vname.': Array or object parameter is passed for scalar.',
+                'message' => $validatorName.': Array or object parameter is passed for scalar.',
                 'value' => $val,
             ],
             $specs,
@@ -708,7 +708,7 @@ class Validate
      *
      * @return bool
      */
-    private function validateEmptyToDefault(&$value, $id, $flags, $options, $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION)
+    private function applyDefaultIfEmpty(&$value, $id, $flags, $options, $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION)
     {
         //$value could be anything
         assert(is_int($flags));
@@ -721,7 +721,7 @@ class Validate
                 return true;
             }
             $value = null;
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'Invalid validation spec: empty value cannot be used without proper "default" value.',
                     'value' => null,
@@ -742,7 +742,7 @@ class Validate
      *
      * @return bool  4 patterns. 0:OK. 1:ignore. 2:error No undefined flag. 3: error Rejected.
      */
-    private function validateRejectAndUndefined(&$validated, &$inputs, $param, $id, $flags, $options, $func_opts)
+    private function checkParamPresence(&$validated, &$inputs, $param, $id, $flags, $options, $func_opts)
     {
         assert(is_array($inputs));
         assert(is_scalar($param));
@@ -754,10 +754,10 @@ class Validate
         if (isset($inputs[$param]) && $flags & VALIDATE_FLAG_REJECT) {
             // Do something for rejected values can be harmful.
             // Rejected parameters should not be defined.
-            $vname = $this->getValidatorName($id);
-            $this->internalError(
+            $validatorName = $this->getValidatorName($id);
+            $this->reportError(
                 [
-                    'message' => $vname.': Rejected by flag.',
+                    'message' => $validatorName.': Rejected by flag.',
                     'value' => $inputs[$param],
                 ],
                 [$id, $flags, $options],
@@ -781,7 +781,7 @@ class Validate
      *
      * @return bool  Return true for successful validation, false otherwise.
      */
-    private function validateImpl(&$validated, &$inputs, $specs, $func_opts)
+    private function runValidation(&$validated, &$inputs, $specs, $func_opts)
     {
         //assert(is_array($inputs));
         assert(is_array($specs));
@@ -834,7 +834,7 @@ class Validate
 
         // Array value spec
         if (!is_array($params)) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_ARRAY: Non array parameter option is passed for VALIDATE_ARRAY. '.
                                  'Missing 4th(params) option required for VALIDATE_ARRAY.',
@@ -846,7 +846,7 @@ class Validate
             return false;
         }
         if (!(is_array($inputs) || $inputs instanceof Countable)) {
-            $this->internalError(
+            $this->reportError(
                 [
                    'message' => 'VALIDATE_ARRAY: Input value is not array. ',
                    'value' => $inputs
@@ -858,7 +858,7 @@ class Validate
         }
         $cnt = count($inputs);
         if ($min > $cnt || $max < $cnt) {
-            $this->internalError(
+            $this->reportError(
                 [
                    'message' => 'VALIDATE_ARRAY: Count out of rage. '.
                                 'min: '. $min .' max: '. $max . ' count '. $cnt,
@@ -891,17 +891,17 @@ class Validate
             );
 
             // Reject / Optional undefined parameter or not.
-            if (!$this->validateRejectAndUndefined($validated, $inputs, $param, $id, $flags, $options, $func_opts)) {
+            if (!$this->checkParamPresence($validated, $inputs, $param, $id, $flags, $options, $func_opts)) {
                 array_pop($this->currentElem);
                 continue;
             }
 
-            if (isset($inputs[$param]) && !$this->validateEmptyToDefault($inputs[$param], $id, $flags, $options)) {
+            if (isset($inputs[$param]) && !$this->applyDefaultIfEmpty($inputs[$param], $id, $flags, $options)) {
                 array_pop($this->currentElem);
                 continue;
             }
 
-            $status = $this->validateImpl($validated[$param], $inputs[$param], $spec, $func_opts);
+            $status = $this->runValidation($validated[$param], $inputs[$param], $spec, $func_opts);
 
             // Remove validated elements
             if ($status === true && !($func_opts & VALIDATE_OPT_KEEP_INPUTS)) {
@@ -929,7 +929,7 @@ class Validate
      *
      * @return bool
      */
-    private function validateApplyFilter(&$input, $id, $flags, $options, $func_opts = 0)
+    private function applyInputFilter(&$input, $id, $flags, $options, $func_opts = 0)
     {
         assert(is_int($id));
         assert(is_int($flags));
@@ -944,7 +944,7 @@ class Validate
             if ($flags & VALIDATE_FLAG_ARRAY) {
                 if (!is_array($input)) {
                     $vname = $this->getValidatorName($id);
-                    $this->internalError(
+                    $this->reportError(
                         [
                             'message' => $vname.' filter (VALIDATE_FLAG_ARRAY) error: Input data is not an array',
                             'value' => $input
@@ -959,7 +959,7 @@ class Validate
                     if ($error) {
                         assert(is_string($error));
                         $vname = $this->getValidatorName($id);
-                        $this->internalError(
+                        $this->reportError(
                             [
                                 'message' => $vname.' filter (VALIDATE_FLAG_ARRAY) error: '. addslashes($error),
                                 'value' => $input
@@ -975,7 +975,7 @@ class Validate
                 if ($error) {
                     assert(is_string($error));
                     $vname = $this->getValidatorName($id);
-                    $this->internalError(
+                    $this->reportError(
                         [
                             'message' => $vname.' filter error: '. addslashes($error),
                             'value' => $input
@@ -1005,7 +1005,7 @@ class Validate
         $id = VALIDATE_MULTI;
         $flags = $specs[VALIDATE_FLAGS];
         $options = $specs[VALIDATE_OPTIONS];
-        $multiple_specs = $specs[VALIDATE_SPECS];
+        $subSpecs = $specs[VALIDATE_SPECS];
 
         // Rejected parameter check
         if ($this->validateReject($validated, $inputs, $id, $flags, $options, $func_opts)) {
@@ -1018,19 +1018,19 @@ class Validate
         }
 
         // Apply filter if any.
-        if (!$this->validateApplyFilter($inputs, $id, $flags, $options, $func_opts)) {
+        if (!$this->applyInputFilter($inputs, $id, $flags, $options, $func_opts)) {
             return false;
         }
 
         // Use AND for broken spec. Spec should be validated already, though.
-        $multi_and = true;
+        $useAnd = true;
         if ($flags & VALIDATE_MULTI_OR) {
-            $multi_and = false;
+            $useAnd = false;
         }
 
         // Check specs count just in case user didn't validate specs
-        if (!is_array($multiple_specs) || !count($multiple_specs)) {
-            $this->internalError(
+        if (!is_array($subSpecs) || !count($subSpecs)) {
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_MULTI: Invalid spec.',
                     'value' => $inputs,
@@ -1042,38 +1042,38 @@ class Validate
         }
 
         $this->setContextErrorValue($inputs);
-        $ret = false;
-        if ($multi_and) {
-            foreach ($multiple_specs as $spec) {
-                $tmp_inputs = $inputs; // Inputs may be changed by filter, etc.
-                $ret = $this->validateImpl($tmp_result, $tmp_inputs, $spec, $func_opts);
-                if ($ret === false) {
+        $result = false;
+        if ($useAnd) {
+            foreach ($subSpecs as $spec) {
+                $inputCopy = $inputs; // Inputs may be changed by filter, etc.
+                $result = $this->runValidation($iterResult, $inputCopy, $spec, $func_opts);
+                if ($result === false) {
                     break;
                 }
             }
         } else {
             $orig_status = $this->status;
-            foreach ($multiple_specs as $spec) {
+            foreach ($subSpecs as $spec) {
                 $spec[VALIDATE_FLAGS] = $spec[VALIDATE_FLAGS] | VALIDATE_FLAG_PASSTHRU; // Disable logging and errors with OR.
-                $tmp_inputs = $inputs; // Inputs may be changed by filter, etc.
-                $ret = $this->validateImpl($tmp_result, $tmp_inputs, $spec, $func_opts);
-                if ($ret === true) {
+                $inputCopy = $inputs; // Inputs may be changed by filter, etc.
+                $result = $this->runValidation($iterResult, $inputCopy, $spec, $func_opts);
+                if ($result === true) {
                     break;
                 }
             }
             // Restore original status.
-            if ($orig_status === true && $ret === true) {
+            if ($orig_status === true && $result === true) {
                 $this->status = true;
             }
         }
 
-        if ($ret === true) {
-            $validated = $tmp_result;
+        if ($result === true) {
+            $validated = $iterResult;
         } else {
             $validated = null;
         }
-        if ($ret === false && !$multi_and) {
-            $this->internalError(
+        if ($result === false && !$useAnd) {
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_MULTI: All of specs are failed. '.
                                  'Note: OR will not log failed validations.',
@@ -1085,7 +1085,7 @@ class Validate
             return false;
         }
 
-        return $ret;
+        return $result;
     }
 
     /**
@@ -1093,11 +1093,11 @@ class Validate
      *
      * @return bool
      */
-    private function validateScalarArray(&$validated, $id, $cnt, $alimit, $key_callback, &$inputs, $flags, $options, $func_opts)
+    private function validateScalarArray(&$validated, $id, $processedCount, $elementLimit, $keyValidator, &$inputs, $flags, $options, $func_opts)
     {
         assert(is_int($id)); // validator id
-        assert(is_int($cnt)); // Apply count
-        assert(is_callable($key_callback));
+        assert(is_int($processedCount)); // Apply count
+        assert(is_callable($keyValidator));
         //assert(is_array($inputs) || empty($inputs)); input could be anything
         assert(is_int($flags));
         assert(is_array($options));
@@ -1122,11 +1122,11 @@ class Validate
         }
 
         // TODO Not a optimal way to get validator name here
-        $vname = $this->getValidatorName($id);
+        $validatorName = $this->getValidatorName($id);
         if (is_scalar($inputs)) {
-            $this->internalError(
+            $this->reportError(
                 [
-                    'message' => $vname.': Array of scalars validation. Scalar value is not allowed.',
+                    'message' => $validatorName.': Array of scalars validation. Scalar value is not allowed.',
                     'value' => $inputs
                 ],
                 [$id, $flags, $options],
@@ -1142,9 +1142,9 @@ class Validate
         $num = count($inputs);
 
         if ($num < $amin || $num > $amax) {
-            $this->internalError(
+            $this->reportError(
                 [
-                    'message' => $vname.' array: Number of elements is out of range. '.
+                    'message' => $validatorName.' array: Number of elements is out of range. '.
                                  'amin: "'. $amin. '" amax: '. $amax .'"',
                     'value' => $inputs
                 ],
@@ -1156,10 +1156,10 @@ class Validate
 
         $status = true;
         foreach ($inputs as $key => $val) {
-            if ($cnt++ > $alimit) {
-                $this->internalError(
+            if ($processedCount++ > $elementLimit) {
+                $this->reportError(
                     [
-                        'message' => $vname. ': Array validation. Number of elements exceed limit: "'.$alimit.'". '.
+                        'message' => $validatorName. ': Array validation. Number of elements exceed limit: "'.$elementLimit.'". '.
                                      'Hint: you may want to set "alimit" option to allow larger array.',
                         'value' => 'N/A',
                     ],
@@ -1168,11 +1168,11 @@ class Validate
                 );
                 return false;
             }
-            if (!$key_callback($this->context, $key)) {
+            if (!$keyValidator($this->context, $key)) {
                 $status = false;
-                $this->internalError(
+                $this->reportError(
                     [
-                        'message' => $vname. ': Array validation. Array parameter has invalid key format. '.
+                        'message' => $validatorName. ': Array validation. Array parameter has invalid key format. '.
                                      'Hint: you may want VALIDATE_FLAG_ARRAY_KEY_ALNUM flag or "key_callback" option.',
                         'value' => 'key:'.$key,
                     ],
@@ -1183,17 +1183,17 @@ class Validate
             }
             if (is_array($val)) {
                 if (!($flags & VALIDATE_FLAG_ARRAY_RECURSIVE)) {
-                    $this->internalError(
+                    $this->reportError(
                         [
-                            'message' => $vname. ': Array validation. Nested array is not allowed by VALIDATE_FLAG_ARRAY_RECURSIVE.',
+                            'message' => $validatorName. ': Array validation. Nested array is not allowed by VALIDATE_FLAG_ARRAY_RECURSIVE.',
                             'value' => 'key:'.$key,
                         ],
                         [$id, $flags, $options],
                         $func_opts
                     );
                 }
-                $ret = $this->validateScalarArray($validated[$key], $id, $cnt, $alimit, $key_callback, $inputs[$key], $flags, $options, $func_opts);
-                if ($ret === false) {
+                $result = $this->validateScalarArray($validated[$key], $id, $processedCount, $elementLimit, $keyValidator, $inputs[$key], $flags, $options, $func_opts);
+                if ($result === false) {
                     break;
                 }
                 continue;
@@ -1234,7 +1234,7 @@ class Validate
         }
 
         // Apply filter if any.
-        if (!$this->validateApplyFilter($inputs, $id, $flags, $options, $func_opts)) {
+        if (!$this->applyInputFilter($inputs, $id, $flags, $options, $func_opts)) {
             return false;
         }
 
@@ -1243,16 +1243,16 @@ class Validate
         if ($flags & VALIDATE_FLAG_ARRAY) {
             assert(is_int($options['amax']));
             // Inputs is array of scalars.
-            $cnt = 0;
-            $alimit = $options['alimit'] ?? $options['amax'];
-            $key_callback = $this->validateScalarArrayGetKeyCallback($flags, $options);
-            $ret = $this->validateScalarArray($validated, $id, $cnt, $alimit, $key_callback, $inputs, $flags, $options, $func_opts);
+            $processedCount = 0;
+            $elementLimit = $options['alimit'] ?? $options['amax'];
+            $keyValidator = $this->buildKeyValidator($flags, $options);
+            $result = $this->validateScalarArray($validated, $id, $processedCount, $elementLimit, $keyValidator, $inputs, $flags, $options, $func_opts);
         } else {
             // Inputs is scalar or object
             $validator = $this->getValidator($id);
-            $ret = $this->$validator($validated, $inputs, $flags, $options, $func_opts);
+            $result = $this->$validator($validated, $inputs, $flags, $options, $func_opts);
         }
-        return $ret;
+        return $result;
     }
 
 
@@ -1261,7 +1261,7 @@ class Validate
      *
      * @return callable Always return callable if user validates spec at development time.
      */
-    private function validateScalarArrayGetKeyCallback($flags, $options)
+    private function buildKeyValidator($flags, $options)
     {
         assert(is_int($flags));
         assert(is_array($options));
@@ -1270,11 +1270,11 @@ class Validate
             // User defined key validator
             assert(is_callable($options['key_callback']));
             // TODO Use Reflection
-            $key_callback = $options['key_callback'];
+            $keyValidator = $options['key_callback'];
         } else {
             // Predefined array key validator
             if ($flags & VALIDATE_FLAG_ARRAY_KEY_ALNUM) {
-                $key_callback= function ($ctx, $key) {
+                $keyValidator = function ($ctx, $key) {
                     if (strlen($key) > 64) {
                         // By default, keys longer than 64 chars are not allowed.
                         // If users have trouble with this restriction, use user defined key validator.
@@ -1287,7 +1287,7 @@ class Validate
                     return false;
                 };
             } else {
-                $key_callback = function ($ctx, $key) {
+                $keyValidator = function ($ctx, $key) {
                     if (strlen($key) > 32) {
                         // By default, keys longer than 32 digits are not allowed.
                         // If users have trouble with this restriction, use user defined key validator.
@@ -1300,7 +1300,7 @@ class Validate
                 };
             }
         }
-        return $key_callback;
+        return $keyValidator;
     }
 
     /**
@@ -1315,7 +1315,7 @@ class Validate
         assert(is_array($options));
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
 
-        $this->internalError(
+        $this->reportError(
             [
                 'message' => 'VALIDATE_INVALID: This validator should not be called. ',
                 'value' => $value,
@@ -1343,7 +1343,7 @@ class Validate
 
         if ($flags & VALIDATE_FLAG_REJECT) {
             $vname = $this->getValidatorName($id);
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => $vname.': Rejected by flag.',
                     'value' => $value,
@@ -1370,7 +1370,7 @@ class Validate
 
         if ($id !== VALIDATE_NULL && is_null($inputs) && !($flags & VALIDATE_FLAG_NULL)) {
             $vname = $this->getValidatorName($id);
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => $vname.': NULL input is rejected by default.',
                     'value' => null,
@@ -1415,7 +1415,7 @@ class Validate
             } elseif ($flags & VALIDATE_FLAG_UNDEFINED) {
                 return false; // 1:Ignore
             }
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'Undefined parameter: Required parameter is not defined.',
                     'value' => null
@@ -1448,7 +1448,7 @@ class Validate
         assert(is_array($options));
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
 
-        $this->internalError(
+        $this->reportError(
             [
                 'message' => 'VALIDATE_ARRAY: This validator should not be called.',
                 'value' => $value,
@@ -1472,7 +1472,7 @@ class Validate
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
 
         if (!is_resource($value)) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_RESOURCE: Not a resource. Type: '.gettype($value).' ',
                     'value' => $value,
@@ -1484,7 +1484,7 @@ class Validate
         }
         $rname = @get_resource_type($value);
         if ($rname === null) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_RESOURCE: Failed to get resource type. ',
                     'value' => $value,
@@ -1495,7 +1495,7 @@ class Validate
             return false;
         }
         if ($rname !== $options['resource']) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_RESOURCE: Resource type does not match. '.
                     'Returned: \''.$rname.'\' Expected: \''.$options['resource'].'\'',
@@ -1528,12 +1528,12 @@ class Validate
         assert(is_array($options));
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
 
-        if (!$this->checkScalar($value, [VALIDATE_NULL, $flags, $options], $func_opts)) {
+        if (!$this->assertScalarType($value, [VALIDATE_NULL, $flags, $options], $func_opts)) {
             return false;
         }
 
         if (!is_null($value) && $value !== '') {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_NULL: Non null value.',
                     'value' => $value,
@@ -1580,7 +1580,7 @@ class Validate
         // Exact values match
         if ($values) {
             if (!is_int($value) || strlen($value) !== strspn($value, '-1234567890')) {
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => 'VALIDATE_INT: Failed option "values" match. Value is not integer.',
                         'value' => $value,
@@ -1591,7 +1591,7 @@ class Validate
                 return false;
             }
             if (empty($values[$value])) {
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => 'VALIDATE_INT: Failed to match defined option "values".',
                         'value' => $value,
@@ -1608,14 +1608,14 @@ class Validate
         assert(is_numeric($options['min']) || is_int($options['min']));
         assert(is_numeric($options['max']) || is_int($options['max']));
         assert($options['min'] <= $options['max']
-               || self::bigintCmp($options['min'], $options['max']) <= 0);
+               || self::compareBigInt($options['min'], $options['max']) <= 0);
 
         // Normal validation
         if (extension_loaded('gmp') && $value instanceof GMP) {
             $value = gmp_strval($value);
         }
 
-        if (!$this->checkScalar($value, [VALIDATE_INT, $flags, $options], $func_opts)) {
+        if (!$this->assertScalarType($value, [VALIDATE_INT, $flags, $options], $func_opts)) {
             return false;
         }
 
@@ -1628,7 +1628,7 @@ class Validate
         }
 
         if (!is_scalar($value)) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_INT: Not a scalar.',
                     'value' => $value,
@@ -1648,7 +1648,7 @@ class Validate
             return true;
         }
 
-        if (!$this->validateEmptyToDefault($value, VALIDATE_INT, $flags, $options)) {
+        if (!$this->applyDefaultIfEmpty($value, VALIDATE_INT, $flags, $options)) {
             return false;
         }
 
@@ -1662,7 +1662,7 @@ class Validate
             $lead_num .= '-';
         }
         if (strspn($ret, $lead_num, 0, 1) !== 1 || strspn($ret, '1234567890', 1) !== ($len-1)) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_INT: Invalid int string.',
                     'value' => addslashes($ret),
@@ -1675,8 +1675,8 @@ class Validate
 
         // Int type conversion is problematic with large values, especially on 32 bit platforms.
         if ($flags & VALIDATE_INT_AS_STRING) {
-            if (self::bigintCmp($ret, $min) < 0 || self::bigintCmp($ret, $max) > 0) {
-                $this->internalError(
+            if (self::compareBigInt($ret, $min) < 0 || self::compareBigInt($ret, $max) > 0) {
+                $this->reportError(
                     [
                         'message' => 'VALIDATE_INT: Out of defined range. min: "'. $min .'" max: "'. $max .'"',
                         'value' => $ret,
@@ -1698,7 +1698,7 @@ class Validate
         $ret = (int)$value;
         if ((string)$ret !== (string)$value) {
             // Integer overflows and value is converted to float.
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_INT: Overflow or malformed input. min: "'. $min.'" max: "'.$max.'"',
                     'value' => $value,
@@ -1710,7 +1710,7 @@ class Validate
         }
 
         if ($ret < $min || $ret > $max) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_INT: Out of defined range. min: "'. $min.'" max: "'.$max.'"',
                     'value' => $ret,
@@ -1747,7 +1747,7 @@ class Validate
         assert(is_array($options));
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
 
-        if (!$this->checkScalar($value, [VALIDATE_BOOL, $flags, $options], $func_opts)) {
+        if (!$this->assertScalarType($value, [VALIDATE_BOOL, $flags, $options], $func_opts)) {
             return false;
         }
 
@@ -1766,13 +1766,13 @@ class Validate
         }
 
         $ret = (string)$value;
-        if (!$this->validateEmptyToDefault($ret, VALIDATE_BOOL, $flags, $options)) {
+        if (!$this->applyDefaultIfEmpty($ret, VALIDATE_BOOL, $flags, $options)) {
             return false;
         }
 
         $len = strlen($ret);
         if ($len > 5) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_BOOL: Invalid input.',
                     'value' => $ret,
@@ -1783,7 +1783,7 @@ class Validate
             return false;
         }
         if (!$len) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_BOOL: Empty input.',
                     'value' => $ret,
@@ -1842,7 +1842,7 @@ class Validate
             }
         }
         if ($ret === null) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_BOOL: Invalid bool.',
                     'value' => $value,
@@ -1895,7 +1895,7 @@ class Validate
         assert(empty($options['INF']) || is_bool($options['INF']));
         assert(empty($options['-INF']) || is_bool($options['-INF']));
 
-        if (!$this->checkScalar($value, [VALIDATE_FLOAT, $flags, $options], $func_opts)) {
+        if (!$this->assertScalarType($value, [VALIDATE_FLOAT, $flags, $options], $func_opts)) {
             return false;
         }
 
@@ -1906,7 +1906,7 @@ class Validate
 
         if (is_double($value)) {
             if ($value === NAN) {
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => 'VALIDATE_FLOAT: NAN value is not allowed.',
                         'value' => NAN,
@@ -1917,7 +1917,7 @@ class Validate
                 return false;
             }
             if (!$pinf && $value === INF) {
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => 'VALIDATE_FLOAT: INF value is not allowed.',
                         'value' => INF
@@ -1928,7 +1928,7 @@ class Validate
                 return false;
             }
             if (!$ninf && $value === -INF) {
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => 'VALIDATE_FLOAT: -INF value is not allowed.',
                         'value' => -INF,
@@ -1939,7 +1939,7 @@ class Validate
                 return false;
             }
             if ($value < $min || $value > $max) {
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => 'VALIDATE_FLOAT: Value is out of range. min: "'.$min.'" max: "'.$max.'"',
                         'value' => addslashes($ret),
@@ -1956,7 +1956,7 @@ class Validate
         // By default max 'length' of float value is 32
         $length = $options['length'] ?? 32;
         if (strlen($length) > $length) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_FLOAT: Float value is too long. length: \''.$length.'\''.
                                  'Hint: set "length" option to allow longer length.',
@@ -1978,12 +1978,12 @@ class Validate
         }
 
         $ret_str = (string)$value;
-        if (!$this->validateEmptyToDefault($ret, VALIDATE_FLOAT, $flags, $options)) {
+        if (!$this->applyDefaultIfEmpty($ret, VALIDATE_FLOAT, $flags, $options)) {
             return false;
         }
 
         if ($ret_str === '') {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_FLOAT: Empty input.',
                     'value' => null,
@@ -1996,7 +1996,7 @@ class Validate
 
         // TODO: Implementation differs from C
         if (!is_numeric($ret_str)) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_FLOAT: Invalid float format.',
                     'value' => $ret_str,
@@ -2030,7 +2030,7 @@ class Validate
         }
 
         if (!$chk) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_FLOAT: Invalid float format.',
                     'value' => $ret_str,
@@ -2043,7 +2043,7 @@ class Validate
 
         $ret = (float)$value;
         if ($ret === NAN || $ret === INF || $ret === -INF) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_FLOAT: Invalid float value.',
                     'value' => $ret,
@@ -2054,7 +2054,7 @@ class Validate
             return false;
         }
         if ($ret < $min || $ret > $max) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_FLOAT: Value is out of range. min: "'.$min.'" max: "'.$max.'"',
                     'value' => $ret,
@@ -2108,7 +2108,7 @@ class Validate
         // Exact values match
         if ($values) {
             if (is_array($value)) {
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => $vname .': Array is passed for option "values" validation.',
                         'value' => $value,
@@ -2119,7 +2119,7 @@ class Validate
                 return false;
             }
             if (empty($values[$value])) {
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => $vname .': Failed to match defined option "values".',
                         'value' => $value,
@@ -2139,7 +2139,7 @@ class Validate
         assert(empty($options['encoding']) || is_string($options['encoding']));
 
         // Normal string validation
-        if (!$this->checkScalar($value, [$id, $flags, $options], $func_opts)) {
+        if (!$this->assertScalarType($value, [$id, $flags, $options], $func_opts)) {
             return false;
         }
 
@@ -2149,7 +2149,7 @@ class Validate
             return true;
         }
 
-        if (!$this->validateEmptyToDefault($ret, $id, $flags, $options)) {
+        if (!$this->applyDefaultIfEmpty($ret, $id, $flags, $options)) {
             return false;
         }
 
@@ -2157,7 +2157,7 @@ class Validate
         $max = $options['max'];
         $len = strlen($ret);
         if ($len < $min || $len > $max) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => $vname .': Length is out of range. min: "'.$min.'" max: "'.$max.'"',
                     'value' => $ret,
@@ -2184,7 +2184,7 @@ class Validate
             $encoding = $options['encoding'] ?? 'UTF-8';
             // Use htmlspecialchars() validation to avoid mbstring dependency.
             if (!htmlspecialchars($ret, ENT_QUOTES, $encoding)) {
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => $vname .': Invalid '.$encoding.' encoding.',
                         'value' => $ret,
@@ -2278,7 +2278,7 @@ class Validate
                         if ($invalid_cp === null) {
                             continue;
                         }
-                        $this->internalError(
+                        $this->reportError(
                             [
                                 'message' => $vname .': Unicode CNTRL char detected.',
                                 'value' => $ret,
@@ -2289,7 +2289,7 @@ class Validate
                     }
                     continue;
                 }
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => $vname .': Multibyte char detected.',
                         'value' => $ret,
@@ -2302,7 +2302,7 @@ class Validate
             // CRLF needs special handling
             if ($crlf) {
                 if ($c === "\n") {
-                    $this->internalError(
+                    $this->reportError(
                         [
                             'message' => $vname .': Invalid LF detected.',
                             'value' => $ret,
@@ -2315,7 +2315,7 @@ class Validate
                 if ($c === "\r") {
                     $c = $ret[++$i];
                     if ($c !== "\n") {
-                        $this->internalError(
+                        $this->reportError(
                             [
                                 'message' => $vname .': Invalid CR/LF detected.',
                                 'value' => $ret,
@@ -2329,7 +2329,7 @@ class Validate
             }
             // Others
             if (!$map[ord($c)]) {
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => $vname .': Illegal char detected. ord: "'
                                      .ord($c).'" chr: "'.addslashes($c).'"',
@@ -2406,7 +2406,7 @@ class Validate
 
         if ($cp > 0x10FFFF) {
             $vname = $this->getValidatorName($id);
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => $vname.': Detected invalid unicode exceeds max value (0x10FFFF).',
                     'value' => $cp,
@@ -2421,7 +2421,7 @@ class Validate
                 return null;
             } else {
                 $vname = $this->getValidatorName($id);
-                $this->internalError(
+                $this->reportError(
                     [
                         'message' => $vname.': Detected invalid unicode defined by $option["unicode"].',
                         'value' => $cp,
@@ -2932,7 +2932,7 @@ class Validate
         */
         if ($ret !== null) {
             $vname = $this->getValidatorName($id);
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => $vname.': Detected invalid unicode.',
                     'value' => $ret,
@@ -2980,7 +2980,7 @@ class Validate
         }
 
         if (!preg_match($regexp, $ret)) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_REGEXP: Failed to match.',
                     'value' => $ret,
@@ -3041,7 +3041,7 @@ class Validate
 
         if (!$tmp) {
             $msg = is_bool($tmp) ? 'Returned false.' : 'NULL is returned. There must be bug in callback.';
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_CALLBACK: '.$msg,
                     'value' => $value,
@@ -3076,7 +3076,7 @@ class Validate
         assert(is_string($options['callback']));
 
         if (!is_object($value)) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_OBJECT: Value is not an object. Type: \''.gettype($value).'\'',
                     'value' => $value,
@@ -3087,7 +3087,7 @@ class Validate
             return false;
         }
         if (!is_object($value) || !is_callable([$value, $options['callback']])) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_OBJECT: "'. get_class($value) . '" class validation callback is not callable or does not exist. Callback: \''.$options['callback'].'\'',
                     'value' => $value,
@@ -3101,7 +3101,7 @@ class Validate
         $ret = $value->$callback($this->context);
         assert(is_bool($ret));
         if ($ret !== true) {
-            $this->internalError(
+            $this->reportError(
                 [
                     'message' => 'VALIDATE_OBJECT: Object validation failed.',
                     'value' => $value,
@@ -3127,7 +3127,7 @@ class Validate
      *
      * @return null
      */
-    private function errorImpl($message, $type)
+    private function dispatchError($message, $type)
     {
         assert(is_string($message));
 
@@ -3159,11 +3159,11 @@ class Validate
 
         // System errors are stored always.
         if ($type === E_ERROR) {
-            $this->errorImplStore($this->errors, $error);
+            $this->appendError($this->errors, $error);
         } elseif ($type === E_WARNING) {
-            $this->errorImplStore($this->warnings, $error);
+            $this->appendError($this->warnings, $error);
         } elseif ($type === E_NOTICE) {
-            $this->errorImplStore($this->notices, $error);
+            $this->appendError($this->notices, $error);
         }
 
         // Set error type flags setting controls ERROR / EXCEPTION.
@@ -3181,28 +3181,28 @@ class Validate
             // Following 3 are set by $flags and $options["error_message"]
             case E_ERROR:
                 if ($user_error_msg) {
-                    $this->errorImplStore($this->userErrors, $user_error_msg);
+                    $this->appendError($this->userErrors, $user_error_msg);
                 }
                 break;
             case E_WARNING:
                 if ($user_error_msg) {
-                    $this->errorImplStore($this->userWarnings, $user_error_msg);
+                    $this->appendError($this->userWarnings, $user_error_msg);
                 }
                 break;
             case E_NOTICE:
                 if ($user_error_msg) {
-                    $this->errorImplStore($this->userNotices, $user_error_msg);
+                    $this->appendError($this->userNotices, $user_error_msg);
                 }
                 break;
             // Following 3 are set by function/method. e.g. validate_error()
             case E_USER_ERROR:
-                $this->errorImplStore($this->userErrors, $message);
+                $this->appendError($this->userErrors, $message);
                 break;
             case E_USER_WARNING:
-                $this->errorImplStore($this->userWarnings, $message);
+                $this->appendError($this->userWarnings, $message);
                 break;
             case E_USER_NOTICE:
-                $this->errorImplStore($this->userNotices, $message);
+                $this->appendError($this->userNotices, $message);
                 break;
             default:
                 trigger_error('Cannot mix error level. e.g. E_WARNING | E_NOTICE', E_USER_ERROR);
@@ -3247,7 +3247,7 @@ class Validate
     /**
      * Store errors as array.
      */
-    private function errorImplStore(&$storage, $error)
+    private function appendError(&$storage, $error)
     {
         assert(is_array($storage));
         // System errors are array. User errors are string.
@@ -3295,7 +3295,7 @@ class Validate
      *
      * @return null
      */
-    private function internalError($error, $spec, $func_opts, $type = E_ERROR)
+    private function reportError($error, $spec, $func_opts, $type = E_ERROR)
     {
         assert(is_array($error));
         assert(is_string($error['message']));
@@ -3314,7 +3314,7 @@ class Validate
         }
 
         $this->setContextErrorValue($error['value']);
-        $this->errorImpl($error['message'], $type);
+        $this->dispatchError($error['message'], $type);
     }
 
 
@@ -3327,7 +3327,7 @@ class Validate
      *
      * @return null
      */
-    private function internalWarning($error, $spec, $func_opts)
+    private function reportWarning($error, $spec, $func_opts)
     {
         assert(is_array($error));
         assert(is_string($error['message']));
@@ -3338,7 +3338,7 @@ class Validate
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
 
         $this->setContextErrorValue($error['value']);
-        $this->errorImpl($error['message'], E_WARNING);
+        $this->dispatchError($error['message'], E_WARNING);
     }
 
 
@@ -3351,7 +3351,7 @@ class Validate
      *
      * @return null
      */
-    private function internalNotice($error, $spec, $func_opts)
+    private function reportNotice($error, $spec, $func_opts)
     {
         assert(is_array($error));
         assert(is_string($error['message']));
@@ -3362,7 +3362,7 @@ class Validate
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
 
         $this->setContextErrorValue($error['value']);
-        $this->errorImpl($error['message'], E_NOTICE);
+        $this->dispatchError($error['message'], E_NOTICE);
     }
 
 
@@ -3371,24 +3371,24 @@ class Validate
      *
      * @return array
      */
-    private function getErrorAndWarning($type)
+    private function collectErrors($type)
     {
-        $ret = array();
+        $report = array();
         switch ($type) {
             case E_USER_ERROR:
-                $ret['error']   = $this->userErrors ?? [];
-                $ret['warning'] = $this->userWarnings ?? [];
-                $ret['notice']  = $this->userNotices ?? [];
+                $report['error']   = $this->userErrors ?? [];
+                $report['warning'] = $this->userWarnings ?? [];
+                $report['notice']  = $this->userNotices ?? [];
                 break;
             case E_ERROR:
-                $ret['error']   = $this->errors ?? [];
-                $ret['warning'] = $this->warnings ?? [];
-                $ret['notice']  = $this->notices ?? [];
+                $report['error']   = $this->errors ?? [];
+                $report['warning'] = $this->warnings ?? [];
+                $report['notice']  = $this->notices ?? [];
                 break;
             default:
                 trigger_error('Report this error.', E_USER_ERROR);
         }
-        return $ret;
+        return $report;
     }
 
 
@@ -3402,7 +3402,7 @@ class Validate
      *
      * @return bool TRUE for success, FALSE otherwise.
      */
-    private function validateSpecImpl(&$spec)
+    private function checkSpecEntry(&$spec)
     {
         if (!is_array($spec)) {
             $this->specError(
@@ -3476,7 +3476,7 @@ class Validate
 
 
         // Special validation validates unvalidated result(value).
-        // Unvalidated result is checked after validateImpl().
+        // Unvalidated result is checked after runValidation().
         // Spec check is called from inside Validate, then this is used.
         if ($spec[VALIDATE_ID] === VALIDATE_UNVALIDATED) {
             // No check is needed.
@@ -3557,7 +3557,7 @@ class Validate
             }
 
             foreach ($spec[VALIDATE_PARAMS] as $k => $s) {
-                $tmp = $this->validateSpecImpl($s);
+                $tmp = $this->checkSpecEntry($s);
                 if ($tmp === true) {
                     unset($spec[VALIDATE_PARAMS][$k]);
                 } else {
@@ -3618,7 +3618,7 @@ class Validate
         $params = &$spec[VALIDATE_PARAMS];
         foreach ($params as $key => $val) {
             array_push($this->currentElem, $key);
-            if ($this->validateSpecImpl($params[$key])) {
+            if ($this->checkSpecEntry($params[$key])) {
                 unset($params[$key]);
             }
             array_pop($this->currentElem);
@@ -3924,7 +3924,7 @@ class Validate
                             ]
                         );
                         $ret = false;
-                    } elseif (self::bigintCmp($options['min'], $options['max']) > 0) {
+                    } elseif (self::compareBigInt($options['min'], $options['max']) > 0) {
                         $this->specError(
                             [
                                 'message' => $vname.' must have valid "min" and "max" options. min: "'

@@ -50,8 +50,9 @@ $var = "This_is_my_stupid_password";
 $validated = validate($ctx, $var, $B['alpha128'], VALIDATE_OPT_DISABLE_EXCEPTION); // Failure.
 // Allow '_' as valid char
 $var = "This_is_my_stupid_password";
-$B['alpha128'][VALIDATE_OPTIONS]['ascii'] = '_';
-$validated = validate($ctx, $var, $B['alpha128'], VALIDATE_OPT_DISABLE_EXCEPTION); // Success.
+$alpha128_with_underscore = $B['alpha128'];
+$alpha128_with_underscore[VALIDATE_OPTIONS]['ascii'] = '_';
+$validated = validate($ctx, $var, $alpha128_with_underscore, VALIDATE_OPT_DISABLE_EXCEPTION); // Success.
 
 
 // $B['header4096'] is a spec for HTTP header w/o UTF-8 chars. $B['header4096u'] allows UTF-8 chars.
@@ -60,6 +61,7 @@ $validated = validate($ctx, $var, $B['header4096']); // Success
 $var = '日本語NID=139=gJnuNA8zuOetvT8uXxXG9PU53LMIXlH-i27alOHmkGGWhQ8Ah6jeDOSpstzbi9JgqWr_W4zPyuqZ75j1KN3yIFz7KqfZQTwIDhx9Gto4eIE6qakO5YvaBUjes9TI-d9i; 1P_JAR=2018-9-22-0';
 $validated = validate($ctx, $var, $B['header4096'], VALIDATE_OPT_DISABLE_EXCEPTION); // Failure.
 // $B's harder specs allow 1 char strings. Disallow short strings
-$B['header4096'][VALIDATE_OPTIONS]['min'] = 60;
+$header4096_min60 = $B['header4096'];
+$header4096_min60[VALIDATE_OPTIONS]['min'] = 60;
 $var = 'abc';
-$validated = validate($ctx, $var, $B['header4096'], VALIDATE_OPT_DISABLE_EXCEPTION); // Failure.
+$validated = validate($ctx, $var, $header4096_min60, VALIDATE_OPT_DISABLE_EXCEPTION); // Failure.

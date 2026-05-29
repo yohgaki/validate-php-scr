@@ -7,7 +7,7 @@
 require_once __DIR__.'/../Validate.php';
 
 // Load basic types
-require_once __DIR__.'../../lib/basic_types.php';
+require_once __DIR__.'/../lib/basic_types.php';
 
 /**
  * POST parameter definition
@@ -88,8 +88,7 @@ $country = [
                 validate_error($ctx, 'Country validation: Empty input.');
                 return false;
             }
-            $ctx['options']['error_message'] = 'Invalid country should not be sent. Go away, criminals.';
-            validate_error($ctx, 'Country validation: malformed input detected.');
+            validate_error($ctx, 'Country validation: malformed input detected. Invalid country should not be sent. Go away, criminals.');
             return false;
         }
     ]

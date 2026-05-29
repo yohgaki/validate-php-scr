@@ -1,6 +1,6 @@
 <?php
 /**
- * Somewhat realistic wep app input validation example.
+ * Somewhat realistic web app input validation example.
  * e.g. Start CLI web server like "php -S 127.0.0.1:8888", then
  * access http://127.0.0.1:8888/00-validate-web.php with your browser.
  *
@@ -62,7 +62,7 @@ $spec2 = $tmp;
 ?>
 <html>
 <head>
-    <title>Somewhat realistic wep app input validation example.</title>
+    <title>Somewhat realistic web app input validation example.</title>
 </head>
 <body>
 <form method="post">

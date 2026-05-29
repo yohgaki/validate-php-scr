@@ -57,8 +57,8 @@ function validate(&$ctx, &$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
     if (!is_array($specs)) {
         throw new InvalidArgumentException('Spec must be array.');
     } elseif (($func_opts & VALIDATE_OPT_CHECK_SPEC)
-         && !validate_spec($specs, $r, $tmp)) {
-        print_r($tmp->getSystemErrors());
+         && !validate_spec($specs, $unvalidatedSpecs, $specCheckCtx)) {
+        print_r($specCheckCtx->getSystemErrors());
         throw new InvalidArgumentException('Invalid validation spec detected. Fix spec errors first.');
     }
     if (!is_int($func_opts)) {

@@ -4,7 +4,7 @@
 require_once __DIR__.'/../validate_func.php';
 
 // Load specs
-require_once __DIR__.'/00-validate-web-param-specs.php';
+require_once __DIR__.'/99-web-specs.php';
 
 // Make complex spec
 $spec = [
