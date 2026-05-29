@@ -1,6 +1,6 @@
 # "Validate" for PHP - An INPUT data validation framework
 
-[![Build Status](https://travis-ci.org/yohgaki/validate-php-scr.svg?branch=master)](https://travis-ci.org/yohgaki/validate-php-scr)
+[![Build Status](https://travis-ci.com/yohgaki/validate-php-scr.svg?branch=master)](https://travis-ci.com/yohgaki/validate-php-scr)
 
 "Validate" is "input data validation **framework**" that is developed to be useful for "CERT Secure Coding" and "Design by Contract"(DbC). "Validate" is designed to develop [**OWASP TOP 10 A10:2017 vulnerability**](https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring) compliant application. "Validate" is planned to be implemented as C module for PHP.
 
