@@ -8,5 +8,12 @@
        Namespaces are deliberately not used; small exception classes live with Validate. -->
   <exclude name="PSR1.Classes.ClassDeclaration.MissingNamespace"/>
   <exclude name="PSR1.Classes.ClassDeclaration.MultipleClasses"/>
+  <exclude name="PSR1.Files.SideEffects.FoundWithSymbols"/>
+ </rule>
+ <rule ref="Generic.Files.LineLength">
+  <properties>
+   <property name="lineLimit" value="200"/>
+   <property name="absoluteLineLimit" value="0"/>
+  </properties>
  </rule>
 </ruleset>
