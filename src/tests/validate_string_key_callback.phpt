@@ -114,7 +114,7 @@ array(3) {
             int(5)
             ["key_callback"]=>
             object(Closure)#%d (%d) {
-%a              ["parameter"]=>
+%A              ["parameter"]=>
               array(2) {
                 ["$ctx"]=>
                 string(10) "<required>"

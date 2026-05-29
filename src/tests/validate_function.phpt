@@ -180,7 +180,7 @@ array(3) {
             int(1000)
             ["filter"]=>
             object(Closure)#%d (%d) {
-%a              ["parameter"]=>
+%A              ["parameter"]=>
               array(3) {
                 ["$ctx"]=>
                 string(10) "<required>"

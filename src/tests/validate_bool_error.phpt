@@ -6,7 +6,7 @@ require_once __DIR__.'/bootstrap.php';
 if (!class_exists("Validate")) die("skip");
 ?>
 --INI--
-error_reporting=-1
+error_reporting=E_ALL & ~E_DEPRECATED
 --FILE--
 <?php
 require_once __DIR__.'/bootstrap.php';
