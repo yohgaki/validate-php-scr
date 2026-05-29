@@ -42,10 +42,10 @@ Validate PHP is designed to handle both string inputs and natively typed inputs.
 
 ### validate_init()
 
-Initialized Validate object.
+Initializes Validate object.
 
 ```php
-Validate validate([string $root_name='root'])
+Validate validate_init([string $root_name='ROOT'])
 ```
 
 Parameters:
@@ -95,7 +95,7 @@ $func_opts bit flag options:
 Get validation status.
 
 ```php
-bool validate(Validate $ctx)
+bool validate_get_status(Validate $ctx)
 ```
 
 Parameters:
@@ -219,7 +219,7 @@ Return Value:
 
 Description:
 
-validate_get_user_errors() returns user error messages set by user. e.g. validate_errer() or 'error_message' validator option.
+validate_get_user_errors() returns user error messages set by user. e.g. validate_error() or 'error_message' validator option.
 
 ### validate_set_logger_function()
 
@@ -253,7 +253,7 @@ Parameters:
  * $unvalidated - Optional spec(s) that are invalid
  * $ctx - Optional Validate object
 
-Retun Value:
+Return Value:
 
  * Returns TRUE when success, FALSE otherwise.
 
@@ -333,7 +333,7 @@ $specs =
 
 Validator IDs are integers.
 
-Validatetors returns corresponding data type values. To allow and return other data type values, validator options must be specified.
+Validators return corresponding data type values. To allow and return other data type values, validator options must be specified.
 
 Validator ID may be specified like
 
@@ -346,7 +346,7 @@ $single_value_spec[VALIDATE_ID] = VALIDATE_STRING;
  * VALIDATE_INT - Integer
  * VALIDATE_FLOAT - Float
  * VALIDATE_STRING - String
- * VALIDATE_REGEX - Regular Expression
+ * VALIDATE_REGEXP - Regular Expression
  * VALIDATE_RESOURCE - Resource. e.g. Network connection resource.
  * VALIDATE_ARRAY - Array
  * VALIDATE_OBJECT - Object
@@ -420,14 +420,14 @@ String validator reject all chars by default. Allowed chars must be specified ex
  * VALIDATE_STRING_DIGIT - Allow 0-9
  * VALIDATE_STRING_TAB - Allow horizontal TAB.
  * VALIDATE_STRING_LF - Allow linefeed.
- * VALIDATE_STRING_CR' - Allow carrige return.
+ * VALIDATE_STRING_CR - Allow carriage return.
  * VALIDATE_STRING_CRLF_MIXED - WARNING: This option allows broken CR/LF sequence.
  * VALIDATE_STRING_CRLF - Same as (VALIDATE_STRING_LF | VALIDATE_STRING_CR), and ensures correct CR/LF sequence.
  * VALIDATE_STRING_LOWER_ALPHA - Allow lower alphabets.
  * VALIDATE_STRING_UPPER_ALPHA - Allow upper(capital) alphabets.
  * VALIDATE_STRING_ALPHA - Same as (VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_UPPER_ALPHA)
  * VALIDATE_STRING_ALNUM - Same as (VALIDATE_STRING_ALPHA | VALIDATE_STRING_DIGIT)
- * VALIDATE_STRING_SYMBOL - Allow cymbol chars, but not controls chars. WARNING: Dangerous option
+ * VALIDATE_STRING_SYMBOL - Allow symbol chars, but not control chars. WARNING: Dangerous option
  * VALIDATE_STRING_MB - Allow MultiByte chars. Only UTF-8 is supported.
  * VALIDATE_STRING_BINARY - Allow anything. WARNING: Dangerous option
  * VALIDATE_STRING_RFC3454_C - Allow Unicode CNTRL char. ASCII code CNTRL is handled by above flags. e.g. VALIDATE_STRING_LF.
@@ -444,8 +444,8 @@ Callback validator accepts flags that are accepted by string validator. Constant
  * VALIDATE_CALLBACK_TAB - VALIDATE_STRING_TAB
  * VALIDATE_CALLBACK_LF - VALIDATE_STRING_LF
  * VALIDATE_CALLBACK_CR - VALIDATE_STRING_CR
- * VALIDATE_CALLBACK_CRLF_MIXED - VALIDATE_STRING_CRLF_MIXED)
- * VALIDATE_CALLBACK_CRLF - VALIDATE_STRING_LF | VALIDATE_STRING_CR)
+ * VALIDATE_CALLBACK_CRLF_MIXED - VALIDATE_STRING_CRLF_MIXED
+ * VALIDATE_CALLBACK_CRLF - VALIDATE_STRING_LF | VALIDATE_STRING_CR
  * VALIDATE_CALLBACK_LOWER_ALPHA - VALIDATE_STRING_LOWER_ALPHA
  * VALIDATE_CALLBACK_UPPER_ALPHA - VALIDATE_STRING_UPPER_ALPHA
  * VALIDATE_CALLBACK_ALPHA - (VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_UPPER_ALPHA)
@@ -467,8 +467,8 @@ Regex validator accepts flags that are accepted by string validator. Constants a
  * VALIDATE_REGEXP_TAB - VALIDATE_STRING_TAB
  * VALIDATE_REGEXP_LF - VALIDATE_STRING_LF
  * VALIDATE_REGEXP_CR - VALIDATE_STRING_CR
- * VALIDATE_REGEXP_CRLF_MIXED - VALIDATE_STRING_CRLF_MIXED)
- * VALIDATE_REGEXP_CRLF - VALIDATE_STRING_LF | VALIDATE_STRING_CR)
+ * VALIDATE_REGEXP_CRLF_MIXED - VALIDATE_STRING_CRLF_MIXED
+ * VALIDATE_REGEXP_CRLF - VALIDATE_STRING_LF | VALIDATE_STRING_CR
  * VALIDATE_REGEXP_LOWER_ALPHA - VALIDATE_STRING_LOWER_ALPHA
  * VALIDATE_REGEXP_UPPER_ALPHA - VALIDATE_STRING_UPPER_ALPHA
  * VALIDATE_REGEXP_ALPHA - (VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_UPPER_ALPHA)
@@ -488,7 +488,7 @@ This is not a type validator, but applies multiple validators for a value.
 
 ## Validator options
 
-Validator options are strings.
+Validator options can be strings, integers, arrays, or callables depending on the option.
 
 Validator options are specified like
  $single_value_spec[VALIDATE_OPTIONS]['opt_name'] = opt_value;
@@ -545,7 +545,7 @@ $vtrim = function($ctx, $input, &$error) {
     return trim($input);
 };
 
-$B['header'] = [
+$basicTypes['header'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
     [
@@ -576,7 +576,7 @@ Return Value:
 Description:
 
 'key_callback' is for array key validations for array of scalars. Only integer key is allowed by default.
-VALIDATE_FLAG_KEY_ALNUM flags can be used to allow alnum chars and '_'.
+VALIDATE_FLAG_ARRAY_KEY_ALNUM flag can be used to allow alnum chars and '_'.
 
 
 Example:
@@ -615,7 +615,7 @@ Validate.php uses 'key_callback' as follows:
 ### 'callback' for VALIDATE_CALLBACK validator
 
 ```php
-bool callbak(Validate $ctx, mixed &$result, mixed $input)
+bool callback(Validate $ctx, mixed &$result, mixed $input)
 ```
 
 Parameters:

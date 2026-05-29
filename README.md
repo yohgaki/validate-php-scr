@@ -24,7 +24,7 @@ Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.m
 
 ## Basic Design
 
-* **Framework** - "Validate" is framework, not an out of box library by itself. Provides easy, yet flexible input data validations.
+* **Framework** - "Validate" is a framework, not an out-of-the-box library by itself. Provides easy, yet flexible input data validations.
 * **Secure** - No insecure defaults. Everything has to be specified explicitly. i.e. White list.
 * **Fast & Simple** - Define data validation rules and use them. No code execution for building validation rules.
 * **Easy to use** - Simple PHP array rule specification. Plain PHP code for complex inputs.
@@ -38,7 +38,6 @@ Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.m
 ## Requirements
 
 * PHP 8.0 and up.
-* PHP 7.0 and up.
 * BCMath module.
 
 ### Recommended
@@ -49,11 +48,11 @@ Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.m
 
 ## Basic Behaviors
 
-* validate() does now allow anything unless explicitly specified. i.e. Strictly white listing.
+* validate() does not allow anything unless explicitly specified. i.e. Strictly white listing.
 * validate() converts input values to native types when it is possible. e.g. '123' to int. 'yes'/'no' to bool.
-* validate() processes input values and and validation specs recursively. i.e. Any input values (scalar/array/object) are accepted.
+* validate() processes input values and validation specs recursively. i.e. Any input values (scalar/array/object) are accepted.
 * validate() checks validation spec format by default. i.e. Disable spec format check for production.
-* validate() stores validation statues to context. e.g. $ctx in examples below.
+* validate() stores validation statuses to context. e.g. $ctx in examples below.
 * validate() throws InvalidArgumentException by default.
 
 Tip:
@@ -75,10 +74,10 @@ require_once __DIR__.'/../lib/basic_types.php';
 
 // Validate domain name
 $domain = 'es-i.jp';
-$domain = validate($ctx, $domain, $B['fqdn']);
+$domain = validate($ctx, $domain, $basicTypes['fqdn']);
 // Validate record ID
 $id = '1234';
-$id = validate($ctx, $id, $B['uint32']);
+$id = validate($ctx, $id, $basicTypes['uint32']);
 // Check results
 var_dump($domain, $id);
 ```
@@ -99,10 +98,10 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines basic type array $B
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION;
 // Validate domain name w/o exception
 $domain = 'es-i.jp';
-$domain = validate($ctx, $domain, $B['fqdn'], $func_opts);
+$domain = validate($ctx, $domain, $basicTypes['fqdn'], $func_opts);
 // Validate record ID
 $id = '1234';
-$id = validate($ctx, $id, $B['uint32'], $func_opts);
+$id = validate($ctx, $id, $basicTypes['uint32'], $func_opts);
 
 if (validate_get_status($ctx) == false) {
     // Check last validation error
@@ -207,17 +206,17 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
 $request_headers_orig = ['a'=>'abc', 'b'=>'456']; //apache_request_headers(); // Get request headers
 
 // Check cookie and user agent. Allow undefined and extra headers.
-$B['cookie'][VALIDATE_FLAGS]                 |= VALIDATE_FLAG_UNDEFINED; // Allow undefined(optional)
-$B['user-agent'][VALIDATE_FLAGS]             |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT; // Allow undefined and set default
-$B['user-agent'][VALIDATE_OPTIONS]['default'] = '';
-$B['user-agent'][VALIDATE_OPTIONS]['min']     = 0; // Allow 0 length(empty)
+$basicTypes['cookie'][VALIDATE_FLAGS]                 |= VALIDATE_FLAG_UNDEFINED; // Allow undefined(optional)
+$basicTypes['user-agent'][VALIDATE_FLAGS]             |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT; // Allow undefined and set default
+$basicTypes['user-agent'][VALIDATE_OPTIONS]['default'] = '';
+$basicTypes['user-agent'][VALIDATE_OPTIONS]['min']     = 0; // Allow 0 length(empty)
 $spec1 = [ // Explicit validations
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
     ['min'=>2, 'max'=>20], // Inputs must have 2 to 20 elements.
     [
-        'Cookie' => $B['cookie'],
-        'User-Agent' => $B['user-agent'],
+        'Cookie' => $basicTypes['cookie'],
+        'User-Agent' => $basicTypes['user-agent'],
     ]
 ];
 
@@ -226,11 +225,11 @@ $request_headers = validate($ctx, $request_headers_orig, $spec1);
 
 // Check the rest of headers.
 // Allow array 'header512' strings and ALNUM + '_' + '-' keys
-$B['header512'][VALIDATE_FLAGS]   |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
-$B['header512'][VALIDATE_OPTIONS]['min'] = 0; // Allow 0 length(empty) headers
-$B['header512'][VALIDATE_OPTIONS]['amin'] = 0; // Allow 0 extra headers
-$B['header512'][VALIDATE_OPTIONS]['amax'] = 20; // Allow 20 extra headers
-$spec2 = $B['header512'];
+$basicTypes['header512'][VALIDATE_FLAGS]   |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
+$basicTypes['header512'][VALIDATE_OPTIONS]['min'] = 0; // Allow 0 length(empty) headers
+$basicTypes['header512'][VALIDATE_OPTIONS]['amin'] = 0; // Allow 0 extra headers
+$basicTypes['header512'][VALIDATE_OPTIONS]['amax'] = 20; // Allow 20 extra headers
+$spec2 = $basicTypes['header512'];
 
 // $request_headers has only validated values. No control chars nor multibyte chars.
 $request_headers += validate($ctx, $request_headers_orig, $spec2);
@@ -291,7 +290,7 @@ Examples.
 Codes.
 
  * validate() and other function definitions are in [validate_func.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate_func.php)
- * Validator behavior is defined in [validate.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate.php)
+ * Validator behavior is defined in [Validate.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/Validate.php)
  * Validator flags is defined in [validate_defs.php](https://github.com/yohgaki/validate-php-scr/blob/master/src/validate_defs.php)
 
 
@@ -338,4 +337,4 @@ https://github.com/yohgaki/validate-php (Do not use this. Use PHP script version
 
 ## Comments & Issues
 
-Comments, Bug reports and PRs are welcomed! Please remember "Validate" is not optimized for OO nor PHP scripts, but C module. This script is planed to be implemented as C module in the future.
+Comments, Bug reports and PRs are welcomed! Please remember "Validate" is not optimized for OO nor PHP scripts, but C module. This script is planned to be implemented as a C module in the future.
