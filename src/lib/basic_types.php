@@ -39,17 +39,17 @@ $basicTypes['uint32'] = [
     ['min' => 0, 'max' => '4294967295']
 ];
 
-// int53 is max range that both 32/64 CPU can compute int correctly.
+// int53: safe integer range for IEEE 754 double / JavaScript Number (±(2^53-1))
 $basicTypes['int53'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => '-4503599627370496', 'max' => '4503599627370495']
+    ['min' => '-9007199254740991', 'max' => '9007199254740991']
 ];
 
 $basicTypes['uint53'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => 0, 'max' => '9007199254740992']
+    ['min' => 0, 'max' => '9007199254740991']
 ];
 
 $basicTypes['int64'] = [
@@ -61,7 +61,7 @@ $basicTypes['int64'] = [
 $basicTypes['uint64'] = [
     VALIDATE_INT,
     VALIDATE_INT_AS_STRING,
-    ['min' => 0, 'max' => '73786976294838206463']
+    ['min' => 0, 'max' => '18446744073709551615']
 ];
 
 $basicTypes['int128'] = [
@@ -84,6 +84,28 @@ if (PHP_INT_SIZE === 4) {
     $basicTypes['int64'][2] = VALIDATE_INT_AS_STRING;
     $basicTypes['uint64'][2] = VALIDATE_INT_AS_STRING;
 }
+
+// Boolean
+$basicTypes['bool'] = [
+    VALIDATE_BOOL,
+    VALIDATE_FLAG_NONE,
+    []
+];
+
+// Floats
+// You should set min/max by yourself to use 'float'.
+$basicTypes['float'] = [
+    VALIDATE_FLOAT,
+    VALIDATE_FLAG_NONE,
+    ['min' => -INF, 'max' => INF]
+];
+
+// Non-negative float
+$basicTypes['float_pos'] = [
+    VALIDATE_FLOAT,
+    VALIDATE_FLAG_NONE,
+    ['min' => 0, 'max' => INF]
+];
 
 // TEXT specs
 // Some of them assumes client side validation.
@@ -413,23 +435,25 @@ $basicTypes['text8192_s'] =  [
 ];
 
 // SQL Identifiers
-// Many chars are allowed, but restrict only alnum.
+// Restrict to alnum + underscore. First char must not be a digit (SQL standard).
 // SQL standards max is 127 chars, but PostgreSQL max is 63.
-$basicTypes['sqlident63'] =  [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+$basicTypes['sqlident63'] = [
+    VALIDATE_REGEXP,
+    VALIDATE_FLAG_NONE,
     [
         'min' => 1, 'max' => 63,
-        'ascii' => '_',
+        'ascii' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_',
+        'regexp' => '/\A[a-zA-Z_][a-zA-Z0-9_]*\z/',
     ]
 ];
 
-$basicTypes['sqlident127'] =  [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+$basicTypes['sqlident127'] = [
+    VALIDATE_REGEXP,
+    VALIDATE_FLAG_NONE,
     [
         'min' => 1, 'max' => 127,
-        'ascii' => '_',
+        'ascii' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_',
+        'regexp' => '/\A[a-zA-Z_][a-zA-Z0-9_]*\z/',
     ]
 ];
 
@@ -492,6 +516,54 @@ $basicTypes['base64_256'] = [
     [
         'min' => 1, 'max' => 256,
         'ascii' => '+/=',
+    ]
+];
+
+
+// URL-safe Base64 (RFC 4648 §5): uses '-' and '_' instead of '+' and '/', no padding
+// You should set min/max by yourself to use 'base64url'.
+$basicTypes['base64url'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM,
+    [
+        'min' => 1, 'max' => 1,
+        'ascii' => '-_=',
+    ]
+];
+
+$basicTypes['base64url_32'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM,
+    [
+        'min' => 1, 'max' => 32,
+        'ascii' => '-_=',
+    ]
+];
+
+$basicTypes['base64url_64'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM,
+    [
+        'min' => 1, 'max' => 64,
+        'ascii' => '-_=',
+    ]
+];
+
+$basicTypes['base64url_128'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM,
+    [
+        'min' => 1, 'max' => 128,
+        'ascii' => '-_=',
+    ]
+];
+
+$basicTypes['base64url_256'] = [
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM,
+    [
+        'min' => 1, 'max' => 256,
+        'ascii' => '-_=',
     ]
 ];
 
@@ -634,7 +706,7 @@ $basicTypes['hex8'] = [
     ]
 ];
 
-// MD5 or like
+// 64-bit hash (e.g. SipHash-64)
 $basicTypes['hex16'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
@@ -644,7 +716,7 @@ $basicTypes['hex16'] = [
     ]
 ];
 
-// SHA-1
+// 96-bit hash
 $basicTypes['hex24'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
@@ -654,7 +726,7 @@ $basicTypes['hex24'] = [
     ]
 ];
 
-// SHA256 / SHA3-256
+// MD5 / RIPEMD-128 (128 bits = 16 bytes = 32 hex chars)
 $basicTypes['hex32'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
@@ -664,7 +736,27 @@ $basicTypes['hex32'] = [
     ]
 ];
 
-// SHA512 / SHA3-512
+// SHA1 / RIPEMD-160 (160 bits = 20 bytes = 40 hex chars)
+$basicTypes['hex40'] = [
+    VALIDATE_STRING,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 40, 'max' => 40,
+        'ascii' => 'abcdefABCDEF0123456789',
+    ]
+];
+
+// SHA224 / SHA3-224 (224 bits = 28 bytes = 56 hex chars)
+$basicTypes['hex56'] = [
+    VALIDATE_STRING,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 56, 'max' => 56,
+        'ascii' => 'abcdefABCDEF0123456789',
+    ]
+];
+
+// SHA256 / SHA3-256 (256 bits = 32 bytes = 64 hex chars)
 $basicTypes['hex64'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
@@ -674,6 +766,17 @@ $basicTypes['hex64'] = [
     ]
 ];
 
+// SHA384 / SHA3-384 (384 bits = 48 bytes = 96 hex chars)
+$basicTypes['hex96'] = [
+    VALIDATE_STRING,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 96, 'max' => 96,
+        'ascii' => 'abcdefABCDEF0123456789',
+    ]
+];
+
+// SHA512 / SHA3-512 (512 bits = 64 bytes = 128 hex chars)
 $basicTypes['hex128'] = [
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
@@ -699,9 +802,44 @@ $basicTypes['uuid'] = [
             return strtolower($input);
         },
         'ascii' => 'abcdef0123456789-',
-        'regexp' => '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/',
+        'regexp' => '/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/',
     ]
 ];
+
+// Date / Time
+// ISO 8601 date: YYYY-MM-DD (day-of-month range is not fully validated without calendar logic)
+$basicTypes['date'] = [
+    VALIDATE_REGEXP,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 10, 'max' => 10,
+        'ascii' => '0123456789-',
+        'regexp' => '/\A\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\z/',
+    ]
+];
+
+// ISO 8601 time: HH:MM or HH:MM:SS
+$basicTypes['time'] = [
+    VALIDATE_REGEXP,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 5, 'max' => 8,
+        'ascii' => '0123456789:',
+        'regexp' => '/\A([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\z/',
+    ]
+];
+
+// ISO 8601 datetime: YYYY-MM-DDTHH:MM[:SS][Z|±HH:MM] or space separator
+$basicTypes['datetime'] = [
+    VALIDATE_REGEXP,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 16, 'max' => 25,
+        'ascii' => '0123456789T :-+Z',
+        'regexp' => '/\A\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[T ]([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?(?:Z|[+-](?:0\d|1[0-4]):[0-5]\d)?\z/',
+    ]
+];
+
 
 // IP Address
 $basicTypes['ipv4'] = [
@@ -710,7 +848,7 @@ $basicTypes['ipv4'] = [
     [
         'min' => 7, 'max' => 15,
         'ascii' => '0123456789.',
-        'regexp' => '/^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/'
+        'regexp' => '/\A((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\z/'
     ]
 ];
 
@@ -721,9 +859,21 @@ $basicTypes['ipv6'] = [
         'min' => 3, 'max' => 45, // Includes IPv4 mapped IPv6. Otherwise, max => 39
         'ascii' => '0123456789abcdefABCDEF:.',
         // https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
-        'regexp' => '/^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/'
+        'regexp' => '/\A(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\z/'
     ]
 ];
+
+// IPv4 CIDR notation (e.g. 192.168.0.0/24)
+$basicTypes['cidr4'] = [
+    VALIDATE_REGEXP,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 9, 'max' => 18,
+        'ascii' => '0123456789./',
+        'regexp' => '/\A((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)\/(3[0-2]|[12]?\d)\z/',
+    ]
+];
+
 
 // Domain name
 $basicTypes['fqdn'] = [
@@ -755,6 +905,48 @@ $basicTypes['hostname'] = [
         'ascii' => '-_',
     ]
 ];
+
+// Domain name - format validation only, no DNS lookup (see 'fqdn' for DNS-verified version)
+// RFC 1123: labels 1-63 chars, total max 253, must have at least one dot
+$basicTypes['domain'] = [
+    VALIDATE_REGEXP,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 3, 'max' => 253,
+        'ascii' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-',
+        'regexp' => '/\A(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}\z/',
+    ]
+];
+
+// Email address - format validation only (RFC 5321/5322 practical subset)
+// Max 64 chars local-part, max 255 chars domain, max 254 chars total
+$basicTypes['email'] = [
+    VALIDATE_CALLBACK,
+    VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
+    [
+        'min' => 6, 'max' => 254,
+        'callback' => function($ctx, &$result, $input) {
+            if (!filter_var($input, FILTER_VALIDATE_EMAIL)) {
+                validate_error($ctx, 'Invalid email address format.');
+                return false;
+            }
+            $result = $input;
+            return true;
+        },
+    ]
+];
+
+// URL slug: lowercase alnum and hyphens, no leading/trailing hyphen
+$basicTypes['slug'] = [
+    VALIDATE_REGEXP,
+    VALIDATE_FLAG_NONE,
+    [
+        'min' => 1, 'max' => 255,
+        'ascii' => 'abcdefghijklmnopqrstuvwxyz0123456789-',
+        'regexp' => '/\A[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\z/',
+    ]
+];
+
 
 // HTTP header
 // https://tools.ietf.org/html/rfc7230#section-3.2
@@ -946,8 +1138,32 @@ $basicTypes['header32ku'] = [
     ]
 ];
 
+// JSON string - validates that input is parseable JSON
+// VALIDATE_CALLBACK_SYMBOL allows all ASCII symbols including { } [ ] " \ etc.
+$basicTypes['json'] = [
+    VALIDATE_CALLBACK,
+    VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_SPACE
+     | VALIDATE_CALLBACK_CRLF | VALIDATE_CALLBACK_TAB | VALIDATE_CALLBACK_MB,
+    [
+        'min' => 2, 'max' => 65535,
+        'callback' => function($ctx, &$result, $input) {
+            json_decode($input);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                validate_error($ctx, 'Invalid JSON: ' . json_last_error_msg());
+                return false;
+            }
+            $result = $input;
+            return true;
+        },
+    ]
+];
+
+
 // Some HTTP header aliases
 $basicTypes['content-length'] = $basicTypes['uint32'];
 $basicTypes['content-type'] = $basicTypes['header128'];
 $basicTypes['user-agent'] = $basicTypes['header512'];
 $basicTypes['cookie'] = $basicTypes['header4096'];
+
+// Networking aliases
+$basicTypes['port'] = $basicTypes['uint16'];

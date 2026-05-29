@@ -2018,11 +2018,11 @@ class Validate
         $lead = empty($lead) ? '' : '['.$lead.']?';
 
         $chk = true;
-        if (!preg_match('/^'.$lead.'(?:0|[1-9]\\d*)(?:\\.\\d+)?$/', $ret_str)) {
+        if (!preg_match('/\A'.$lead.'(?:0|[1-9]\\d*)(?:\\.\\d+)?\z/', $ret_str)) {
             $chk = false;
         }
         if ($flags & VALIDATE_FLOAT_SCIENTIFIC) {
-            if (preg_match('/^'.$lead.'(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+\\-]?\\d+)?$/', $ret_str)) {
+            if (preg_match('/\A'.$lead.'(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+\\-]?\\d+)?\z/', $ret_str)) {
                 $chk = true;
             } else {
                 $chk = false;
