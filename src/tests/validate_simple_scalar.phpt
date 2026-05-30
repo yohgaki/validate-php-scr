@@ -48,7 +48,8 @@ echo "\n**** validate() FLOAT ****\n";
 $spec = [
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_AS_STRING,
-    ['min' => 0, 'max' => '99999999999999999999999999999999999999999999999'],
+    // 'length' raised from the default 32 so the 47-digit input string fits.
+    ['min' => 0, 'max' => '99999999999999999999999999999999999999999999999', 'length' => 100],
 ];
 $values = [1234, '1234',  '99999999999999999999999999999999999999999999999'];
 foreach ($values as $val) {

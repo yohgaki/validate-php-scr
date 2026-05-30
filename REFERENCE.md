@@ -406,8 +406,8 @@ $single_value_spec[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED;
 ### VALIDATE_FLOAT flags
 
  * VALIDATE_FLOAT_AS_STRING - Return validated value as string.
- * VALIDATE_FLOAT_FRACTION - TODO Implement this.
- * VALIDATE_FLOAT_THOUSAND - TODO Implement this.
+ * VALIDATE_FLOAT_FRACTION - Require a fractional part. "1.5" passes, "1" and "1." fail.
+ * VALIDATE_FLOAT_THOUSAND - Allow thousand separators in the integer part. Separator char comes from the `thousand` option (default `,`).
  * VALIDATE_FLOAT_SCIENTIFIC - Allow scientific notation. e.g. 1.23e10
  * VALIDATE_FLOAT_POSITIVE_SIGN - Allow "+" prefix.
  * VALIDATE_FLOAT_NEGATIVE_SIGN - Allow "-" prefix.
@@ -501,6 +501,8 @@ Validator options are specified like
  * 'key_callback' - Array key validation callback function. By default only int key is allowed. VALIDATE_FLAG_ARRAY_KEY_ALNUM may be used for less strict array key validation.
  * 'INF' - Float validator option allows INF as valid value.
  * '-INF' - Float validator option allows -INF as valid value.
+ * 'decimal' - Float decimal separator (single char). Default `.`.
+ * 'thousand' - Float thousand separator (single char). Default `,`. Only consulted when `VALIDATE_FLOAT_THOUSAND` flag is set; must differ from `decimal`.
  * 'length' - Maximum chars(bytes) for float value strings. Float string could be extremely long. 'max' is used for Maximum value. Default to 32 bytes.
  * 'encoding' - Char encoding for strings. Only UTF-8 is supported currently and default to UTF-8.
  * 'ascii' - Char list for additionally allowed chars in strings.

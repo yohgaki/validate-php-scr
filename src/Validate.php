@@ -1918,17 +1918,26 @@ class Validate
 
 
     /**
-     * Float validator
+     * Float validator.
      *
-     * Supported Flags: See validate_defs.php
-     * Supported Options:
-     * "min" - Minimum length.
-     * "max" - Maximum length.
-     * "filter" - Optional. Filter callback before validation. Use this for normalization.
-     * “INF“ - Optional. Bool value. Allow INF as "max" value.
-     * "-INF" - Optional. Bool value. Allow -INF as "min" value.
-     * "decimal" - Optional. String value. Decimal char. TODO: Not implemented, yet.
-     * "default" - Default value. Default value is subject to be validated also.
+     * Supported flags (see validate_defs.php):
+     *   VALIDATE_FLOAT_AS_STRING     return the input as a numeric string.
+     *   VALIDATE_FLOAT_FRACTION      require a fractional part (e.g. "1.5", reject "1" or "1.").
+     *   VALIDATE_FLOAT_THOUSAND      accept thousand separators in the integer part.
+     *   VALIDATE_FLOAT_SCIENTIFIC    accept scientific notation (1.2e3).
+     *   VALIDATE_FLOAT_POSITIVE_SIGN allow an explicit leading '+'.
+     *   VALIDATE_FLOAT_NEGATIVE_SIGN allow a leading '-' (also implied when min < 0).
+     *
+     * Supported options:
+     *   "min"      numeric. Inclusive lower bound.
+     *   "max"      numeric. Inclusive upper bound.
+     *   "INF"      bool. Permit positive infinity as a valid value.
+     *   "-INF"     bool. Permit negative infinity as a valid value.
+     *   "decimal"  single char. Decimal separator (default '.').
+     *   "thousand" single char. Thousand separator (default ','). Only consulted when VALIDATE_FLOAT_THOUSAND is set.
+     *   "length"   int. Max byte length of a string-form input (default 32).
+     *   "filter"   callable. Pre-filter applied before validation.
+     *   "default"  mixed. Substituted when VALIDATE_FLAG_EMPTY_TO_DEFAULT applies; itself validated.
      *
      * @return bool
      */
@@ -1942,6 +1951,7 @@ class Validate
         assert(isset($options['max']) && is_numeric($options['max']));
         assert($options['min'] <= $options['max']);
         assert(empty($options['decimal']) || (is_string($options['decimal']) && strlen($options['decimal']) === 1));
+        assert(empty($options['thousand']) || (is_string($options['thousand']) && strlen($options['thousand']) === 1));
         assert(empty($options['INF']) || is_bool($options['INF']));
         assert(empty($options['-INF']) || is_bool($options['-INF']));
 
@@ -1953,9 +1963,13 @@ class Validate
         $max = $options['max'];
         $pinf = $options['INF'] ?? false;
         $ninf = $options['-INF'] ?? false;
+        $decimalChar = $options['decimal'] ?? '.';
+        $thousandChar = $options['thousand'] ?? ',';
+        // Spec must guarantee these don't collide; checkSpecEntry() enforces it.
+        assert(!($flags & VALIDATE_FLOAT_THOUSAND) || $decimalChar !== $thousandChar);
 
         if (is_double($value)) {
-            if ($value === NAN) {
+            if (is_nan($value)) {
                 $this->reportError(
                     [
                         'message' => 'VALIDATE_FLOAT: NAN value is not allowed.',
@@ -1992,25 +2006,43 @@ class Validate
                 $this->reportError(
                     [
                         'message' => 'VALIDATE_FLOAT: Value is out of range. min: "'.$min.'" max: "'.$max.'"',
-                        'value' => addslashes($ret),
+                        'value' => $value,
                     ],
                     [VALIDATE_FLOAT, $flags, $options],
                     $func_opts
                 );
                 return false;
             }
-            $validated = $value;
-            return false;
+            // FRACTION flag: native floats trivially satisfy "has a fractional
+            // part" only when the value is non-integral; matches the C module.
+            if (($flags & VALIDATE_FLOAT_FRACTION) && floor($value) == $value) {
+                $this->reportError(
+                    [
+                        'message' => 'VALIDATE_FLOAT: Fractional part is required.',
+                        'value' => $value,
+                    ],
+                    [VALIDATE_FLOAT, $flags, $options],
+                    $func_opts
+                );
+                return false;
+            }
+            if ($flags & VALIDATE_FLOAT_AS_STRING) {
+                $validated = (string)$value;
+            } else {
+                $validated = $value;
+            }
+            return true;
         }
 
-        // By default max 'length' of float value is 32
+        // String-form input. Bound the byte length cheaply before regex work.
         $length = $options['length'] ?? 32;
-        if (strlen($length) > $length) {
+        $ret_str = (string)$value;
+        if (strlen($ret_str) > $length) {
             $this->reportError(
                 [
-                    'message' => 'VALIDATE_FLOAT: Float value is too long. length: \''.$length.'\''.
+                    'message' => 'VALIDATE_FLOAT: Float value is too long. length: \''.$length.'\' '.
                                  'Hint: set "length" option to allow longer length.',
-                    'value' => null,
+                    'value' => $ret_str,
                 ],
                 [VALIDATE_FLOAT, $flags, $options],
                 $func_opts
@@ -2027,10 +2059,10 @@ class Validate
             return true;
         }
 
-        $ret_str = (string)$value;
-        if (!$this->applyDefaultIfEmpty($ret, VALIDATE_FLOAT, $flags, $options)) {
+        if (!$this->applyDefaultIfEmpty($value, VALIDATE_FLOAT, $flags, $options)) {
             return false;
         }
+        $ret_str = (string)$value;
 
         if ($ret_str === '') {
             $this->reportError(
@@ -2044,20 +2076,8 @@ class Validate
             return false;
         }
 
-        // TODO: Implementation differs from C
-        if (!is_numeric($ret_str)) {
-            $this->reportError(
-                [
-                    'message' => 'VALIDATE_FLOAT: Invalid float format.',
-                    'value' => $ret_str,
-                ],
-                [VALIDATE_FLOAT, $flags, $options],
-                $func_opts
-            );
-            return false;
-        }
-
-        // Setup lead sign symbol
+        // Build the format regex from flags + options. The string is parsed
+        // strictly so locale leakage (whitespace, alt forms) cannot pass.
         $lead = '';
         if ($flags & VALIDATE_FLOAT_POSITIVE_SIGN) {
             $lead = '+';
@@ -2067,19 +2087,23 @@ class Validate
         }
         $lead = empty($lead) ? '' : '['.$lead.']?';
 
-        $chk = true;
-        if (!preg_match('/\A'.$lead.'(?:0|[1-9]\\d*)(?:\\.\\d+)?\z/', $ret_str)) {
-            $chk = false;
+        $dec = preg_quote($decimalChar, '/');
+        if ($flags & VALIDATE_FLOAT_THOUSAND) {
+            $thou = preg_quote($thousandChar, '/');
+            // Integer part: either "0", or a grouped form where the first
+            // group is 1-3 digits and every subsequent group is exactly 3.
+            // Ungrouped "1234" is also accepted (the C module's behaviour:
+            // separator is permitted, not required).
+            $int = '(?:0|[1-9]\\d{0,2}(?:'.$thou.'\\d{3})*|[1-9]\\d*)';
+        } else {
+            $int = '(?:0|[1-9]\\d*)';
         }
-        if ($flags & VALIDATE_FLOAT_SCIENTIFIC) {
-            if (preg_match('/\A'.$lead.'(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+\\-]?\\d+)?\z/', $ret_str)) {
-                $chk = true;
-            } else {
-                $chk = false;
-            }
-        }
+        $fracOptional = '(?:'.$dec.'\\d+)?';
+        $fracRequired = $dec.'\\d+';
+        $frac = ($flags & VALIDATE_FLOAT_FRACTION) ? $fracRequired : $fracOptional;
+        $sci = ($flags & VALIDATE_FLOAT_SCIENTIFIC) ? '(?:[eE][+\\-]?\\d+)?' : '';
 
-        if (!$chk) {
+        if (!preg_match('/\A'.$lead.$int.$frac.$sci.'\z/', $ret_str)) {
             $this->reportError(
                 [
                     'message' => 'VALIDATE_FLOAT: Invalid float format.',
@@ -2091,8 +2115,18 @@ class Validate
             return false;
         }
 
-        $ret = (float)$value;
-        if ($ret === NAN || $ret === INF || $ret === -INF) {
+        // Normalize separators before the float cast: drop thousand chars,
+        // then swap a custom decimal char back to '.' so (float) parses.
+        $normalized = $ret_str;
+        if ($flags & VALIDATE_FLOAT_THOUSAND) {
+            $normalized = str_replace($thousandChar, '', $normalized);
+        }
+        if ($decimalChar !== '.') {
+            $normalized = str_replace($decimalChar, '.', $normalized);
+        }
+
+        $ret = (float)$normalized;
+        if (is_nan($ret) || $ret === INF || $ret === -INF) {
             $this->reportError(
                 [
                     'message' => 'VALIDATE_FLOAT: Invalid float value.',
@@ -2118,7 +2152,8 @@ class Validate
         if ($flags & VALIDATE_FLAG_RAW) {
             $validated = $value;
         } elseif ($flags & VALIDATE_FLOAT_AS_STRING) {
-            // TODO Validate float as string is not really a string validation.
+            // Returns the original string so locale glyphs survive round-trip;
+            // callers wanting a canonical form should drop the AS_STRING flag.
             $validated = $ret_str;
         } else {
             $validated = $ret;
@@ -4075,7 +4110,10 @@ class Validate
                     $f[] = 'VALIDATE_FLOAT_AS_STRING';
                 }
                 if ($flags & VALIDATE_FLOAT_FRACTION) {
-                    $f[] = 'VALIDATE_FLOAT_AS_FRACTION';
+                    $f[] = 'VALIDATE_FLOAT_FRACTION';
+                }
+                if ($flags & VALIDATE_FLOAT_THOUSAND) {
+                    $f[] = 'VALIDATE_FLOAT_THOUSAND';
                 }
                 if ($flags & VALIDATE_FLOAT_SCIENTIFIC) {
                     $f[] = 'VALIDATE_FLOAT_SCIENTIFIC';
@@ -4190,6 +4228,7 @@ class Validate
             'amax', 'amin', 'alimit', // Number of array elements.
             'key_callback', // Array key validation callback for VALIDATE_FLAG_ARRAY.
             'INF', '-INF', 'length', // FLOAT option.
+            'decimal', 'thousand', // FLOAT separator chars (paired with VALIDATE_FLOAT_THOUSAND).
             'encoding', 'ascii', 'unicode', // STRING / REGEXP / CALLBACK option.
             'values', // INT / STRING option. (REGEXP / CALLBACK may use, but not use with them)
             'regexp', // REGEXP option.
@@ -4441,6 +4480,61 @@ class Validate
                             'flags'   => $str_flags
                         ]
                     );
+                }
+                if (isset($options['decimal']) && (!is_string($options['decimal']) || strlen($options['decimal']) !== 1)) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' "decimal" option must be a single ASCII character.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
+                }
+                if (isset($options['thousand']) && (!is_string($options['thousand']) || strlen($options['thousand']) !== 1)) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' "thousand" option must be a single ASCII character.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
+                }
+                if (isset($options['thousand']) && !($flags & VALIDATE_FLOAT_THOUSAND)) {
+                    $this->specWarning(
+                        [
+                            'message' => $vname.' has "thousand" option but VALIDATE_FLOAT_THOUSAND flag is not set.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                }
+                if ($flags & VALIDATE_FLOAT_THOUSAND) {
+                    $decimalChar = $options['decimal'] ?? '.';
+                    $thousandChar = $options['thousand'] ?? ',';
+                    if (is_string($decimalChar) && is_string($thousandChar)
+                        && strlen($decimalChar) === 1 && strlen($thousandChar) === 1
+                        && $decimalChar === $thousandChar) {
+                        $this->specError(
+                            [
+                                'message' => $vname.' "decimal" and "thousand" options must differ. Both are "'.$decimalChar.'".',
+                                'spec'    => $spec,
+                                'flags'   => $str_flags
+                            ]
+                        );
+                        $ret = false;
+                    }
+                }
+                if (isset($options['length']) && (!is_int($options['length']) || $options['length'] <= 0)) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' "length" option must be a positive int.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
                 }
                 break;
             default:

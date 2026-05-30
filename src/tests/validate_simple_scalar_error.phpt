@@ -76,7 +76,9 @@ echo "\n**** validate() FLOAT ****\n";
 $spec = [
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
-    ['min' => -0.1, 'max' => '99999999999999999999999999999999999999999999999'],
+    // 'length' raised so the long invalid-format inputs reach the syntax
+    // check instead of being rejected up-front for length.
+    ['min' => -0.1, 'max' => '99999999999999999999999999999999999999999999999', 'length' => 100],
 ];
 $values = [-1, '', null, true, false, new StdClass, '1234abc', 'abc1234',  'e9999999999999999999999999999999999999999999999999'];
 foreach ($values as $val) {

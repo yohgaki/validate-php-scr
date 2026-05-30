@@ -445,7 +445,6 @@ Codes.
 
 * Add Unicode validations. e.g. [RFC 3454](https://www.ietf.org/rfc/rfc3454.txt), [.NET like UnicodeCategory](https://en.wikipedia.org/wiki/Unicode_character_property) (RFC 3454 C check is implemented. Whitelist may be implemented in C module from Unicode standard char definition XML. RFC 3454 C check makes string validation 6 times slower already.)
 * More tests. (Most features are tested.)
-* Some minor features - Float is not validated like C module, etc.
 * Back port this to C module - When API is fixed. (TODO: Cleanup, Optimize, Reorganize PHP code for C implementation.)
 * Spec builder app(?).
 * Learning and automatic spec builder tool(?).
