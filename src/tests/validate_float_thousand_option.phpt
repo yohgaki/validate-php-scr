@@ -138,7 +138,7 @@ foreach (validate_get_system_errors($ctx)['warning'] as $w) {
 
 **** Spec error: 'thousand' option not a single char ****
 bool(false)
-spec error: VALIDATE_FLOAT "thousand" option must be a single ASCII character.
+spec error: VALIDATE_FLOAT "thousand" option must be a single character other than digits, "+", "-", "e" and "E".
 
 **** Spec error: decimal == thousand ****
 bool(false)

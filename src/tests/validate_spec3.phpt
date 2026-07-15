@@ -129,7 +129,7 @@ BOOL no format flags: OK
 ascii non-ASCII: FAIL
   error: VALIDATE_STRING "ascii" option must contain ASCII characters only.
 INF on INT: OK
-  warning: VALIDATE_INT has "INF"/"-INF"/"length" options that have no effect.
+  warning: VALIDATE_INT has "INF"/"-INF"/"length"/"decimal"/"thousand" options that have no effect.
 alimit no ARRAY flag: OK
   warning: VALIDATE_STRING has "alimit" option but VALIDATE_FLAG_ARRAY is not set.
 ARRAY_RECURSIVE no ARRAY: OK

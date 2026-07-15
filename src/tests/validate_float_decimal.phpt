@@ -84,13 +84,13 @@ $spec = [
 tryone('1.5 (dbl)',     1.5,             $spec); // ok — PHP scalar
 tryone('-3.14 (dbl)',   -3.14,           $spec); // ok
 
-echo "\n**** AS_STRING preserves the locale glyph in output ****\n";
+echo "\n**** AS_STRING returns the canonical numeric string ****\n";
 $spec = [
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_AS_STRING,
     ['min' => -10, 'max' => 10, 'decimal' => ','],
 ];
-tryone('"1,5"',         '1,5',           $spec); // string out with ','
+tryone('"1,5"',         '1,5',           $spec); // string out, normalized to '.'
 
 echo "\n**** Spec error: decimal not a string ****\n";
 $spec = [
@@ -153,13 +153,13 @@ foreach (validate_get_system_errors($ctx)['error'] as $e) {
 [1.5 (dbl)] in=1.5 => out=1.5 status=true
 [-3.14 (dbl)] in=-3.14 => out=-3.14 status=true
 
-**** AS_STRING preserves the locale glyph in output ****
-["1,5"] in='1,5' => out='1,5' status=true
+**** AS_STRING returns the canonical numeric string ****
+["1,5"] in='1,5' => out='1.5' status=true
 
 **** Spec error: decimal not a string ****
 bool(false)
-spec error: VALIDATE_FLOAT "decimal" option must be a single ASCII character.
+spec error: VALIDATE_FLOAT "decimal" option must be a single character other than digits, "+", "-", "e" and "E".
 
 **** Spec error: decimal more than 1 char ****
 bool(false)
-spec error: VALIDATE_FLOAT "decimal" option must be a single ASCII character.
+spec error: VALIDATE_FLOAT "decimal" option must be a single character other than digits, "+", "-", "e" and "E".

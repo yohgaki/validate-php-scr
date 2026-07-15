@@ -73,13 +73,13 @@ $spec = [VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, ['min' => 0, 'max' => 1.0e10]]
 tryone('1234.5 (dbl)',  1234.5,          $spec); // ok
 tryone('0.0 (dbl)',     0.0,             $spec); // ok
 
-echo "\n**** AS_STRING preserves separators in output ****\n";
+echo "\n**** AS_STRING returns the canonical numeric string ****\n";
 $spec = [
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_THOUSAND | VALIDATE_FLOAT_AS_STRING,
     ['min' => 0, 'max' => 1.0e6],
 ];
-tryone('"1,234.5"',     '1,234.5',       $spec); // string out, sep preserved
+tryone('"1,234.5"',     '1,234.5',       $spec); // string out, separators removed
 
 echo "\n**** Range applies to numeric value, not raw string ****\n";
 $spec = [VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, ['min' => 0, 'max' => 1000]];
@@ -127,8 +127,8 @@ tryone('999',           '999',           $spec); // ok
 [1234.5 (dbl)] in=1234.5 => out=1234.5 status=true
 [0.0 (dbl)] in=0.0 => out=0.0 status=true
 
-**** AS_STRING preserves separators in output ****
-["1,234.5"] in='1,234.5' => out='1,234.5' status=true
+**** AS_STRING returns the canonical numeric string ****
+["1,234.5"] in='1,234.5' => out='1234.5' status=true
 
 **** Range applies to numeric value, not raw string ****
 [1,234] in='1,234' => out=NULL status=false

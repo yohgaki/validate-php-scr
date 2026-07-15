@@ -37,10 +37,10 @@ tryone('-3.14',     '-3.14', $spec); // ok — negative implicit (min < 0)
 
 echo "\n**** Native double inputs ****\n";
 tryone('1.5 (dbl)', 1.5,   $spec); // ok
-tryone('1.0 (dbl)', 1.0,   $spec); // fail — value is integral
-tryone('0.0 (dbl)', 0.0,   $spec); // fail
+tryone('1.0 (dbl)', 1.0,   $spec); // ok — a native float always satisfies FRACTION
+tryone('0.0 (dbl)', 0.0,   $spec); // ok
 tryone('-3.14',    -3.14, $spec); // ok
-tryone('5 (int)',  5,     $spec); // fail — int promotes to 5.0, integral
+tryone('5 (int)',  5,     $spec); // fail — int is validated as string '5', no fraction notation
 
 echo "\n**** Combined with VALIDATE_FLOAT_SCIENTIFIC ****\n";
 $spec = [
@@ -94,8 +94,8 @@ tryone('0.5',       '0.5', $spec); // ok
 
 **** Native double inputs ****
 [1.5 (dbl)] in=1.5 => out=1.5 status=true
-[1.0 (dbl)] in=1.0 => out=NULL status=false
-[0.0 (dbl)] in=0.0 => out=NULL status=false
+[1.0 (dbl)] in=1.0 => out=1.0 status=true
+[0.0 (dbl)] in=0.0 => out=0.0 status=true
 [-3.14] in=-3.14 => out=-3.14 status=true
 [5 (int)] in=5 => out=NULL status=false
 

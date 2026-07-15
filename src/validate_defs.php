@@ -67,13 +67,14 @@ define('VALIDATE_INT_NEGATIVE_SIGN', 1 << 5); /* Allow a leading '-' sign (negat
 define('VALIDATE_INT_LAST_BIT', 6); /* Used internally — bit count for this type's flags. */
 
 /* VALIDATE_FLOAT flags */
-define('VALIDATE_FLOAT_AS_STRING', 1 << 0); /* Accept the input only as a numeric string; return it without type conversion. */
-define('VALIDATE_FLOAT_FRACTION', 1 << 1); /* Require a fractional part — e.g. "1.5" passes, "1" / "1." fail. */
+define('VALIDATE_FLOAT_AS_STRING', 1 << 0); /* Accept the input only as a numeric string; return it as a canonical numeric string (separators normalized, no type conversion of string input). */
+define('VALIDATE_FLOAT_FRACTION', 1 << 1); /* Require a fractional part in string input — e.g. "1.5" passes, "1" / "1." fail. Native floats always satisfy it. */
 define('VALIDATE_FLOAT_THOUSAND', 1 << 2); /* Allow thousand separators in the integer part. Char comes from the "thousand" option (default ','). */
 define('VALIDATE_FLOAT_SCIENTIFIC', 1 << 3); /* Allow scientific notation (e.g. "1.2e3"). */
 define('VALIDATE_FLOAT_POSITIVE_SIGN', 1 << 4); /* Allow an explicit leading '+' sign. */
 define('VALIDATE_FLOAT_NEGATIVE_SIGN', 1 << 5); /* Allow a leading '-' sign (negative values). */
 define('VALIDATE_FLOAT_LAST_BIT', 6); /* Used internally — bit count for this type's flags. */
+define('VALIDATE_FLOAT_SEPARATOR_INVALID_CHARS', '0123456789+-eE'); /* Used internally — chars the "decimal"/"thousand" separators must not use (they collide with the float grammar). */
 
 /*
  * VALIDATE_STRING flags — whitelist of character classes that are permitted.

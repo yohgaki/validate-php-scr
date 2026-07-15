@@ -405,8 +405,8 @@ $single_value_spec[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED;
 
 ### VALIDATE_FLOAT flags
 
- * VALIDATE_FLOAT_AS_STRING - Return validated value as string.
- * VALIDATE_FLOAT_FRACTION - Require a fractional part. "1.5" passes, "1" and "1." fail.
+ * VALIDATE_FLOAT_AS_STRING - Accept numeric string (or int) input only; native float input is rejected. Returns the validated value as a canonical numeric string (thousand separators removed, decimal separator normalized to `.`), so the result is always `is_numeric()`.
+ * VALIDATE_FLOAT_FRACTION - Require a fractional part in string input. "1.5" passes, "1" and "1." fail. Native float input always satisfies this flag (a PHP float is already a float).
  * VALIDATE_FLOAT_THOUSAND - Allow thousand separators in the integer part. Separator char comes from the `thousand` option (default `,`).
  * VALIDATE_FLOAT_SCIENTIFIC - Allow scientific notation. e.g. 1.23e10
  * VALIDATE_FLOAT_POSITIVE_SIGN - Allow "+" prefix.
@@ -501,9 +501,9 @@ Validator options are specified like
  * 'key_callback' - Array key validation callback function. By default only int key is allowed. VALIDATE_FLAG_ARRAY_KEY_ALNUM may be used for less strict array key validation.
  * 'INF' - Float validator option allows INF as valid value.
  * '-INF' - Float validator option allows -INF as valid value.
- * 'decimal' - Float decimal separator (single char). Default `.`.
- * 'thousand' - Float thousand separator (single char). Default `,`. Only consulted when `VALIDATE_FLOAT_THOUSAND` flag is set; must differ from `decimal`.
- * 'length' - Maximum chars(bytes) for float value strings. Float string could be extremely long. 'max' is used for Maximum value. Default to 32 bytes.
+ * 'decimal' - Float decimal separator (single char). Default `.`. Must not be a digit, `+`, `-`, `e` or `E` (those would corrupt parsing); such specs are rejected.
+ * 'thousand' - Float thousand separator (single char). Default `,`. Only consulted when `VALIDATE_FLOAT_THOUSAND` flag is set; must differ from `decimal` and has the same character restrictions as 'decimal'.
+ * 'length' - Maximum chars(bytes) for float value strings. Float string could be extremely long. 'max' is used for Maximum value. Default to 32 bytes. Note: due to a bug, this limit was not enforced before the float fraction/decimal implementation — specs that accept float strings longer than 32 bytes must now set 'length' explicitly.
  * 'encoding' - Char encoding for strings. Only UTF-8 is supported currently and default to UTF-8.
  * 'ascii' - Char list for additionally allowed chars in strings.
  * 'values' - Set of valid values for string and integer. i.e. If an integer must be 1 or 2, 'values' should be [1=>true,2=>true];
