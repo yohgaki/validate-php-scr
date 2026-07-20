@@ -75,9 +75,9 @@ try {
     var_dump($e->getMessage());
 }
 ?>
---EXPECT--
+--EXPECTF--
 Stream resource
-resource(9) of type (stream)
+resource(%d) of type (stream)
 bool(true)
 
 Bad resource
