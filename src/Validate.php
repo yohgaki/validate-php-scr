@@ -588,12 +588,15 @@ class Validate
         $b = (string)$b;
         $aneg = ($a !== '' && $a[0] === '-');
         $bneg = ($b !== '' && $b[0] === '-');
+        // Normalize magnitudes first so "-0"/"000" compare as plain zero.
+        $a = ltrim($aneg ? substr($a, 1) : $a, '0') ?: '0';
+        $b = ltrim($bneg ? substr($b, 1) : $b, '0') ?: '0';
+        $aneg = $aneg && $a !== '0';
+        $bneg = $bneg && $b !== '0';
         if ($aneg !== $bneg) {
             return $aneg ? -1 : 1;
         }
         if ($aneg) {
-            $a = ltrim(substr($a, 1), '0') ?: '0';
-            $b = ltrim(substr($b, 1), '0') ?: '0';
             $la = strlen($a);
             $lb = strlen($b);
             if ($la !== $lb) {
@@ -601,8 +604,6 @@ class Validate
             }
             return strcmp($b, $a) <=> 0;
         }
-        $a = ltrim($a, '0') ?: '0';
-        $b = ltrim($b, '0') ?: '0';
         $la = strlen($a);
         $lb = strlen($b);
         if ($la !== $lb) {
@@ -1745,8 +1746,15 @@ class Validate
             return true;
         }
 
-        $ret = (int)$value;
-        if ((string)$ret !== (string)$value) {
+        // An explicit '+' sign (allowed via VALIDATE_INT_POSITIVE_SIGN) is not
+        // part of PHP's canonical int string form — strip it before the
+        // round-trip check below or "+42" would be misreported as overflow.
+        $cmp = (string)$value;
+        if ($cmp !== '' && $cmp[0] === '+') {
+            $cmp = substr($cmp, 1);
+        }
+        $ret = (int)$cmp;
+        if ((string)$ret !== $cmp) {
             // Integer overflows and value is converted to float.
             $this->reportError(
                 [
@@ -3506,6 +3514,9 @@ class Validate
 
         if (!is_scalar($this->context_vars['value']) || is_null($this->context_vars['value'])) {
             $value = serialize($this->context_vars['value']);
+        } elseif (is_float($this->context_vars['value']) && is_nan($this->context_vars['value'])) {
+            // PHP 8.5+ warns when NAN is implicitly coerced to string.
+            $value = 'NAN';
         } else {
             $value = $this->context_vars['value'];
         }
