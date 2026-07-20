@@ -326,7 +326,7 @@ class Validate
     {
         if (!$this->validate_params_checked) {
             if (($func_opts & VALIDATE_OPT_CHECK_SPEC)
-                && !$this->validateSpec($specs)) {
+                && !$this->validateSpec($specs, $unvalidated_spec, $this)) {
                 $err = $this->getSystemErrors();
                 if (!empty($err['warning'])) {
                     $cnt = count($err['warning']);
@@ -354,6 +354,11 @@ class Validate
         assert(is_int($func_opts));
         assert(!($func_opts & VALIDATE_OPT_UPPER));
 
+        // NOTE: As written, the leftover ("Unvalidated value remains") check
+        // below only ever fires for a top-level spec that is VALIDATE_ARRAY
+        // *and* carries VALIDATE_FLAG_ARRAY. Plain VALIDATE_ARRAY specs skip
+        // it, so leftover input keys stay in $inputs silently — several tests
+        // (validate_basic, validate_default*) encode that behavior.
         $scalar_validation = ($specs[VALIDATE_ID] !== VALIDATE_ARRAY || !($specs[VALIDATE_FLAGS] & VALIDATE_FLAG_ARRAY));
         // Successful status for each validate() call.
         // Previous errors are stored $this->errors array when object is used multiple times.
@@ -3934,7 +3939,9 @@ class Validate
                 $multi_spec_ret = false;
             }
 
-            foreach ($spec[VALIDATE_PARAMS] as $k => $s) {
+            // VALIDATE_PARAMS may be absent here — that case is already
+            // reported as a spec error above; keep collecting other errors.
+            foreach ($spec[VALIDATE_PARAMS] ?? [] as $k => $s) {
                 $tmp = $this->checkSpecEntry($s);
                 if ($tmp === true) {
                     unset($spec[VALIDATE_PARAMS][$k]);
@@ -4279,6 +4286,7 @@ class Validate
             'encoding', 'ascii', 'unicode', // STRING / REGEXP / CALLBACK option.
             'values', // INT / STRING option. (REGEXP / CALLBACK may use, but not use with them)
             'regexp', // REGEXP option.
+            'resource', // RESOURCE option. Required resource type name.
             'default', // default value for VALIDATE_FLAG_EMPTY_TO_DEFAULT and VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
             'filter', // Filter callback. All validators may have filter.
             'callback', // CALLBACK validator callback.
@@ -4303,7 +4311,7 @@ class Validate
                         );
                         $ret = false;
                     }
-                    if ($spec[VALIDATE_ID] === VALIDATE_OBJECT && !(is_object($options[$known]) && is_callable($optoin[$known]))) {
+                    if ($spec[VALIDATE_ID] === VALIDATE_OBJECT && !(is_object($options[$known]) || is_callable($options[$known]))) {
                         $this->specError(
                             [
                                 'message' => 'VALIDATE_OBJECT has invalid "default" option. "default" value must '.
@@ -4407,10 +4415,28 @@ class Validate
                 break;
             case VALIDATE_INT:
                 if (!isset($options['values'])) {
+                    // compareBigInt() below requires int or plain decimal
+                    // string min/max — anything else (array, float, '1e5')
+                    // would make bccomp() throw instead of reporting the
+                    // broken spec.
+                    $int_minmax_ok = function ($v) {
+                        return is_int($v)
+                               || (is_string($v) && strlen($v)
+                                   && strlen($v) === strspn($v, '-1234567890'));
+                    };
                     if (!(isset($options['min']) && isset($options['max']))) {
                         $this->specError(
                             [
                                 'message' => $vname.' "min" and/or "max" is missing.',
+                                'spec'    => $spec,
+                                'flags'   => $str_flags
+                            ]
+                        );
+                        $ret = false;
+                    } elseif (!$int_minmax_ok($options['min']) || !$int_minmax_ok($options['max'])) {
+                        $this->specError(
+                            [
+                                'message' => $vname.' "min" and "max" options must be int or integer string.',
                                 'spec'    => $spec,
                                 'flags'   => $str_flags
                             ]
@@ -4457,7 +4483,7 @@ class Validate
             case VALIDATE_BOOL:
             case VALIDATE_RESOURCE:
             case VALIDATE_OBJECT:
-                if (isset($options['min']) || isset($options['min'])) {
+                if (isset($options['min']) || isset($options['max'])) {
                     $this->specWarning(
                         [
                             'message' => $vname.' has "min" and/or "max" options that have no effect.',
@@ -4650,8 +4676,7 @@ class Validate
                         ]
                     );
                     $ret = false;
-                }
-                if (!is_callable($options['callback'])) {
+                } elseif (!is_callable($options['callback'])) {
                     $this->specError(
                         [
                             'message' => $vname.' "callback" option is not callable.',
