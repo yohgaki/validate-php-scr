@@ -3,8 +3,8 @@
 ## Unreleased
 
 Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
-`basic_types.php` format fixes, the `VALIDATE_ARRAY` `undeclared` option, and
-example/tool fixes.
+`basic_types.php` format fixes, the `VALIDATE_ARRAY` `undeclared` option,
+example/tool fixes, and remembering checked specs.
 
 ### Changed — behavior changes that can affect existing code
 
@@ -125,12 +125,32 @@ example/tool fixes.
 * `basic_types.php`: `http_host` for the HTTP `Host` header — a host name
   (one label such as `localhost` is fine), IPv4 address or `[IPv6]` address
   with an optional port 1-65535. Examples 95 and 99-web use it.
+* `validate()` remembers specs that passed the `VALIDATE_OPT_CHECK_SPEC` check
+  (up to 64 per process, i.e. per request on PHP-FPM / mod_php) and skips the
+  check for an identical spec — same values, following PHP references, and
+  same object instances. A spec is checked on its first and second use (the
+  second check guards against changes through PHP references), then trusted
+  as a reference-free copy; a changed spec is checked again. `validate_spec()`
+  always checks. Per-call time of `validate()` with the check, before → after:
+
+  | Spec / input | Repeated calls | First use | Without the check |
+  |---|---|---|---|
+  | `95-example.php` spec and CLI sample inputs | 64.2 → 28.0 µs | 63.8 → 65.1 µs | 26.5 µs |
+  | `$basicTypes['uint32']`, `'12345'` | 3.27 → 1.23 µs | 3.29 → 3.34 µs | 1.1 µs |
+
+  Measured in the `php:8.5-cli` Docker image (PHP 8.5.11, no Xdebug, CLI
+  OPcache off) with `-d zend.assertions=-1`, before = commit 01dedde: per-call
+  time of a `hrtime()`-timed loop of 3,000 (95) / 30,000 (`uint32`) calls,
+  best of 5 loops per run, minimum of 9 runs. "First use" empties the cache
+  (through reflection) before every call. The machine was under load, so only
+  the minima are meaningful.
 * `ValidateInvalidSpecException::getContext()`,
   `ValidateInvalidValueException::getError()`.
 * `VALIDATE_TOOLS_DIR` environment variable for `src/tools` (see
   `src/tools/README.md`); the tools refuse directories other users can write to.
 * `src/tests/validate_regressions.phpt`, `src/tests/basic_types_formats.phpt`,
-  `src/tests/validate_array_undeclared.phpt`; PHP 8.5 in both CI matrices.
+  `src/tests/validate_array_undeclared.phpt`, `src/tests/validate_spec_cache.phpt`;
+  PHP 8.5 in both CI matrices.
 
 ### Removed / internal
 

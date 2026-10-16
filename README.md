@@ -50,7 +50,7 @@ Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.m
 * validate() does not allow anything unless explicitly specified. i.e. Strictly white listing.
 * validate() converts input values to native types when it is possible. e.g. '123' to int. 'yes'/'no' to bool.
 * validate() processes input values and validation specs recursively. i.e. Any input values (scalar/array/object) are accepted.
-* validate() checks validation spec format by default (spec errors throw ValidateInvalidSpecException). i.e. Disable spec format check for production.
+* validate() checks validation spec format by default (spec errors throw ValidateInvalidSpecException). It remembers specs that passed, so a spec validated repeatedly in a process is not checked again after its second use. i.e. Disable spec format check for production.
 * validate() rejects input keys that a VALIDATE_ARRAY spec does not declare ("Unvalidated value remains."), unless the spec's "undeclared" option gives a spec for them (e.g. a catch-all for unknown HTTP headers). Pass VALIDATE_OPT_UNVALIDATED for multi-stage validation.
 * validate() stores validation statuses to context. e.g. $ctx in examples below. validate_get_status() reports the most recent validate() call.
 * validate() throws ValidateInvalidValueException by default. Both exception classes extend InvalidArgumentException.

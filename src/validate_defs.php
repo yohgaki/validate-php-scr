@@ -205,7 +205,10 @@ define('VALIDATE_FLAGS_UPPER', 0xffff0000); /* Internal — mask for general VAL
  * behavior of the call itself rather than the per-field validation rules.
  */
 define('VALIDATE_OPT_NONE', 0);      // No options.
-define('VALIDATE_OPT_CHECK_SPEC', 1 << 0); // DEFAULT-ON. Validate the spec array itself first; spec errors throw ValidateInvalidSpecException. Disable in production for speed.
+// DEFAULT-ON. Validate the spec array itself first; spec errors throw ValidateInvalidSpecException.
+// validate() remembers up to 64 specs that passed in the process and skips the check for an
+// identical spec from its 3rd use on (see REFERENCE.md). Disable in production to skip it entirely.
+define('VALIDATE_OPT_CHECK_SPEC', 1 << 0);
 define('VALIDATE_OPT_DISABLE_EXCEPTION', 1 << 1); // Suppress the ValidateInvalidValueException raised on validation failure; the call returns null instead.
 // Permit input keys that a VALIDATE_ARRAY spec does not declare (by default each level
 // reports "Unvalidated value remains."). Needed for multi-stage validation. A VALIDATE_ARRAY

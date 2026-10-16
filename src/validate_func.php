@@ -44,6 +44,8 @@ function validate_init($root_name = 'ROOT')
  * Primary entry point of the framework. By default this also checks the spec
  * format itself (VALIDATE_OPT_CHECK_SPEC) — leave that on while developing,
  * then drop it in production for speed once the specs are known to be correct.
+ * Specs that passed are remembered (up to 64 per process): an unchanged spec
+ * is not checked again after its second use.
  *
  * $inputs is passed by reference: keys that pass validation are unset, so
  * after the call $inputs holds only the leftover (unvalidated) input. This
@@ -213,7 +215,8 @@ function validate_set_logger_function($ctx, $logger_func)
  *
  * Called automatically by validate() when VALIDATE_OPT_CHECK_SPEC is set
  * (the default). Call it directly during development to surface spec errors
- * before any input is touched.
+ * before any input is touched. A direct call always checks the whole spec;
+ * it does not use validate()'s memory of checked specs.
  *
  * A spec array uses integer offsets (VALIDATE_ID / VALIDATE_FLAGS /
  * VALIDATE_OPTIONS / VALIDATE_PARAMS) so it can compile to a fixed-shape

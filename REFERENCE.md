@@ -83,7 +83,7 @@ validate() removes validated values from $inputs (pass by reference), so $inputs
 $func_opts bit flag options:
 
  * VALIDATE_OPT_NONE - No options (no spec check).
- * VALIDATE_OPT_CHECK_SPEC - Check $spec before validation (default). Spec errors throw ValidateInvalidSpecException. Use this for development and debugging; omit it in production for speed.
+ * VALIDATE_OPT_CHECK_SPEC - Check $spec before validation (default). Spec errors throw ValidateInvalidSpecException. validate() remembers up to 64 specs that passed the check in the process (one request on per-request SAPIs such as PHP-FPM; the oldest is dropped first) and skips the check for an identical spec: the same values, following PHP references, and the same object instances (closures). A spec is checked on its first and second use (the second check guards against changes made through PHP references) and not again while it stays unchanged; a changed spec is checked again. Use this for development and debugging; omit it in production to skip the check entirely.
  * VALIDATE_OPT_UNVALIDATED - Allow input keys that a VALIDATE_ARRAY spec does not declare. They stay in $inputs. Has no effect on a VALIDATE_ARRAY with an 'undeclared' option, which validates those keys.
  * VALIDATE_OPT_KEEP_INPUTS - Keep $inputs as is (validate() works on a copy, so no unset, no "filter" result and no substituted "default" reaches the caller). validate() unsets validated values from $inputs by default.
  * VALIDATE_OPT_RAISE_ERROR - Also raise a PHP error (trigger_error()) per failure at the level set by validate_set_error_level() (default E_USER_WARNING). Use this for debugging.
@@ -271,7 +271,7 @@ Return Value:
 
 Description:
 
-validate() checks $spec by default (VALIDATE_OPT_CHECK_SPEC) with a separate context and throws ValidateInvalidSpecException when this returns FALSE.
+validate() checks $spec by default (VALIDATE_OPT_CHECK_SPEC) with a separate context and throws ValidateInvalidSpecException when this returns FALSE. validate_spec() itself always checks the whole spec and reports warnings and notices too; it neither uses nor fills validate()'s memory of checked specs.
 
 ## Validation SPEC
 

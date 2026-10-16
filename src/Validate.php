@@ -148,6 +148,29 @@ class Validate
     private const PRESENCE_SKIP = 3;     // Nothing to validate; not an error.
     private const PRESENCE_FAIL = 4;     // Error already reported.
 
+    /* Max entries of $checkedSpecs (oldest dropped first). */
+    private const CHECKED_SPECS_MAX = 64;
+
+    /**
+     * Specs that passed the VALIDATE_OPT_CHECK_SPEC check in this process
+     * (one PHP request on per-request SAPIs), so validate() can skip checking
+     * an identical spec again — the script version's stand-in for the C
+     * extension's compiled specs. Oldest first; each entry is [spec, trusted]:
+     *
+     *  - untrusted: the caller's array as first checked. It may contain PHP
+     *    references whose targets can change later, so a match only marks
+     *    the spec as reused: it is checked again, then stored trusted.
+     *  - trusted: a reference-free copy (copySpecValues()), which nothing
+     *    outside can modify. A spec identical (===) to it, i.e. with the same
+     *    values now and the same object instances, skips the check.
+     *
+     * Only successful checks are stored. A spec check is a pure function of
+     * the spec except for is_callable(), which never turns false once true.
+     *
+     * @var array
+     */
+    private static $checkedSpecs = [];
+
     /**
      * Stack of element names representing the path from the root to the value
      * currently being validated (e.g. ['ROOT', 'POST', 'address', 'zip']).
@@ -359,6 +382,9 @@ class Validate
      * reported as "Unvalidated value remains." unless VALIDATE_OPT_UNVALIDATED
      * is set.
      *
+     * With VALIDATE_OPT_CHECK_SPEC (default) the spec is checked first, unless
+     * an identical spec passed before and is remembered ($checkedSpecs).
+     *
      * On failure either a ValidateInvalidValueException is thrown (default)
      * or null is returned (VALIDATE_OPT_DISABLE_EXCEPTION). Partial validation
      * results remain reachable via getValidated().
@@ -389,11 +415,15 @@ class Validate
             );
         }
         if ($func_opts & VALIDATE_OPT_CHECK_SPEC) {
-            // Check with a separate context so spec problems never mix with
-            // value errors recorded in $this.
-            $specCtx = new Validate();
-            if (!$specCtx->validateSpec($specs, $unvalidated_spec, $specCtx)) {
-                throw new ValidateInvalidSpecException(self::buildSpecErrorMessage($specCtx), $specCtx);
+            $checked = self::findCheckedSpec($specs);
+            if ($checked === null || !self::$checkedSpecs[$checked][1]) {
+                // Check with a separate context so spec problems never mix
+                // with value errors recorded in $this.
+                $specCtx = new Validate();
+                if (!$specCtx->validateSpec($specs, $unvalidated_spec, $specCtx)) {
+                    throw new ValidateInvalidSpecException(self::buildSpecErrorMessage($specCtx), $specCtx);
+                }
+                self::rememberCheckedSpec($specs, $checked);
             }
         }
 
@@ -414,6 +444,85 @@ class Validate
             return $this->validated;
         }
         return null;
+    }
+
+
+    /**
+     * Find the $checkedSpecs entry identical (===) to $spec.
+     *
+     * @param array $spec Spec passed to validate().
+     *
+     * @return int|null Index into $checkedSpecs, or null when not found.
+     */
+    private static function findCheckedSpec($spec)
+    {
+        assert(is_array($spec));
+        foreach (self::$checkedSpecs as $idx => $entry) {
+            if ($entry[0] === $spec) {
+                return $idx;
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * Record a spec that just passed the spec check.
+     *
+     * A new spec is stored untrusted as is (no copy cost for a spec used
+     * once). A reused one ($idx: its untrusted entry) is replaced by a
+     * trusted reference-free copy; if it cannot be copied (nested deeper
+     * than any real spec, e.g. a recursive array), it stays untrusted.
+     *
+     * @param array    $spec Spec that passed the check.
+     * @param int|null $idx  Index of its untrusted entry, null if none.
+     *
+     * @return null
+     */
+    private static function rememberCheckedSpec($spec, $idx)
+    {
+        assert(is_array($spec));
+        assert(is_null($idx) || !self::$checkedSpecs[$idx][1]);
+        if ($idx === null) {
+            if (count(self::$checkedSpecs) >= self::CHECKED_SPECS_MAX) {
+                array_shift(self::$checkedSpecs);
+            }
+            self::$checkedSpecs[] = [$spec, false];
+            return;
+        }
+        $copy = self::copySpecValues($spec, 0);
+        if ($copy !== null) {
+            self::$checkedSpecs[$idx] = [$copy, true];
+        }
+    }
+
+
+    /**
+     * Deep-copy a spec value, replacing PHP references by their current
+     * values. Objects (closures, ...) are kept as the same instances.
+     *
+     * @param mixed $value Spec or spec element.
+     * @param int   $depth Current array nesting depth.
+     *
+     * @return mixed The copy, or null when arrays nest deeper than 64 levels.
+     */
+    private static function copySpecValues($value, $depth)
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+        if ($depth >= 64) {
+            return null;
+        }
+        $copy = [];
+        foreach ($value as $key => $elem) {
+            $elem = self::copySpecValues($elem, $depth + 1);
+            if ($elem === null && is_array($value[$key])) {
+                return null;
+            }
+            $copy[$key] = $elem;
+        }
+        return $copy;
     }
 
 
