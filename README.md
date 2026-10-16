@@ -1,6 +1,6 @@
 # "Validate" for PHP - An INPUT data validation framework
 
-[![CI](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml/badge.svg)](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml)
+[![CI](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml/badge.svg?branch=php-8.x)](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml?query=branch%3Aphp-8.x)
 
 "Validate" is "input data validation **framework**" that is developed to be useful for "CERT Secure Coding" and "Design by Contract"(DbC). "Validate" is designed to develop [**OWASP TOP 10 A10:2017 vulnerability**](https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring) compliant application. "Validate" is planned to be implemented as C module for PHP.
 
@@ -37,7 +37,7 @@ Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.m
 
 ## Requirements
 
-* PHP 8.0 and up, including PHP versions in development (this is the `master` branch; see [Branches](#branches)).
+* PHP 8.0 - 8.x (this is the `php-8.x` branch; see [Branches](#branches)).
 * No extension is required.
 
 ### Recommended

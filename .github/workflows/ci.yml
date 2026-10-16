@@ -12,9 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # master branch: released PHP 8 versions plus setup-php's builds of the
-        # next PHP release ('nightly') and php-src master ('master').
-        php: ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5', 'nightly', 'master']
+        # php-8.x branch: released PHP 8 versions.
+        php: ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
 
     steps:
       - uses: actions/checkout@v4

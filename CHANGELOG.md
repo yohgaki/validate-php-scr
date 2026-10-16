@@ -7,6 +7,12 @@ Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
 example/tool fixes, and remembering checked specs. Branches for older PHP
 versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
 
+### Branch `php-8.x`
+
+* Created from `master` (2026-10-17) for PHP 8.x with the same code: the
+  GitHub Actions matrix is PHP 8.0 - 8.5 (no development versions) and
+  `composer.json` requires `php` `^8.0`.
+
 ### Changed — behavior changes that can affect existing code
 
 * **Undeclared input keys are errors.** Every `VALIDATE_ARRAY` level now reports
