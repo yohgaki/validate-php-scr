@@ -58,7 +58,7 @@ define('VALIDATE_BOOL_LAST_BIT', 6); /* Used internally — bit count for this t
    ('' with VALIDATE_BOOL_AS_STRING), like the other validators. */
 
 /* VALIDATE_INT flags */
-define('VALIDATE_INT_AS_STRING', 1 << 0); /* Accept the input only as a numeric string; return it without type conversion. */
+define('VALIDATE_INT_AS_STRING', 1 << 0); /* Compare as integer strings (no int conversion, so values beyond PHP_INT_MAX work); always return a string, also for int input. */
 define('VALIDATE_INT_BIT', 1 << 1); /* TODO: accept binary literals (e.g. "0b1010"). Not implemented yet. */
 define('VALIDATE_INT_OCTAL', 1 << 2); /* TODO: accept octal literals (e.g. "0755"). Not implemented yet. */
 define('VALIDATE_INT_HEX', 1 << 3); /* TODO: accept hexadecimal literals (e.g. "0xff"). Not implemented yet. */

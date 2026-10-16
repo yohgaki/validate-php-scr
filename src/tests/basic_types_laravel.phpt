@@ -23,12 +23,16 @@ $cases = [
     ['mac_address', 'aa:bb:cc:dd:ee:ff', 'pass'],
     ['mac_address', 'gg:1A:2B:3C:4D:5E', 'fail'],
     ['mac_address', '00:1A:2B:3C:4D', 'fail'],
+    ['mac_address', '00:1A-2B:3C:4D:5E', 'fail'], // mixed separators
+    ['mac_address', '00-1A-2B-3C-4D:5E', 'fail'],
 
     // ulid
     ['ulid', '01ARZ3NDEKTSV4RRFFQ69G5FAV', 'pass'],
     ['ulid', '01arz3ndektsv4rrffq69g5fav', 'pass'],
     ['ulid', '01ARZ3NDEKTSV4RRFFQ69G5FAU', 'fail'],
     ['ulid', '01ARZ3NDEKTSV4RRFFQ69G5FA', 'fail'],
+    ['ulid', '7ZZZZZZZZZZZZZZZZZZZZZZZZZ', 'pass'], // 2^128-1
+    ['ulid', '8ZZZZZZZZZZZZZZZZZZZZZZZZZ', 'fail'], // > 128 bits
 
     // hex_color
     ['hex_color', '#fff', 'pass'],
@@ -97,6 +101,16 @@ $cases = [
     ['timezone', 'America/New_York', 'pass'],
     ['timezone', 'Not/A/Zone', 'fail'],
     ['timezone', '', 'fail'],
+    ['timezone', 'US/Eastern', 'fail'],    // backward-compatible link
+    ['timezone', 'Asia/Calcutta', 'fail'], // renamed (Asia/Kolkata)
+    ['timezone', ['UTC'], 'fail'],
+
+    // timezone_all_with_bc (Laravel 'timezone:all_with_bc')
+    ['timezone_all_with_bc', 'Asia/Tokyo', 'pass'],
+    ['timezone_all_with_bc', 'US/Eastern', 'pass'],
+    ['timezone_all_with_bc', 'Asia/Calcutta', 'pass'],
+    ['timezone_all_with_bc', 'Etc/GMT+5', 'pass'],
+    ['timezone_all_with_bc', 'Not/A/Zone', 'fail'],
 ];
 
 foreach ($cases as [$type, $input, $expected]) {
@@ -104,7 +118,7 @@ foreach ($cases as [$type, $input, $expected]) {
     $r = validate($ctx, $input, $basicTypes[$type], VALIDATE_OPT_DISABLE_EXCEPTION);
     $actual = ($ctx instanceof Validate && $ctx->getStatus()) ? 'pass' : 'fail';
     $mark = ($actual === $expected) ? 'OK' : 'NG';
-    printf("[%s] %s(%s) => %s (expected %s)\n", $mark, $type, var_export($input, true), $actual, $expected);
+    printf("[%s] %s(%s) => %s (expected %s)\n", $mark, $type, str_replace("\n", '', var_export($input, true)), $actual, $expected);
 }
 echo "Done.\n";
 ?>
@@ -114,10 +128,14 @@ echo "Done.\n";
 [OK] mac_address('aa:bb:cc:dd:ee:ff') => pass (expected pass)
 [OK] mac_address('gg:1A:2B:3C:4D:5E') => fail (expected fail)
 [OK] mac_address('00:1A:2B:3C:4D') => fail (expected fail)
+[OK] mac_address('00:1A-2B:3C:4D:5E') => fail (expected fail)
+[OK] mac_address('00-1A-2B-3C-4D:5E') => fail (expected fail)
 [OK] ulid('01ARZ3NDEKTSV4RRFFQ69G5FAV') => pass (expected pass)
 [OK] ulid('01arz3ndektsv4rrffq69g5fav') => pass (expected pass)
 [OK] ulid('01ARZ3NDEKTSV4RRFFQ69G5FAU') => fail (expected fail)
 [OK] ulid('01ARZ3NDEKTSV4RRFFQ69G5FA') => fail (expected fail)
+[OK] ulid('7ZZZZZZZZZZZZZZZZZZZZZZZZZ') => pass (expected pass)
+[OK] ulid('8ZZZZZZZZZZZZZZZZZZZZZZZZZ') => fail (expected fail)
 [OK] hex_color('#fff') => pass (expected pass)
 [OK] hex_color('#FFFF') => pass (expected pass)
 [OK] hex_color('#FFFFFF') => pass (expected pass)
@@ -166,4 +184,12 @@ echo "Done.\n";
 [OK] timezone('America/New_York') => pass (expected pass)
 [OK] timezone('Not/A/Zone') => fail (expected fail)
 [OK] timezone('') => fail (expected fail)
+[OK] timezone('US/Eastern') => fail (expected fail)
+[OK] timezone('Asia/Calcutta') => fail (expected fail)
+[OK] timezone(array (  0 => 'UTC',)) => fail (expected fail)
+[OK] timezone_all_with_bc('Asia/Tokyo') => pass (expected pass)
+[OK] timezone_all_with_bc('US/Eastern') => pass (expected pass)
+[OK] timezone_all_with_bc('Asia/Calcutta') => pass (expected pass)
+[OK] timezone_all_with_bc('Etc/GMT+5') => pass (expected pass)
+[OK] timezone_all_with_bc('Not/A/Zone') => fail (expected fail)
 Done.

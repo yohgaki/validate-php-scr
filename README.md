@@ -299,7 +299,7 @@ $postSpec = [
     ]
 ];
 
-// $_COOKIE: session id (PHP session.sid_length default is 32; tolerate 32-128).
+// $_COOKIE: session id ('sessid' allows the session.sid_length range 22-256; default 32).
 $cookieSpec = [
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,

@@ -26,6 +26,8 @@ require_once __DIR__.'/../validate_defs.php';
 // Integers — bounded by the named bit width. The string min/max bounds on
 // 53+/64+ bit specs let validation work on 32-bit PHP builds (see the
 // PHP_INT_SIZE adjustment below, which switches them to AS_STRING mode).
+// AS_STRING specs ('uint64', 'int128', 'uint128' everywhere) return the value
+// as a string, also for int input.
 // ---------------------------------------------------------------------------
 $basicTypes['int8'] = [
     VALIDATE_INT,
@@ -102,7 +104,8 @@ $basicTypes['uint128'] = [
 
 // On 32-bit PHP builds, integers wider than PHP_INT_MAX (2^31-1) cannot be
 // represented natively. Flip the affected specs to AS_STRING mode so the
-// validator compares numeric strings without overflow.
+// validator compares numeric strings without overflow; they then return
+// strings instead of ints.
 if (PHP_INT_SIZE === 4) {
     $basicTypes['uint32'][VALIDATE_FLAGS] |= VALIDATE_INT_AS_STRING;
     $basicTypes['int53'][VALIDATE_FLAGS] |= VALIDATE_INT_AS_STRING;
@@ -513,15 +516,15 @@ $basicTypes['sqlident127'] = [
 // PHP session ID.
 // NOTE: The PHP session module silently strips invalid characters from the
 // incoming session id, so an extra sanity check at the application boundary
-// is still valuable. The spec assumes the default session.sid_length (32),
-// but allows up to 128 chars to accommodate longer ids configured via
-// session.sid_length or session.sid_bits_per_character.
+// is still valuable. The length range is the one session.sid_length accepts
+// (22-256, default 32; the setting is deprecated as of PHP 8.4). Narrow
+// 'min'/'max' to your configured length for a tighter check.
 // ---------------------------------------------------------------------------
 $basicTypes['sessid'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
     [
-        'min' => 32, 'max' => 128,
+        'min' => 22, 'max' => 256,
         'ascii' => '-,',
     ]
 ];
@@ -530,153 +533,171 @@ $basicTypes['sessid'] = [
 // ---------------------------------------------------------------------------
 // Base64 (standard alphabet, RFC 4648 §4). 'base64' has min=max=1 placeholders;
 // override the length to match your payload (length is in encoded bytes).
+// '=' padding is optional but, when present, must complete the last 4-char
+// group (so "====", "a=b" and 5-char "abcde" are rejected).
 // See https://en.wikipedia.org/wiki/Base64
 // ---------------------------------------------------------------------------
 $basicTypes['base64'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 1,
         'ascii' => '+/=',
+        'regexp' => '/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}(?:==)?|[A-Za-z0-9+\/]{3}=?)?\z/',
     ]
 ];
 
 $basicTypes['base64_32'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 32,
         'ascii' => '+/=',
+        'regexp' => '/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}(?:==)?|[A-Za-z0-9+\/]{3}=?)?\z/',
     ]
 ];
 
 $basicTypes['base64_64'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 64,
         'ascii' => '+/=',
+        'regexp' => '/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}(?:==)?|[A-Za-z0-9+\/]{3}=?)?\z/',
     ]
 ];
 
 $basicTypes['base64_128'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 128,
         'ascii' => '+/=',
+        'regexp' => '/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}(?:==)?|[A-Za-z0-9+\/]{3}=?)?\z/',
     ]
 ];
 
 $basicTypes['base64_256'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 256,
         'ascii' => '+/=',
+        'regexp' => '/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}(?:==)?|[A-Za-z0-9+\/]{3}=?)?\z/',
     ]
 ];
 
 
 // ---------------------------------------------------------------------------
 // URL-safe Base64 (RFC 4648 §5). Uses '-' and '_' instead of '+' and '/';
-// padding ('=') is optional but accepted. Common in JWT and OAuth tokens.
+// padding ('=') is optional but accepted, with the same placement rule as
+// 'base64'. Common in JWT and OAuth tokens.
 // 'base64url' has min=max=1 placeholders; override before use.
 // ---------------------------------------------------------------------------
 $basicTypes['base64url'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 1,
         'ascii' => '-_=',
+        'regexp' => '/\A(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}(?:==)?|[A-Za-z0-9_-]{3}=?)?\z/',
     ]
 ];
 
 $basicTypes['base64url_32'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 32,
         'ascii' => '-_=',
+        'regexp' => '/\A(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}(?:==)?|[A-Za-z0-9_-]{3}=?)?\z/',
     ]
 ];
 
 $basicTypes['base64url_64'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 64,
         'ascii' => '-_=',
+        'regexp' => '/\A(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}(?:==)?|[A-Za-z0-9_-]{3}=?)?\z/',
     ]
 ];
 
 $basicTypes['base64url_128'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 128,
         'ascii' => '-_=',
+        'regexp' => '/\A(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}(?:==)?|[A-Za-z0-9_-]{3}=?)?\z/',
     ]
 ];
 
 $basicTypes['base64url_256'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 256,
         'ascii' => '-_=',
+        'regexp' => '/\A(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}(?:==)?|[A-Za-z0-9_-]{3}=?)?\z/',
     ]
 ];
 
 
 // ---------------------------------------------------------------------------
 // URL-encoded string (the output of rawurlencode()/urlencode()).
-// Alnum + the percent-encoding escape character and the symbols left
-// unreserved by RFC 3986 ('-_.~') plus '+' used by application/x-www-form-urlencoded.
+// Alnum + the symbols left unreserved by RFC 3986 ('-_.~') plus '+' used by
+// application/x-www-form-urlencoded; '%' only as a "%HH" escape (two hex digits).
 // 'urle' has min=max=1 placeholders; override before use.
 // ---------------------------------------------------------------------------
 $basicTypes['urle'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 1,
         'ascii' => '%-_.~+',
+        'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
     ]
 ];
 
 $basicTypes['urle32'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 32,
         'ascii' => '%-_.~+',
+        'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
     ]
 ];
 
 $basicTypes['urle64'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 64,
         'ascii' => '%-_.~+',
+        'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
     ]
 ];
 
 $basicTypes['urle128'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 128,
         'ascii' => '%-_.~+',
+        'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
     ]
 ];
 
 $basicTypes['urle256'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 256,
         'ascii' => '%-_.~+',
+        'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
     ]
 ];
 
@@ -894,25 +915,29 @@ $basicTypes['date'] = [
     ]
 ];
 
-// ISO 8601 time: HH:MM or HH:MM:SS
+// ISO 8601 time: HH:MM, HH:MM:SS or HH:MM:SS.fraction (1-9 digits, as sent
+// by <input type="time" step="0.001">).
 $basicTypes['time'] = [
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
     [
-        'min' => 5, 'max' => 8,
-        'ascii' => '0123456789:',
-        'regexp' => '/\A([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\z/',
+        'min' => 5, 'max' => 18,
+        'ascii' => '0123456789:.',
+        'regexp' => '/\A([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?\z/',
     ]
 ];
 
-// ISO 8601 datetime: YYYY-MM-DDTHH:MM[:SS][Z|±HH:MM] or space separator
+// ISO 8601 datetime: YYYY-MM-DDTHH:MM[:SS[.fraction]][Z|±HH:MM] or space
+// separator. The fraction (1-9 digits) covers JavaScript's
+// Date.prototype.toISOString() output ("2025-01-02T03:04:05.678Z").
 $basicTypes['datetime'] = [
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
     [
-        'min' => 16, 'max' => 25,
-        'ascii' => '0123456789T :-+Z',
-        'regexp' => '/\A\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[T ]([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?(?:Z|[+-](?:0\d|1[0-4]):[0-5]\d)?\z/',
+        'min' => 16, 'max' => 35,
+        'ascii' => '0123456789T :-+Z.',
+        'regexp' => '/\A\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[T ]([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?'
+                    .'(?:Z|[+-](?:0\d|1[0-4]):[0-5]\d)?\z/',
     ]
 ];
 
@@ -1009,14 +1034,17 @@ $basicTypes['hostname'] = [
 ];
 
 // Domain name - format validation only, no DNS lookup (see 'fqdn' for DNS-verified version)
-// RFC 1123: labels 1-63 chars, total max 253, must have at least one dot
+// RFC 1123: labels 1-63 chars, total max 253, must have at least one dot.
+// The TLD is alphabetic or an IDNA A-label ("xn--p1ai"); pass IDNs through
+// idn_to_ascii() first, as Unicode labels are rejected.
 $basicTypes['domain'] = [
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
     [
         'min' => 3, 'max' => 253,
         'ascii' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-',
-        'regexp' => '/\A(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}\z/',
+        'regexp' => '/\A(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+'
+                    .'(?:[a-zA-Z]{2,63}|[xX][nN]--[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,57}[a-zA-Z0-9])?)\z/',
     ]
 ];
 
@@ -1299,25 +1327,28 @@ $basicTypes['port'] = $basicTypes['uint16'];
 // application code, not a generic input validator.
 // =============================================================================
 
-// MAC address — 6 hex octets separated by ':' or '-' (e.g. "AA:BB:CC:DD:EE:FF").
+// MAC address — 6 hex octets separated by ':' or '-' (e.g. "AA:BB:CC:DD:EE:FF"),
+// one separator throughout. The Cisco dotted form ("AABB.CCDD.EEFF") that
+// Laravel's FILTER_VALIDATE_MAC also accepts is not.
 $basicTypes['mac_address'] = [
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
     [
         'min' => 17, 'max' => 17,
         'ascii' => '0123456789abcdefABCDEF:-',
-        'regexp' => '/\A(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\z/',
+        'regexp' => '/\A[0-9A-Fa-f]{2}([:-])(?:[0-9A-Fa-f]{2}\1){4}[0-9A-Fa-f]{2}\z/',
     ]
 ];
 
-// ULID - 26 chars, Crockford Base32 (excludes I, L, O, U), case-insensitive
+// ULID - 26 chars, Crockford Base32 (excludes I, L, O, U), case-insensitive.
+// 26 chars hold 130 bits; a ULID is 128, so the first char is at most '7'.
 $basicTypes['ulid'] = [
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
     [
         'min' => 26, 'max' => 26,
         'ascii' => '0123456789ABCDEFGHJKMNPQRSTVWXYZabcdefghjkmnpqrstvwxyz',
-        'regexp' => '/\A[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}\z/',
+        'regexp' => '/\A[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}\z/',
     ]
 ];
 
@@ -1524,7 +1555,8 @@ $basicTypes['declined'] = [
     ]
 ];
 
-// IANA timezone identifier (e.g., "Asia/Tokyo", "UTC")
+// IANA timezone identifier (e.g., "Asia/Tokyo", "UTC"). Like Laravel's
+// 'timezone' rule, only canonical names (DateTimeZone::ALL) are accepted.
 $basicTypes['timezone'] = [
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM,
@@ -1532,7 +1564,32 @@ $basicTypes['timezone'] = [
         'min' => 1, 'max' => 64,
         'ascii' => '/_+-',
         'callback' => function ($ctx, &$result, $input) {
-            if (!in_array($input, DateTimeZone::listIdentifiers(), true)) {
+            static $ids = null;
+            $ids = $ids ?? array_flip(DateTimeZone::listIdentifiers());
+            if (!is_string($input) || !isset($ids[$input])) {
+                validate_error($ctx, 'Invalid timezone identifier.');
+                return false;
+            }
+            $result = $input;
+            return true;
+        },
+    ]
+];
+
+// IANA timezone identifier including backward-compatible links
+// (DateTimeZone::ALL_WITH_BC; Laravel 'timezone:all_with_bc'): "US/Eastern",
+// "Etc/GMT+5", and renamed zones such as "Asia/Calcutta" or "Europe/Kiev",
+// which browsers still report via Intl.DateTimeFormat().resolvedOptions().
+$basicTypes['timezone_all_with_bc'] = [
+    VALIDATE_CALLBACK,
+    VALIDATE_CALLBACK_ALNUM,
+    [
+        'min' => 1, 'max' => 64,
+        'ascii' => '/_+-',
+        'callback' => function ($ctx, &$result, $input) {
+            static $ids = null;
+            $ids = $ids ?? array_flip(DateTimeZone::listIdentifiers(DateTimeZone::ALL_WITH_BC));
+            if (!is_string($input) || !isset($ids[$input])) {
                 validate_error($ctx, 'Invalid timezone identifier.');
                 return false;
             }

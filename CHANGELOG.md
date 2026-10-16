@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased (2026-10-16 design review)
+## Unreleased
+
+Design review (2026-10-16, commit d622eb4) and the `basic_types.php` follow-up
+(2026-10-16).
 
 ### Changed — behavior changes that can affect existing code
 
@@ -37,11 +40,17 @@
 * `alimit` counts elements across all nesting levels (`VALIDATE_FLAG_ARRAY_RECURSIVE`).
 * `VALIDATE_STRING_BINARY` returns a string; a validated `VALIDATE_ARRAY`
   yields an array (`[]` when empty) instead of `null`.
+* `VALIDATE_INT_AS_STRING` returns a string also for int input (int input used
+  to come back as int), matching `VALIDATE_FLOAT_AS_STRING`. Affects
+  `uint64` / `int128` / `uint128` and, on 32-bit builds, `uint32` / `int53` /
+  `uint53` / `int64`.
 * `basic_types.php`: `url` / `active_url` accept only `http` / `https`;
   `ipv4` / `cidr4` reject leading zeros; `ipv6` uses
   `filter_var(FILTER_FLAG_IPV6)` (accepts `::` and IPv4-embedded forms);
   `hostname` is one RFC 1123 label; header specs trim only SP/HTAB; DNS checks
   query absolute names for explicit record types instead of `DNS_ANY`.
+* `basic_types.php`: `base64*`, `base64url*` and `urle*` are `VALIDATE_REGEXP`
+  specs (were `VALIDATE_STRING`) so they can check where `=` and `%` appear.
 
 ### Fixed
 
@@ -67,6 +76,19 @@
 * `basic_types.php`: 32-bit builds wrote `VALIDATE_INT_AS_STRING` into the
   options slot; `fqdn` / `json` threw `TypeError` on array input; `json`
   rejected LF-only line breaks.
+* `basic_types.php` format checks:
+  * `base64*` / `base64url*` accepted `=` anywhere (`====`, `a=b`) and
+    lengths no encoder produces; `=` is now only the padding of the last
+    4-char group (padding stays optional).
+  * `urle*` accepted `%` without two hex digits (`%zz`, a trailing `%`).
+  * `time` / `datetime` rejected fractional seconds, e.g. JavaScript
+    `toISOString()` output (`2025-01-02T03:04:05.678Z`); 1-9 digits are
+    accepted after the seconds.
+  * `domain` rejected IDNA A-label TLDs (`example.xn--p1ai`).
+  * `mac_address` accepted mixed separators (`00:1A-2B:3C:4D:5E`).
+  * `ulid` accepted values above 128 bits (first char `8`-`Z`).
+  * `sessid` required 32-128 chars; it now takes the `session.sid_length`
+    range 22-256.
 * tools: `input_validator.php` loaded `validate_func.php` relative to the
   working directory and validated against the whole spec map; the analyzer
   enabled DIGIT/ALPHA flags for characters never seen, added backslashes to
@@ -79,11 +101,16 @@
 
 * `VALIDATE_OBJECT` `class` option (instanceof check), as `validate_defs.php`
   already described.
+* `basic_types.php`: `timezone_all_with_bc` also accepts backward-compatible
+  zone names (`DateTimeZone::ALL_WITH_BC`, Laravel `timezone:all_with_bc`),
+  e.g. `US/Eastern` or `Asia/Calcutta`, which browsers still report.
+  `timezone` keeps accepting canonical names only.
 * `ValidateInvalidSpecException::getContext()`,
   `ValidateInvalidValueException::getError()`.
 * `VALIDATE_TOOLS_DIR` environment variable for `src/tools` (see
   `src/tools/README.md`); the tools refuse directories other users can write to.
-* `src/tests/validate_regressions.phpt`; PHP 8.5 in both CI matrices.
+* `src/tests/validate_regressions.phpt`, `src/tests/basic_types_formats.phpt`;
+  PHP 8.5 in both CI matrices.
 
 ### Removed / internal
 
@@ -96,4 +123,5 @@
 * Removed dead internals (`reportWarning()`, `reportNotice()`,
   `validateInvalid()`, `validateUndefined()`, the public
   `validate_params_checked` / `spec_params_checked` handshake properties).
-* `src/Validate.php`: 5,154 → 4,563 lines (`wc -l`, HEAD 997dbd7 vs. this change).
+* `src/Validate.php`: 5,154 → 4,563 lines (`wc -l src/Validate.php` at 997dbd7
+  vs. d622eb4).

@@ -98,7 +98,7 @@ try {
 ?>
 --EXPECT--
 Simple string
-int(12)
+string(2) "12"
 bool(true)
 \Simple array
 array(1) {

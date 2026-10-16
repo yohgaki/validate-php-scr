@@ -37,7 +37,7 @@ var_dump($validated); // NULL — the conventional "failure" return when excepti
 $var = -4503599627370496;
 $validated = validate($ctx, $var, $basicTypes['int53']); // Success — inside the safe-integer range (int53 is -(2^53-1)..2^53-1).
 $var = '-4503599627370496'; // Web input typically arrives as a string; int validators accept the numeric string.
-$validated = validate($ctx, $var, $basicTypes['int53']); // Success — integer validators normalize the result to int.
+$validated = validate($ctx, $var, $basicTypes['int53']); // Success — the result is int (a string on 32-bit builds, where int53 is AS_STRING).
 $var = -4503599627370497;
 $validated = validate($ctx, $var, $basicTypes['int8'], VALIDATE_OPT_DISABLE_EXCEPTION); // Failure — out of int8 range.
 $var = ''; // Empty string is not a valid integer; use VALIDATE_FLAG_EMPTY to permit it explicitly.

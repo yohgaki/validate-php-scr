@@ -110,9 +110,9 @@ string(64) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: ''"
 bool(false)
 string(1) "0"
 bool(true)
-int(0)
+string(1) "0"
 bool(true)
-int(1)
+string(1) "1"
 bool(true)
 string(111) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
 bool(false)

@@ -1720,8 +1720,10 @@ class Validate
                 );
                 return false;
             }
-            if ($flags & (VALIDATE_INT_AS_STRING | VALIDATE_FLAG_RAW)) {
+            if ($flags & VALIDATE_FLAG_RAW) {
                 $validated = $value;
+            } elseif ($flags & VALIDATE_INT_AS_STRING) {
+                $validated = (string)$value;
             } else {
                 $validated = (int)$value;
             }
@@ -1737,7 +1739,10 @@ class Validate
         $max = $options['max'];
 
         if (is_int($value) && $value >= $min && $value <= $max) {
-            $validated = $value;
+            // AS_STRING always yields a string, so int input (json_decode())
+            // and string input give the same result type.
+            $validated = (($flags & VALIDATE_INT_AS_STRING) && !($flags & VALIDATE_FLAG_RAW))
+                         ? (string)$value : $value;
             return true;
         }
 

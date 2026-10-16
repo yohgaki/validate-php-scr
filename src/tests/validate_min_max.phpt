@@ -66,11 +66,11 @@ foreach ($values as $val) {
 ?>
 --EXPECT--
 **** validate() INT ****
-int(-100)
+string(4) "-100"
 bool(true)
-int(100)
+string(3) "100"
 bool(true)
-int(0)
+string(1) "0"
 bool(true)
 string(4) "-100"
 bool(true)

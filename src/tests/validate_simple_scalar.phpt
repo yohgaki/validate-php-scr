@@ -97,7 +97,7 @@ bool(true)
 bool(true)
 
 **** validate() INT ****
-int(1234)
+string(4) "1234"
 bool(true)
 string(4) "1234"
 bool(true)

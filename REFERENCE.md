@@ -418,7 +418,7 @@ For VALIDATE_ARRAY specs only VALIDATE_FLAG_REJECT, VALIDATE_FLAG_UNDEFINED, VAL
 
 ### VALIDATE_INT flags
 
- * VALIDATE_INT_AS_STRING - Validate as int string. i.e. No type conversion.
+ * VALIDATE_INT_AS_STRING - Validate as int string, i.e. no int conversion (values beyond PHP_INT_MAX keep their precision). The result is always a string, also for int input.
  * VALIDATE_INT_BIT - TODO Implement this.
  * VALIDATE_INT_OCTAL - TODO Implement this.
  * VALIDATE_INT_HEX - TODO Implement this.
