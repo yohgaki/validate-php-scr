@@ -60,8 +60,8 @@ Every branch provides the same features with code written for its PHP versions. 
 * `master` is the development branch. Changes go to `master` first and are then ported to `php-8.x`, `php-7.x` and `php-5.x`, changing only what their PHP versions require (syntax, test runner, CI settings).
 * [`dev/basic_types_corpus.php`](dev/basic_types_corpus.php) checks a port: it validates tricky inputs with every `$basicTypes` spec. Run it on each branch and PHP version (`php dev/basic_types_corpus.php src > out.txt`) and compare the output with `master`'s. [`dev/fuzz_inputs.php`](dev/fuzz_inputs.php) does the same with generated inputs for the `json` and `url` specs.
 * `nightly` and `master` in the CI column are [setup-php](https://github.com/shivammathur/setup-php) builds of the next PHP release and of php-src master (8.6 and 8.7.0-dev as of October 2026).
-* The CI runs the tests with BCMath, GMP and mbstring, and once more without BCMath and GMP on the newest PHP version of the branch (8.5 on `master` / `php-8.x`, 7.4, 5.6), where big integers are compared in pure PHP.
-* `.gitlab-ci.yml` runs the same tests, with BCMath and GMP, in the official `php` Docker images for the released PHP versions of each branch, except PHP 5.3 / 5.4, whose images current Docker cannot pull (manifest schema 1).
+* The CI runs the tests with BCMath, GMP and mbstring, and once more without BCMath and GMP on the newest PHP version of the branch (8.5 on `master` / `php-8.x`, 7.4, 5.6), where big integers are compared in pure PHP. A job fails if an extension is missing, or loaded where it should not be.
+* `.gitlab-ci.yml` runs the same jobs in the official `php` Docker images for the released PHP versions of each branch, except PHP 5.3 / 5.4, whose images current Docker cannot pull (manifest schema 1).
 
 ### Differences of `php-5.x` from `master`
 

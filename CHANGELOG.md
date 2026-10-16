@@ -181,8 +181,9 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
   GMP on its newest PHP version, where `validate_compare_bigint.phpt` tests
   the pure PHP big-integer comparison (it is skipped while GMP is loaded),
   and the jobs fail unless the extensions are loaded or disabled as
-  requested. `.gitlab-ci.yml` installs `libgmp-dev` from archive.debian.org
-  when the image's Debian release is no longer on the mirrors.
+  requested; `.gitlab-ci.yml` does the same with the official `php` images.
+  `.gitlab-ci.yml` installs `libgmp-dev` from archive.debian.org when the
+  image's Debian release is no longer on the mirrors.
   `dev/basic_types_corpus.php` prints the results of every `$basicTypes` spec
   for tricky inputs, and `dev/fuzz_inputs.php` generates inputs for the
   `json` and `url` specs and validates them, to compare a branch with
