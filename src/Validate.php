@@ -2800,7 +2800,7 @@ class Validate
         assert(isset($options['regexp']));
 
         $regexp = $options['regexp'];
-        $ret = (string)$value;
+        $ret = null; // Set by validateString(), which also rejects non-scalar input.
 
         // Validate as String first
         if (!$this->validateString($ret, $value, $flags, $options, $func_opts, VALIDATE_REGEXP)) {

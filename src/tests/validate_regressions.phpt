@@ -174,6 +174,11 @@ try {
 } catch (InvalidArgumentException $e) {
     echo $e->getMessage(), "\n";
 }
+
+echo "\n**** REGEXP with non-scalar input ****\n";
+$RE = [VALIDATE_REGEXP, VALIDATE_REGEXP_ALNUM, ['min'=>0, 'max'=>100, 'regexp'=>'/\A[a-z]+\z/']];
+t('array', ['a'], $RE);
+t('object', new stdClass, $RE);
 ?>
 --EXPECT--
 **** STRING ****
@@ -256,3 +261,7 @@ string(33) "VALIDATE_INT: Invalid int string."
 bool(false)
 Error level must be E_USER_ERROR, E_USER_WARNING or E_USER_NOTICE.
 VALIDATE_OPT_ERROR_FULL, VALIDATE_OPT_ERROR_PARAM and VALIDATE_OPT_ERROR_SQUASH are mutually exclusive.
+
+**** REGEXP with non-scalar input ****
+array: null status=false errors=["VALIDATE_REGEXP: Array or object parameter is passed for scalar."]
+object: null status=false errors=["VALIDATE_REGEXP: Array or object parameter is passed for scalar."]

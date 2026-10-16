@@ -63,6 +63,9 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
 
 ### Fixed
 
+* `VALIDATE_REGEXP` cast the input to a string before checking its type: an
+  array raised "Array to string conversion" and an object a fatal `Error`.
+  Both are now reported as "Array or object parameter is passed for scalar."
 * PHP 8.6 deprecated `is_double()`: every float input to `VALIDATE_FLOAT`
   raised a deprecation notice there; it uses `is_float()`.
 * DEL (0x7F) with `VALIDATE_STRING_MB` triggered "Report this error" (a fatal
