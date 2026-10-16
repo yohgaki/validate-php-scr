@@ -107,8 +107,11 @@ $cases = array(
 
     // timezone_all_with_bc (Laravel 'timezone:all_with_bc')
     array('timezone_all_with_bc', 'Asia/Tokyo', 'pass'),
-    array('timezone_all_with_bc', 'US/Eastern', 'pass'),
-    array('timezone_all_with_bc', 'Asia/Calcutta', 'pass'),
+    // Backward-compatible names are valid if PHP's timezone database has
+    // them. PHP of Debian / Ubuntu uses the system database, which has them
+    // only with the tzdata-legacy package (Debian 13, Ubuntu 24.04 and later).
+    array('timezone_all_with_bc', 'US/Eastern', @timezone_open('US/Eastern') ? 'pass' : 'fail'),
+    array('timezone_all_with_bc', 'Asia/Calcutta', @timezone_open('Asia/Calcutta') ? 'pass' : 'fail'),
     array('timezone_all_with_bc', 'Etc/GMT+5', 'pass'),
     array('timezone_all_with_bc', 'Not/A/Zone', 'fail'),
 );
@@ -189,8 +192,8 @@ echo "Done.\n";
 [OK] timezone('Asia/Calcutta') => fail (expected fail)
 [OK] timezone(array (  0 => 'UTC',)) => fail (expected fail)
 [OK] timezone_all_with_bc('Asia/Tokyo') => pass (expected pass)
-[OK] timezone_all_with_bc('US/Eastern') => pass (expected pass)
-[OK] timezone_all_with_bc('Asia/Calcutta') => pass (expected pass)
+[OK] timezone_all_with_bc('US/Eastern') => %s (expected %s)
+[OK] timezone_all_with_bc('Asia/Calcutta') => %s (expected %s)
 [OK] timezone_all_with_bc('Etc/GMT+5') => pass (expected pass)
 [OK] timezone_all_with_bc('Not/A/Zone') => fail (expected fail)
 Done.

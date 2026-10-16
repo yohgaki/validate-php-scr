@@ -1870,6 +1870,10 @@ $basicTypes['timezone'] = array(
 // (DateTimeZone::ALL_WITH_BC; Laravel 'timezone:all_with_bc'): "US/Eastern",
 // "Etc/GMT+5", and renamed zones such as "Asia/Calcutta" or "Europe/Kiev",
 // which browsers still report via Intl.DateTimeFormat().resolvedOptions().
+// Only names in PHP's timezone database are valid: PHP of Debian / Ubuntu
+// uses the system database, which has the backward-compatible links only with
+// the tzdata-legacy package (Debian 13, Ubuntu 24.04 and later; see README
+// "Recommended").
 $basicTypes['timezone_all_with_bc'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM,
