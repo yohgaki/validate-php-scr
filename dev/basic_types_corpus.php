@@ -70,7 +70,7 @@ $inputs = array(
     'accepted', '1.0', '0.0', '-0.0', '1e-7', '123456789012345678901234567890.5', '0.1', '3,14', '3:14',
 );
 $nonStrings = array(
-    'int(0)' => 0, 'int(1)' => 1, 'int(-1)' => -1, 'int(max)' => PHP_INT_MAX, 'float(1.5)' => 1.5, 'float(-0.0)' => -0.0,
+    'int(0)' => 0, 'int(1)' => 1, 'int(-1)' => -1, 'int(max)' => PHP_INT_MAX, 'float(1.5)' => 1.5, 'float(-0.0)' => 0.0 * -1, // PHP 5 compiles the literal -0.0 as +0.0
     'float(1e20)' => 1e20, 'bool(true)' => true, 'bool(false)' => false, 'null' => null, 'array()' => array(), "array('a')" => array('a'),
     'object' => new stdClass(),
 );
@@ -85,6 +85,9 @@ function repr($v)
     }
     if (is_float($v)) {
         return 'float('.(is_nan($v) ? 'NAN' : sprintf('%.17g', $v)).')';
+    }
+    if (is_int($v)) {
+        return (string)$v; // var_export(PHP_INT_MIN) differs between PHP versions
     }
     if (is_object($v)) {
         return 'object('.get_class($v).')';
