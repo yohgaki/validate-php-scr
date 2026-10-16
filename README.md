@@ -44,6 +44,7 @@ Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.m
 
 * BCMath or GMP module - used for big-integer range checks (VALIDATE_INT_AS_STRING); a pure PHP fallback is used otherwise.
 * GMP module - VALIDATE_INT also accepts GMP objects.
+* `tzdata-legacy` package on Debian 13 / Ubuntu 24.04 and later, when PHP comes from the distribution or another Debian-based package (e.g. ppa:ondrej/php, which GitHub Actions' setup-php also uses) - needed for `$basicTypes['timezone_all_with_bc']` to accept backward-compatible timezone names such as `US/Eastern` and `Asia/Calcutta`, which browsers still report (`Intl.DateTimeFormat().resolvedOptions().timeZone`). The spec accepts the names PHP's timezone database knows. These PHP packages read the system timezone database, and these OS releases moved the backward-compatible names out of `tzdata` into `tzdata-legacy`; without it, PHP does not know them (`timezone_open('US/Eastern')` fails) and the spec rejects them. Install it on production servers (`apt-get install tzdata-legacy`). PHP with its built-in timezone database (the official `php` Docker images, PHP built from the php.net source) is not affected.
 
 ## Branches
 

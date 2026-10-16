@@ -157,7 +157,13 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
 * `basic_types.php`: `timezone_all_with_bc` also accepts backward-compatible
   zone names (`DateTimeZone::ALL_WITH_BC`, Laravel `timezone:all_with_bc`),
   e.g. `US/Eastern` or `Asia/Calcutta`, which browsers still report.
-  `timezone` keeps accepting canonical names only.
+  `timezone` keeps accepting canonical names only. Only names in PHP's
+  timezone database are valid: PHP of Debian / Ubuntu uses the system
+  database, which has the backward-compatible names only with the
+  `tzdata-legacy` package (Debian 13, Ubuntu 24.04 and later). README
+  "Recommended" asks to install it on such servers, and
+  `basic_types_laravel.phpt` expects the names to pass only where PHP knows
+  them.
 * `basic_types.php`: `http_host` for the HTTP `Host` header — a host name
   (one label such as `localhost` is fine), IPv4 address or `[IPv6]` address
   with an optional port 1-65535. Examples 95 and 99-web use it.
