@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    name: PHP ${{ matrix.php }}
+    name: PHP ${{ matrix.php }}${{ matrix.label }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -15,6 +15,13 @@ jobs:
         # master branch: released PHP 8 versions plus setup-php's builds of the
         # next PHP release ('nightly') and php-src master ('master').
         php: ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5', 'nightly', 'master']
+        extensions: ['bcmath, gmp, mbstring']
+        include:
+          # Without BCMath and GMP, big integers are compared in pure PHP
+          # (validate_compare_bigint.phpt, skipped while GMP is loaded).
+          - php: '8.5'
+            extensions: 'mbstring, :bcmath, :gmp'
+            label: ' without BCMath/GMP'
 
     steps:
       - uses: actions/checkout@v4
@@ -23,11 +30,23 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: bcmath, gmp, mbstring
+          extensions: ${{ matrix.extensions }}
           coverage: none
 
+      # Fail unless each extension is loaded, or not loaded if it has a ':'.
       - name: Check PHP and extensions
-        run: php -v && php -m | grep -E 'bcmath|gmp|mbstring'
+        env:
+          EXTENSIONS: ${{ matrix.extensions }}
+        run: |
+          php -v
+          mods=$(php -m)
+          for e in $(echo "$EXTENSIONS" | tr ',' ' '); do
+            if [ "${e#:}" = "$e" ]; then
+              echo "$mods" | grep -qix "$e" || { echo "$e is not loaded"; exit 1; }
+            elif echo "$mods" | grep -qix "${e#:}"; then
+              echo "${e#:} is loaded"; exit 1
+            fi
+          done
 
       - name: Run tests
         run: cd src && php run-tests.php -p $(which php) --show-diff tests
