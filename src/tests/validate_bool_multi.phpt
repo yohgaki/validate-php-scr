@@ -18,26 +18,26 @@ require_once __DIR__.'/../validate_func.php';
 
 
 // Test #1 — both sub-specs accept VALIDATE_BOOL_TF, so MULTI_AND succeeds.
-$bool_spec = [
+$bool_spec = array(
     VALIDATE_MULTI,
     VALIDATE_MULTI_AND,
-    [],
-    [
-        [
+    array(),
+    array(
+        array(
             VALIDATE_BOOL,
             VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
-            ['amin' => 1, 'amax' =>4]
-        ],
-        [
+            array('amin' => 1, 'amax' =>4)
+        ),
+        array(
             VALIDATE_BOOL,
             VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
-            ['amin' => 1, 'amax' =>4]
-        ],
-    ]
-];
+            array('amin' => 1, 'amax' =>4)
+        ),
+    )
+);
 
 // Value to be validated.
-$bool = ['t', 'f', true, false];
+$bool = array('t', 'f', true, false);
 
 echo "**** test #1 *****\n";
 try {
@@ -52,14 +52,14 @@ var_dump($ctx->getStatus());
 
 
 // Test #2 — single-spec baseline (no VALIDATE_MULTI), for comparison with #1.
-$bool_spec = [
+$bool_spec = array(
     VALIDATE_BOOL,
     VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
-    ['amin' => 1, 'amax' => 4]
-];
+    array('amin' => 1, 'amax' => 4)
+);
 
 // Value to be validated.
-$bool = ['t', 'f', true, false];
+$bool = array('t', 'f', true, false);
 
 echo "**** test #2 *****\n";
 try {
@@ -76,26 +76,26 @@ var_dump($ctx->getStatus());
 
 // Test #3 — MULTI_OR: the first sub-spec rejects 't'/'f' (no BOOL_TF flag) but
 // the second accepts them, so the OR clause is satisfied.
-$bool_spec = [
+$bool_spec = array(
     VALIDATE_MULTI,
     VALIDATE_MULTI_OR,
-    [],
-    [
-        [
+    array(),
+    array(
+        array(
             VALIDATE_BOOL,
             VALIDATE_FLAG_ARRAY,
-            ['amin' => 1, 'amax' =>4]
-        ],
-        [
+            array('amin' => 1, 'amax' =>4)
+        ),
+        array(
             VALIDATE_BOOL,
             VALIDATE_FLAG_ARRAY | VALIDATE_BOOL_TF,
-            ['amin' => 1, 'amax' =>4]
-        ],
-    ]
-];
+            array('amin' => 1, 'amax' =>4)
+        ),
+    )
+);
 
 // Value to be validated.
-$bool = ['t', 'f', true, false];
+$bool = array('t', 'f', true, false);
 
 echo "**** test #3 *****\n";
 try {

@@ -15,11 +15,11 @@ $func_opts = VALIDATE_OPT_CHECK_SPEC;
 
 echo "Simple string\n";
 $var = 12;
-$spec = [
+$spec = array(
 	VALIDATE_INT,
 	VALIDATE_INT_AS_STRING,
-	['min'=>0, 'max'=>20]
-];
+	array('min'=>0, 'max'=>20)
+);
 $result = validate($ctx, $var, $spec, $func_opts);
 var_dump($result, $ctx->getStatus());
 
@@ -27,11 +27,11 @@ var_dump($result, $ctx->getStatus());
 echo "\Simple array\n";
 try {
 	$var = array(12);
-	$spec = [
+	$spec = array(
 		VALIDATE_INT,
 		VALIDATE_FLAG_ARRAY,
-		['min'=>0, 'max'=>20, 'amin'=>0, 'amax'=>20]
-	];
+		array('min'=>0, 'max'=>20, 'amin'=>0, 'amax'=>20)
+	);
 	$result = validate($ctx, $var, $spec, $func_opts);
 	var_dump($result, $ctx->getStatus());
 } catch (Exception $e) {
@@ -41,11 +41,11 @@ try {
 echo "\nScalar to array\n";
 try {
 	$var = 12;
-	$spec = [
+	$spec = array(
 		VALIDATE_INT,
 		VALIDATE_FLAG_ARRAY,
-		['min'=>0, 'max'=>20, 'amin'=>0, 'amax'=>20]
-	];
+		array('min'=>0, 'max'=>20, 'amin'=>0, 'amax'=>20)
+	);
 	$result = validate($ctx, $var, $spec, $func_opts);
 	var_dump($result, $ctx->getStatus());
 } catch (Exception $e) {
@@ -56,11 +56,11 @@ try {
 echo "\nNested array\n";
 try {
 	$var = array(array(12));
-	$spec = [
+	$spec = array(
 		VALIDATE_INT,
 		VALIDATE_FLAG_ARRAY,
-		['min'=>0, 'max'=>20, 'amin'=>0, 'amax'=>20]
-	];
+		array('min'=>0, 'max'=>20, 'amin'=>0, 'amax'=>20)
+	);
 	$result = validate($ctx, $var, $spec, $func_opts);
 	var_dump($result, $ctx->getStatus());
 } catch (Exception $e) {
@@ -71,11 +71,11 @@ try {
 echo "\nNested array (should pass)\n";
 try {
 	$var = array(array(12));
-	$spec = [
+	$spec = array(
 		VALIDATE_INT,
 		VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_RECURSIVE,
-		['min'=>0, 'max'=>20, 'amin'=>0, 'amax'=>20]
-	];
+		array('min'=>0, 'max'=>20, 'amin'=>0, 'amax'=>20)
+	);
 	$result = validate($ctx, $var, $spec, $func_opts);
 	var_dump($result, $ctx->getStatus());
 } catch (Exception $e) {
@@ -85,11 +85,11 @@ try {
 echo "\nArray of scalars\n";
 try {
 	$var = array(12,13,20);
-	$spec = [
+	$spec = array(
 		VALIDATE_INT,
 		VALIDATE_FLAG_ARRAY,
-		['min'=>0, 'max'=>20, 'amin'=>0, 'amax'=>20]
-	];
+		array('min'=>0, 'max'=>20, 'amin'=>0, 'amax'=>20)
+	);
 	$result = validate($ctx, $var, $spec, $func_opts);
 	var_dump($result, $ctx->getStatus());
 } catch (Exception $e) {

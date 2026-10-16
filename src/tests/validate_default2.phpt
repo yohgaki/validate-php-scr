@@ -18,30 +18,30 @@ $values = array(
 );
 
 echo "\n** Successful case**\n";
-$spec = [
+$spec = array(
 	VALIDATE_ARRAY,
 	VALIDATE_FLAG_NONE,
-	['min'=>0, 'max'=>10],
-	[
-		'bar' => [ // Empty in $values
+	array('min'=>0, 'max'=>10),
+	array(
+		'bar' => array( // Empty in $values
 			VALIDATE_STRING,
 			VALIDATE_FLAG_EMPTY_TO_DEFAULT
 			| VALIDATE_STRING_SPACE | VALIDATE_STRING_LOWER_ALPHA,
-			['min'=>0, 'max'=>100, 'default'=>'value was not defined']
-		],
-		'baz' => [ // Empty in $values
+			array('min'=>0, 'max'=>100, 'default'=>'value was not defined')
+		),
+		'baz' => array( // Empty in $values
 			VALIDATE_INT,
 			VALIDATE_FLAG_EMPTY_TO_DEFAULT,
-			['min'=>0, 'max'=>100, 'default'=>1 ]
-		],
-		'hoge' => [ // Empty in $values
+			array('min'=>0, 'max'=>100, 'default'=>1 )
+		),
+		'hoge' => array( // Empty in $values
 			VALIDATE_FLOAT,
 			VALIDATE_FLAG_EMPTY_TO_DEFAULT
 			| VALIDATE_FLAG_ARRAY,
-			['min'=>0, 'max'=>100, 'amin'=>2, 'amax'=>4, 'default'=>[12,34,56] ] // Abuse, but works
-		],
-	],
-];
+			array('min'=>0, 'max'=>100, 'amin'=>2, 'amax'=>4, 'default'=>array(12,34,56) ) // Abuse, but works
+		),
+	),
+);
 
 try {
 	// 'foo' is not declared: VALIDATE_OPT_UNVALIDATED allows the leftover.

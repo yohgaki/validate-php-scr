@@ -12,22 +12,32 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
+// var_export() as in PHP 7.0.2+: a float keeps ".0" (PHP 5 prints 1500.0 as 1500).
+function vexp($v)
+{
+    $s = var_export($v, true);
+    if (is_float($v) && strpbrk($s, '.eEN') === false) {
+        $s .= '.0';
+    }
+    return $s;
+}
+
 function tryone($label, $value, $spec) {
     $ctx = null;
     $r = validate($ctx, $value, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
     printf("[%s] in=%s => out=%s status=%s\n",
         $label,
-        var_export($value, true),
-        var_export($r, true),
+        vexp($value),
+        vexp($r),
         var_export($ctx instanceof Validate ? $ctx->getStatus() : null, true));
 }
 
 echo "**** European: thousand='.' decimal=',' ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_THOUSAND,
-    ['min' => 0, 'max' => 1.0e10, 'thousand' => '.', 'decimal' => ','],
-];
+    array('min' => 0, 'max' => 1.0e10, 'thousand' => '.', 'decimal' => ','),
+);
 tryone('1.234',         '1.234',         $spec); // ok — 1234 grouped
 tryone('12.345',        '12.345',        $spec); // ok
 tryone('1.234.567',     '1.234.567',     $spec); // ok — multi group
@@ -40,11 +50,11 @@ tryone('12.34',         '12.34',         $spec); // fail — group not 3 digits
 tryone('1.234.56',      '1.234.56',      $spec); // fail — last group not 3 digits
 
 echo "\n**** Underscore separator (programmer-style) ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_THOUSAND,
-    ['min' => 0, 'max' => 1.0e10, 'thousand' => '_'],
-];
+    array('min' => 0, 'max' => 1.0e10, 'thousand' => '_'),
+);
 tryone('1_234',         '1_234',         $spec); // ok
 tryone('1_234_567',     '1_234_567',     $spec); // ok
 tryone('1_234.5',       '1_234.5',       $spec); // ok — '.' still decimal
@@ -52,57 +62,60 @@ tryone('1_23',          '1_23',          $spec); // fail
 tryone('_123',          '_123',          $spec); // fail
 
 echo "\n**** Space separator (French SI style) ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_THOUSAND,
-    ['min' => 0, 'max' => 1.0e10, 'thousand' => ' '],
-];
+    array('min' => 0, 'max' => 1.0e10, 'thousand' => ' '),
+);
 tryone('"1 234"',       '1 234',         $spec); // ok
 tryone('"12 345 678"',  '12 345 678',    $spec); // ok
 tryone('"1 23"',        '1 23',          $spec); // fail
 tryone('"1234"',        '1234',          $spec); // ok — ungrouped still accepted
 
 echo "\n**** Negative + custom separator ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_THOUSAND,
-    ['min' => -1.0e6, 'max' => 1.0e6, 'thousand' => '.', 'decimal' => ','],
-];
+    array('min' => -1.0e6, 'max' => 1.0e6, 'thousand' => '.', 'decimal' => ','),
+);
 tryone('-1.234,5',      '-1.234,5',      $spec); // ok
 
 echo "\n**** Spec error: 'thousand' option not a single char ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_THOUSAND,
-    ['min' => 0, 'max' => 10000, 'thousand' => '__'],
-];
+    array('min' => 0, 'max' => 10000, 'thousand' => '__'),
+);
 $ctx = validate_init();
 var_dump(validate_spec($spec, $unvalidated, $ctx));
-foreach (validate_get_system_errors($ctx)['error'] as $e) {
+$_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+foreach ($_tmp['error'] as $e) {
     echo 'spec error: ', $e['message'], "\n";
 }
 
 echo "\n**** Spec error: decimal == thousand ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_THOUSAND,
-    ['min' => 0, 'max' => 10000, 'decimal' => '.', 'thousand' => '.'],
-];
+    array('min' => 0, 'max' => 10000, 'decimal' => '.', 'thousand' => '.'),
+);
 $ctx = validate_init();
 var_dump(validate_spec($spec, $unvalidated, $ctx));
-foreach (validate_get_system_errors($ctx)['error'] as $e) {
+$_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+foreach ($_tmp['error'] as $e) {
     echo 'spec error: ', $e['message'], "\n";
 }
 
 echo "\n**** Spec warning: 'thousand' option without VALIDATE_FLOAT_THOUSAND flag ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
-    ['min' => 0, 'max' => 10000, 'thousand' => ','],
-];
+    array('min' => 0, 'max' => 10000, 'thousand' => ','),
+);
 $ctx = validate_init();
 var_dump(validate_spec($spec, $unvalidated, $ctx));
-foreach (validate_get_system_errors($ctx)['warning'] as $w) {
+$_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+foreach ($_tmp['warning'] as $w) {
     echo 'spec warning: ', $w['message'], "\n";
 }
 

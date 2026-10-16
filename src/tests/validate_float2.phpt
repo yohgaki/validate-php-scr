@@ -11,16 +11,16 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
-    ['min'=>-1000, 'max'=>1000, 'filter'=>
+    array('min'=>-1000, 'max'=>1000, 'filter'=>
     function($ctx, $input, &$error) {
         return trim($input);
-    }]
-];
+    })
+);
 
-$floats = [0, -1000, 1000, -1000.1, 1000.1];
+$floats = array(0, -1000, 1000, -1000.1, 1000.1);
 
 foreach ($floats as $float) {
     try {

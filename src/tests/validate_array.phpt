@@ -71,9 +71,9 @@ try {
 	var_dump('Throwable: '.$e->getMessage());
 } catch (Exception $e) {
 	var_dump('Exception: '.$e->getMessage());
-} finally {
-	var_dump('Finally');
 }
+// PHP 5.3 has no "finally"; the catch blocks above handle every exception.
+var_dump('Finally');
 ?>
 --EXPECT--
 string(14) "** 1st call **"

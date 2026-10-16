@@ -28,88 +28,88 @@ function check($label, $spec) {
 }
 
 // 1. amin == amax is valid (bug fix)
-check('amin==amax', [
+check('amin==amax', array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 1, 'max' => 10, 'amin' => 2, 'amax' => 2],
-]);
+    array('min' => 1, 'max' => 10, 'amin' => 2, 'amax' => 2),
+));
 
 // 2. VALIDATE_FLAG_UNDEFINED_TO_DEFAULT without 'default'
-check('UNDEFINED_TO_DEFAULT no default', [
+check('UNDEFINED_TO_DEFAULT no default', array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
-    ['min' => 1, 'max' => 10],
-]);
+    array('min' => 1, 'max' => 10),
+));
 
 // 3. VALIDATE_FLAG_EMPTY_TO_DEFAULT without 'default'
-check('EMPTY_TO_DEFAULT no default', [
+check('EMPTY_TO_DEFAULT no default', array(
     VALIDATE_INT,
     VALIDATE_FLAG_EMPTY_TO_DEFAULT,
-    ['min' => 1, 'max' => 100],
-]);
+    array('min' => 1, 'max' => 100),
+));
 
 // 4. Invalid PCRE pattern
-check('invalid regexp', [
+check('invalid regexp', array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    ['min' => 1, 'max' => 10, 'regexp' => '/[unclosed/'],
-]);
+    array('min' => 1, 'max' => 10, 'regexp' => '/[unclosed/'),
+));
 
 // 5. filter is not callable
-check('filter not callable', [
+check('filter not callable', array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 1, 'max' => 10, 'filter' => 12345],
-]);
+    array('min' => 1, 'max' => 10, 'filter' => 12345),
+));
 
 // 6. key_callback is not callable
-check('key_callback not callable', [
+check('key_callback not callable', array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_FLAG_ARRAY,
-    ['min' => 1, 'max' => 10, 'amin' => 0, 'amax' => 5, 'key_callback' => 'not_a_function_xyz'],
-]);
+    array('min' => 1, 'max' => 10, 'amin' => 0, 'amax' => 5, 'key_callback' => 'not_a_function_xyz'),
+));
 
 // 7. VALIDATE_BOOL with no format flags
-check('BOOL no format flags', [
+check('BOOL no format flags', array(
     VALIDATE_BOOL,
     VALIDATE_FLAG_NONE,
-    [],
-]);
+    array(),
+));
 
 // 8. ascii with non-ASCII bytes
-check('ascii non-ASCII', [
+check('ascii non-ASCII', array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 1, 'max' => 10, 'ascii' => "\xc3\xa9"],
-]);
+    array('min' => 1, 'max' => 10, 'ascii' => "\xc3\xa9"),
+));
 
 // 9. INF on VALIDATE_INT
-check('INF on INT', [
+check('INF on INT', array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => 1, 'max' => 100, 'INF' => true],
-]);
+    array('min' => 1, 'max' => 100, 'INF' => true),
+));
 
 // 10. alimit without VALIDATE_FLAG_ARRAY
-check('alimit no ARRAY flag', [
+check('alimit no ARRAY flag', array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 1, 'max' => 10, 'alimit' => 5],
-]);
+    array('min' => 1, 'max' => 10, 'alimit' => 5),
+));
 
 // 11. VALIDATE_FLAG_ARRAY_RECURSIVE without VALIDATE_FLAG_ARRAY
-check('ARRAY_RECURSIVE no ARRAY', [
+check('ARRAY_RECURSIVE no ARRAY', array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_FLAG_ARRAY_RECURSIVE,
-    ['min' => 1, 'max' => 10],
-]);
+    array('min' => 1, 'max' => 10),
+));
 
 // 12. STRING min as float
-check('min as float', [
+check('min as float', array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 1.0, 'max' => 10],
-]);
+    array('min' => 1.0, 'max' => 10),
+));
 ?>
 --EXPECT--
 amin==amax: OK

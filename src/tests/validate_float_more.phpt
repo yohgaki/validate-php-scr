@@ -14,16 +14,16 @@ require_once __DIR__.'/bootstrap.php';
 $func_opts = VALIDATE_OPT_NONE;
 
 echo "**** array input is rejected ****\n";
-$spec = [VALIDATE_FLOAT, VALIDATE_FLAG_NONE, ['min'=>0.0, 'max'=>100.0]];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLAG_NONE, array('min'=>0.0, 'max'=>100.0));
 try {
-    $copy = [1.0];
+    $copy = array(1.0);
     var_dump(validate($ctx, $copy, $spec, $func_opts));
 } catch (Exception $e) {
     var_dump($e->getMessage(), $ctx->getStatus());
 }
 
 echo "\n**** NAN / INF / -INF native doubles ****\n";
-foreach ([NAN, INF, -INF] as $var) {
+foreach (array(NAN, INF, -INF) as $var) {
     try {
         $copy = $var;
         var_dump(validate($ctx, $copy, $spec, $func_opts));
@@ -33,18 +33,18 @@ foreach ([NAN, INF, -INF] as $var) {
 }
 
 echo "\n**** INF allowed by option ****\n";
-$spec_inf = [VALIDATE_FLOAT, VALIDATE_FLAG_NONE,
-             ['min'=>0.0, 'max'=>100.0, 'INF'=>true, '-INF'=>true]];
-foreach ([INF, -INF] as $var) {
+$spec_inf = array(VALIDATE_FLOAT, VALIDATE_FLAG_NONE,
+             array('min'=>0.0, 'max'=>100.0, 'INF'=>true, '-INF'=>true));
+foreach (array(INF, -INF) as $var) {
     $copy = $var;
     var_dump(validate($ctx, $copy, $spec_inf, $func_opts), $ctx->getStatus());
 }
 
 echo "\n**** VALIDATE_FLAG_EMPTY ****\n";
-$spec_e = [VALIDATE_FLOAT, VALIDATE_FLAG_EMPTY, ['min'=>0.0, 'max'=>100.0]];
+$spec_e = array(VALIDATE_FLOAT, VALIDATE_FLAG_EMPTY, array('min'=>0.0, 'max'=>100.0));
 $copy = '';
 var_dump(validate($ctx, $copy, $spec_e, $func_opts), $ctx->getStatus());
-$spec_e = [VALIDATE_FLOAT, VALIDATE_FLOAT_AS_STRING | VALIDATE_FLAG_EMPTY, ['min'=>0.0, 'max'=>100.0]];
+$spec_e = array(VALIDATE_FLOAT, VALIDATE_FLOAT_AS_STRING | VALIDATE_FLAG_EMPTY, array('min'=>0.0, 'max'=>100.0));
 $copy = '';
 var_dump(validate($ctx, $copy, $spec_e, $func_opts), $ctx->getStatus());
 
@@ -57,7 +57,7 @@ try {
 }
 
 echo "\n**** EMPTY_TO_DEFAULT without default (broken spec, check off) ****\n";
-$spec_d = [VALIDATE_FLOAT, VALIDATE_FLAG_EMPTY_TO_DEFAULT, ['min'=>0.0, 'max'=>100.0]];
+$spec_d = array(VALIDATE_FLOAT, VALIDATE_FLAG_EMPTY_TO_DEFAULT, array('min'=>0.0, 'max'=>100.0));
 try {
     $copy = '';
     var_dump(validate($ctx, $copy, $spec_d, $func_opts));
@@ -66,7 +66,7 @@ try {
 }
 
 echo "\n**** string form overflows to INF after cast ****\n";
-$spec_s = [VALIDATE_FLOAT, VALIDATE_FLOAT_SCIENTIFIC, ['min'=>0.0, 'max'=>INF]];
+$spec_s = array(VALIDATE_FLOAT, VALIDATE_FLOAT_SCIENTIFIC, array('min'=>0.0, 'max'=>INF));
 try {
     $copy = '9e999';
     var_dump(validate($ctx, $copy, $spec_s, $func_opts));
@@ -75,7 +75,7 @@ try {
 }
 
 echo "\n**** RAW returns original string ****\n";
-$spec_r = [VALIDATE_FLOAT, VALIDATE_FLAG_RAW, ['min'=>0.0, 'max'=>100.0]];
+$spec_r = array(VALIDATE_FLOAT, VALIDATE_FLAG_RAW, array('min'=>0.0, 'max'=>100.0));
 $copy = '1.5';
 var_dump(validate($ctx, $copy, $spec_r, $func_opts), $ctx->getStatus());
 

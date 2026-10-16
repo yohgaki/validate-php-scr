@@ -28,42 +28,42 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines $basicTypes
 // =============================================================================
 
 // ---- $_GET: only a CSRF token is expected -----------------------------------
-$getSpec = [
+$getSpec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 1, 'max' => 1],
-    [
+    array('min' => 1, 'max' => 1),
+    array(
         'csrf' => $basicTypes['hex64'], // 64-char hex (SHA-256)
-    ]
-];
+    )
+);
 
 // ---- $_POST: a user-registration form ---------------------------------------
-$postSpec = [
+$postSpec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 5, 'max' => 5],
-    [
-        'username' => [
+    array('min' => 5, 'max' => 5),
+    array(
+        'username' => array(
             VALIDATE_STRING, VALIDATE_STRING_ALNUM,
-            ['min' => 3, 'max' => 32, 'ascii' => '-_',
-             'error_message' => 'Username must be 3-32 chars (alnum, "-", "_").']
-        ],
+            array('min' => 3, 'max' => 32, 'ascii' => '-_',
+             'error_message' => 'Username must be 3-32 chars (alnum, "-", "_").')
+        ),
         'email'    => $basicTypes['email'],
-        'age'      => [
+        'age'      => array(
             VALIDATE_INT, VALIDATE_FLAG_NONE,
-            ['min' => 13, 'max' => 120,
-             'error_message' => 'Age must be between 13 and 120.']
-        ],
-        'country'  => [
+            array('min' => 13, 'max' => 120,
+             'error_message' => 'Age must be between 13 and 120.')
+        ),
+        'country'  => array(
             VALIDATE_REGEXP, VALIDATE_FLAG_NONE,
-            ['min' => 2, 'max' => 2,
+            array('min' => 2, 'max' => 2,
              'ascii' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
              'regexp' => '/\A(?:JP|US|GB|DE|FR)\z/', // ISO 3166-1 alpha-2 whitelist
-             'error_message' => 'Country must be one of: JP, US, GB, DE, FR.']
-        ],
+             'error_message' => 'Country must be one of: JP, US, GB, DE, FR.')
+        ),
         'accepted_tos' => $basicTypes['accepted'], // "yes"/"on"/"1"/"true"
-    ]
-];
+    )
+);
 
 // ---- $_COOKIE: session id + optional UX cookies -----------------------------
 $langSpec  = $basicTypes['alpha_dash32'];
@@ -71,16 +71,16 @@ $langSpec[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED; // optional
 $themeSpec = $basicTypes['alpha_dash32'];
 $themeSpec[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED;
 
-$cookieSpec = [
+$cookieSpec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 1, 'max' => 4],
-    [
+    array('min' => 1, 'max' => 4),
+    array(
         'PHPSESSID' => $basicTypes['sessid'],
         'lang'      => $langSpec,
         'theme'     => $themeSpec,
-    ]
-];
+    )
+);
 
 // ---- $_FILES: single avatar upload (5-6 keys per upload) --------------------
 // Each $_FILES[<field>] is an array: name, type, tmp_name, error, size, and
@@ -88,36 +88,36 @@ $cookieSpec = [
 // Whitelist MIME type by regex; bound size explicitly.
 // NOTE: 'type' is browser-supplied and not trustworthy. Re-check the uploaded
 // file with finfo_file() before storing or serving it.
-$uploadSpec = [
+$uploadSpec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 5, 'max' => 6],
-    [
-        'name'     => [VALIDATE_STRING, VALIDATE_STRING_ALNUM,
-                       ['min' => 1, 'max' => 255, 'ascii' => '._-']],
-        'full_path' => [VALIDATE_STRING, VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED,
-                        ['min' => 1, 'max' => 255, 'ascii' => '._-/']],
-        'type'     => [VALIDATE_REGEXP, VALIDATE_FLAG_NONE,
-                       ['min' => 6, 'max' => 32,
+    array('min' => 5, 'max' => 6),
+    array(
+        'name'     => array(VALIDATE_STRING, VALIDATE_STRING_ALNUM,
+                       array('min' => 1, 'max' => 255, 'ascii' => '._-')),
+        'full_path' => array(VALIDATE_STRING, VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED,
+                        array('min' => 1, 'max' => 255, 'ascii' => '._-/')),
+        'type'     => array(VALIDATE_REGEXP, VALIDATE_FLAG_NONE,
+                       array('min' => 6, 'max' => 32,
                         'ascii' => 'abcdefghijklmnopqrstuvwxyz/',
-                        'regexp' => '/\Aimage\/(?:jpeg|png|gif|webp)\z/']],
-        'tmp_name' => [VALIDATE_STRING, VALIDATE_STRING_ALNUM,
-                       ['min' => 1, 'max' => 4096, 'ascii' => '/_.-']],
-        'error'    => [VALIDATE_INT, VALIDATE_FLAG_NONE,
-                       ['min' => 0, 'max' => 8]], // UPLOAD_ERR_OK..EXTENSION
-        'size'     => [VALIDATE_INT, VALIDATE_FLAG_NONE,
-                       ['min' => 1, 'max' => 5 * 1024 * 1024]], // up to 5 MiB
-    ]
-];
+                        'regexp' => '/\Aimage\/(?:jpeg|png|gif|webp)\z/')),
+        'tmp_name' => array(VALIDATE_STRING, VALIDATE_STRING_ALNUM,
+                       array('min' => 1, 'max' => 4096, 'ascii' => '/_.-')),
+        'error'    => array(VALIDATE_INT, VALIDATE_FLAG_NONE,
+                       array('min' => 0, 'max' => 8)), // UPLOAD_ERR_OK..EXTENSION
+        'size'     => array(VALIDATE_INT, VALIDATE_FLAG_NONE,
+                       array('min' => 1, 'max' => 5 * 1024 * 1024)), // up to 5 MiB
+    )
+);
 
-$filesSpec = [
+$filesSpec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 1, 'max' => 1],
-    [
+    array('min' => 1, 'max' => 1),
+    array(
         'avatar' => $uploadSpec,
-    ]
-];
+    )
+);
 
 // ---- HTTP headers -------------------------------------------------------------
 // Same pattern as Example #4 (94-example.php). Cookie and User-Agent are
@@ -133,61 +133,61 @@ $uaHdr[VALIDATE_OPTIONS]['min']     = 0;
 $headerCatchSpec = $basicTypes['header512'];
 $headerCatchSpec[VALIDATE_OPTIONS]['min'] = 0; // Allow empty header values.
 
-$headerSpec = [
+$headerSpec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_ARRAY_KEY_ALNUM,
-    ['min' => 1, 'max' => 100, 'undeclared' => $headerCatchSpec], // Host required + up to 99 others
-    [
+    array('min' => 1, 'max' => 100, 'undeclared' => $headerCatchSpec), // Host required + up to 99 others
+    array(
         'Host'       => $basicTypes['http_host'], // name or IP, optional ":port"
         'Cookie'     => $cookieHdr,
         'User-Agent' => $uaHdr,
-    ]
-];
+    )
+);
 
 // =============================================================================
 // 2. Top-level spec: validate every superglobal + all headers in one call
 // =============================================================================
 
-$spec = [
+$spec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 5, 'max' => 5],
-    [
+    array('min' => 5, 'max' => 5),
+    array(
         'get'    => $getSpec,
         'post'   => $postSpec,
         'cookie' => $cookieSpec,
         'files'  => $filesSpec,
         'header' => $headerSpec,
-    ]
-];
+    )
+);
 
 // =============================================================================
 // 3. Collect inputs (with CLI-friendly fallback so this script is runnable)
 // =============================================================================
 
 if (PHP_SAPI === 'cli' && empty($_GET) && empty($_POST)) {
-    $_GET = ['csrf' => str_repeat('a', 64)];
-    $_POST = [
+    $_GET = array('csrf' => str_repeat('a', 64));
+    $_POST = array(
         'username'     => 'yohgaki',
         'email'        => 'yohgaki@ohgaki.net',
         'age'          => 42,
         'country'      => 'JP',
         'accepted_tos' => 'yes',
-    ];
-    $_COOKIE = [
+    );
+    $_COOKIE = array(
         'PHPSESSID' => str_repeat('a', 32),
         'lang'      => 'ja',
         'theme'     => 'dark',
-    ];
-    $_FILES = [
-        'avatar' => [
+    );
+    $_FILES = array(
+        'avatar' => array(
             'name'     => 'photo.jpg',
             'type'     => 'image/jpeg',
             'tmp_name' => '/tmp/phpAbCdEf',
             'error'    => 0,
             'size'     => 102400,
-        ],
-    ];
+        ),
+    );
 }
 
 // Request headers from $_SERVER: HTTP_* plus CONTENT_TYPE / CONTENT_LENGTH,
@@ -196,7 +196,7 @@ if (PHP_SAPI === 'cli' && empty($_GET) && empty($_POST)) {
 // all lower case over HTTP/2 — so 'Host' would not match "host".) The
 // other $_SERVER entries are server/environment variables, not headers.
 // CLI has no request headers (its $_SERVER is the environment): use samples.
-$headers = [];
+$headers = array();
 if (PHP_SAPI !== 'cli') {
     foreach ($_SERVER as $k => $v) {
         if (strncmp($k, 'HTTP_', 5) === 0 || $k === 'CONTENT_TYPE' || $k === 'CONTENT_LENGTH') {
@@ -205,22 +205,22 @@ if (PHP_SAPI !== 'cli') {
         }
     }
 } else {
-    $headers = [
+    $headers = array(
         'Host'            => 'example.com:8080',
         'User-Agent'      => 'Mozilla/5.0 (compatible; validate-php-scr/95)',
         'Cookie'          => 'PHPSESSID='.str_repeat('a', 32),
         'Accept'          => 'text/html',
         'Accept-Language' => 'ja, en;q=0.8',
-    ];
+    );
 }
 
-$inputs = [
+$inputs = array(
     'get'    => $_GET,
     'post'   => $_POST,
     'cookie' => $_COOKIE,
     'files'  => $_FILES,
     'header' => $headers,
-];
+);
 
 // =============================================================================
 // 4. Validate

@@ -7,31 +7,40 @@ Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
 example/tool fixes, and remembering checked specs. Branches for older PHP
 versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
 
-### Branch `php-7.x`
+### Branch `php-5.x`
 
-* Created from `master` (2026-10-17) for PHP 7.0 - 7.4. Differences from
+* Created from `php-7.x` (2026-10-17) for PHP 5.3 - 5.6. Differences from
   `master`:
-  * The internal class constants of `Validate` have no visibility (PHP 7.0
-    has none); `preg_last_error_msg()` (PHP 8.0) is replaced by
-    `Validate::pregLastErrorMsg()`, which returns the same messages.
-  * `src/run-tests.php` is the one of PHP 7.4.33 (no `--show-diff`; CI prints
-    `tests/*.diff` on failure).
-  * Tests: `list()` instead of `[...]` in `foreach`; `assert.exception=1`
-    (PHP 8 default) in `validate_object.phpt`; `serialize_precision=14` in
-    the float tests (PHP 7.0 prints 17 digits); `validate_reject.phpt` drops
-    the caught exception before `var_dump()`, since PHP 7 keeps by-reference
-    arguments as references in its trace.
-  * GitHub Actions and `.gitlab-ci.yml` test PHP 7.0 - 7.4; `composer.json`
-    requires `php` `^7.0`.
-* Checked on PHP 7.0.33, 7.1.33, 7.2.34, 7.3.33 and 7.4.33 (official Docker
-  images plus BCMath and GMP): all tests pass; the output of
-  `dev/basic_types_corpus.php` equals `master`'s on PHP 8.5.11, and that of
-  the examples `master`'s on PHP 8.0.30 (PHP 8.4+ `var_dump()` shows more
-  closure fields); on 7.0 the `src/tools` flow (logger, analyzer, validator)
-  gives the same `spec.php` and results as `master` on 8.5.11; on 7.0, 7.2
-  and 7.4 `dev/fuzz_inputs.php` gives the same results as `master` on PHP
-  8.6.0RC3 for 120,000 JSON inputs and on PHP 8.5.11 for 80,000 URLs (seeds
-  as in the `json` / `url` entries below).
+  * PHP 5.3 syntax in all sources, tests, examples, tools and the code of
+    README / REFERENCE: `array()` for `[]`, `isset() ? :` for `??`, no
+    `(new Validate)->` one-liner, `call_user_func()` /
+    `call_user_func_array()` for callbacks (PHP 5.3 cannot call
+    `array($class, $method)` as `$f()`), no `finally`, `\u{}` or
+    `foreach (... as list())` in tests.
+  * `json` checks the input with `$jsonCheck` only: `json_decode()` of PHP 5
+    accepts `TRUE`, `+1`, `07`, `[1.]`, lone `\ud800` and control characters
+    in strings, and reports `[1]]` as a state mismatch.
+  * `VALIDATE_INT` accepts the GMP resources of PHP 5.3 - 5.5.
+  * As in `php-7.x`: the internal class constants of `Validate` have no
+    visibility, and `Validate::pregLastErrorMsg()` replaces
+    `preg_last_error_msg()`.
+  * `src/run-tests.php` is the one of PHP 5.5.38 (no `--show-diff`; CI sets
+    `REPORT_EXIT_STATUS=1`, without which it exits 0 on failures).
+  * Tests: PHP 5 `assert()` warnings, the PHP 5 uncaught-exception message,
+    a float printer for `var_export()` (PHP 5 prints `1.0` as `1`),
+    `pack('H*')` for `hex2bin()` (PHP 5.4).
+  * Tools: `mt_rand()` when `random_bytes()` is missing; `PHP_INT_MIN` is
+    defined when missing.
+  * GitHub Actions tests PHP 5.3 - 5.6; `.gitlab-ci.yml` tests PHP 5.5 and
+    5.6 (current Docker cannot pull the `php:5.3` / `php:5.4` images, which
+    use manifest schema 1); `composer.json` requires `php` `^5.3`.
+* Checked on PHP 5.3.29 and 5.4.45 (built from source in Docker) and 5.5.38
+  and 5.6.40 (official Docker images), all with BCMath and GMP: all tests
+  pass; the outputs of `dev/basic_types_corpus.php`, of the examples and of
+  the `src/tools` flow (logger, analyzer, validator) equal `master`'s on
+  PHP 8.5.11; `dev/fuzz_inputs.php` gives the same results as `master` on
+  PHP 8.6.0RC3 for 120,000 JSON inputs and on PHP 8.5.11 for 80,000 URLs
+  (seeds as in the `json` / `url` entries below).
 
 ### Changed — behavior changes that can affect existing code
 

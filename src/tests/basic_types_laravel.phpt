@@ -16,104 +16,105 @@ require_once __DIR__.'/../lib/basic_types.php';
 // Covers the Laravel-compatible single-value validators that don't need
 // network access. DNS-bound rules ('active_url', 'email_dns') live in
 // basic_types_laravel_dns.phpt.
-$cases = [
+$cases = array(
     // mac_address
-    ['mac_address', '00:1A:2B:3C:4D:5E', 'pass'],
-    ['mac_address', '00-1A-2B-3C-4D-5E', 'pass'],
-    ['mac_address', 'aa:bb:cc:dd:ee:ff', 'pass'],
-    ['mac_address', 'gg:1A:2B:3C:4D:5E', 'fail'],
-    ['mac_address', '00:1A:2B:3C:4D', 'fail'],
-    ['mac_address', '00:1A-2B:3C:4D:5E', 'fail'], // mixed separators
-    ['mac_address', '00-1A-2B-3C-4D:5E', 'fail'],
+    array('mac_address', '00:1A:2B:3C:4D:5E', 'pass'),
+    array('mac_address', '00-1A-2B-3C-4D-5E', 'pass'),
+    array('mac_address', 'aa:bb:cc:dd:ee:ff', 'pass'),
+    array('mac_address', 'gg:1A:2B:3C:4D:5E', 'fail'),
+    array('mac_address', '00:1A:2B:3C:4D', 'fail'),
+    array('mac_address', '00:1A-2B:3C:4D:5E', 'fail'), // mixed separators
+    array('mac_address', '00-1A-2B-3C-4D:5E', 'fail'),
 
     // ulid
-    ['ulid', '01ARZ3NDEKTSV4RRFFQ69G5FAV', 'pass'],
-    ['ulid', '01arz3ndektsv4rrffq69g5fav', 'pass'],
-    ['ulid', '01ARZ3NDEKTSV4RRFFQ69G5FAU', 'fail'],
-    ['ulid', '01ARZ3NDEKTSV4RRFFQ69G5FA', 'fail'],
-    ['ulid', '7ZZZZZZZZZZZZZZZZZZZZZZZZZ', 'pass'], // 2^128-1
-    ['ulid', '8ZZZZZZZZZZZZZZZZZZZZZZZZZ', 'fail'], // > 128 bits
+    array('ulid', '01ARZ3NDEKTSV4RRFFQ69G5FAV', 'pass'),
+    array('ulid', '01arz3ndektsv4rrffq69g5fav', 'pass'),
+    array('ulid', '01ARZ3NDEKTSV4RRFFQ69G5FAU', 'fail'),
+    array('ulid', '01ARZ3NDEKTSV4RRFFQ69G5FA', 'fail'),
+    array('ulid', '7ZZZZZZZZZZZZZZZZZZZZZZZZZ', 'pass'), // 2^128-1
+    array('ulid', '8ZZZZZZZZZZZZZZZZZZZZZZZZZ', 'fail'), // > 128 bits
 
     // hex_color
-    ['hex_color', '#fff', 'pass'],
-    ['hex_color', '#FFFF', 'pass'],
-    ['hex_color', '#FFFFFF', 'pass'],
-    ['hex_color', '#FFFFFFFF', 'pass'],
-    ['hex_color', '#FF', 'fail'],
-    ['hex_color', 'FFFFFF', 'fail'],
-    ['hex_color', '#GGG', 'fail'],
+    array('hex_color', '#fff', 'pass'),
+    array('hex_color', '#FFFF', 'pass'),
+    array('hex_color', '#FFFFFF', 'pass'),
+    array('hex_color', '#FFFFFFFF', 'pass'),
+    array('hex_color', '#FF', 'fail'),
+    array('hex_color', 'FFFFFF', 'fail'),
+    array('hex_color', '#GGG', 'fail'),
 
     // url (format only)
-    ['url', 'https://example.com/path?q=1', 'pass'],
-    ['url', 'http://example.com', 'pass'],
-    ['url', 'not-a-url', 'fail'],
+    array('url', 'https://example.com/path?q=1', 'pass'),
+    array('url', 'http://example.com', 'pass'),
+    array('url', 'not-a-url', 'fail'),
 
     // alpha_dash
-    ['alpha_dash32', 'foo-bar_baz123', 'pass'],
-    ['alpha_dash32', 'abc', 'pass'],
-    ['alpha_dash32', 'foo bar', 'fail'],
-    ['alpha_dash32', 'foo.bar', 'fail'],
+    array('alpha_dash32', 'foo-bar_baz123', 'pass'),
+    array('alpha_dash32', 'abc', 'pass'),
+    array('alpha_dash32', 'foo bar', 'fail'),
+    array('alpha_dash32', 'foo.bar', 'fail'),
 
     // ascii
-    ['ascii64', 'Hello, World!', 'pass'],
-    ['ascii64', 'abc XYZ 123 _-+', 'pass'],
-    ['ascii64', "\xe3\x81\x82", 'fail'],
+    array('ascii64', 'Hello, World!', 'pass'),
+    array('ascii64', 'abc XYZ 123 _-+', 'pass'),
+    array('ascii64', "\xe3\x81\x82", 'fail'),
 
     // lowercase
-    ['lowercase32', 'hello', 'pass'],
-    ['lowercase32', 'Hello', 'fail'],
-    ['lowercase32', 'hello1', 'fail'],
+    array('lowercase32', 'hello', 'pass'),
+    array('lowercase32', 'Hello', 'fail'),
+    array('lowercase32', 'hello1', 'fail'),
 
     // uppercase
-    ['uppercase32', 'HELLO', 'pass'],
-    ['uppercase32', 'Hello', 'fail'],
-    ['uppercase32', 'HELLO1', 'fail'],
+    array('uppercase32', 'HELLO', 'pass'),
+    array('uppercase32', 'Hello', 'fail'),
+    array('uppercase32', 'HELLO1', 'fail'),
 
     // digits
-    ['digits5', '12345', 'pass'],
-    ['digits5', '00000', 'pass'],
-    ['digits5', '1234', 'fail'],
-    ['digits5', '123456', 'fail'],
-    ['digits5', 'abcde', 'fail'],
-    ['digits_between_1_10', '1', 'pass'],
-    ['digits_between_1_10', '1234567890', 'pass'],
-    ['digits_between_1_10', '', 'fail'],
-    ['digits_between_1_10', '12345678901', 'fail'],
+    array('digits5', '12345', 'pass'),
+    array('digits5', '00000', 'pass'),
+    array('digits5', '1234', 'fail'),
+    array('digits5', '123456', 'fail'),
+    array('digits5', 'abcde', 'fail'),
+    array('digits_between_1_10', '1', 'pass'),
+    array('digits_between_1_10', '1234567890', 'pass'),
+    array('digits_between_1_10', '', 'fail'),
+    array('digits_between_1_10', '12345678901', 'fail'),
 
     // accepted
-    ['accepted', 'yes', 'pass'],
-    ['accepted', 'on', 'pass'],
-    ['accepted', 'true', 'pass'],
-    ['accepted', '1', 'pass'],
-    ['accepted', 'no', 'fail'],
-    ['accepted', 'maybe', 'fail'],
+    array('accepted', 'yes', 'pass'),
+    array('accepted', 'on', 'pass'),
+    array('accepted', 'true', 'pass'),
+    array('accepted', '1', 'pass'),
+    array('accepted', 'no', 'fail'),
+    array('accepted', 'maybe', 'fail'),
 
     // declined
-    ['declined', 'no', 'pass'],
-    ['declined', 'off', 'pass'],
-    ['declined', 'false', 'pass'],
-    ['declined', '0', 'pass'],
-    ['declined', 'yes', 'fail'],
+    array('declined', 'no', 'pass'),
+    array('declined', 'off', 'pass'),
+    array('declined', 'false', 'pass'),
+    array('declined', '0', 'pass'),
+    array('declined', 'yes', 'fail'),
 
     // timezone
-    ['timezone', 'UTC', 'pass'],
-    ['timezone', 'Asia/Tokyo', 'pass'],
-    ['timezone', 'America/New_York', 'pass'],
-    ['timezone', 'Not/A/Zone', 'fail'],
-    ['timezone', '', 'fail'],
-    ['timezone', 'US/Eastern', 'fail'],    // backward-compatible link
-    ['timezone', 'Asia/Calcutta', 'fail'], // renamed (Asia/Kolkata)
-    ['timezone', ['UTC'], 'fail'],
+    array('timezone', 'UTC', 'pass'),
+    array('timezone', 'Asia/Tokyo', 'pass'),
+    array('timezone', 'America/New_York', 'pass'),
+    array('timezone', 'Not/A/Zone', 'fail'),
+    array('timezone', '', 'fail'),
+    array('timezone', 'US/Eastern', 'fail'),    // backward-compatible link
+    array('timezone', 'Asia/Calcutta', 'fail'), // renamed (Asia/Kolkata)
+    array('timezone', array('UTC'), 'fail'),
 
     // timezone_all_with_bc (Laravel 'timezone:all_with_bc')
-    ['timezone_all_with_bc', 'Asia/Tokyo', 'pass'],
-    ['timezone_all_with_bc', 'US/Eastern', 'pass'],
-    ['timezone_all_with_bc', 'Asia/Calcutta', 'pass'],
-    ['timezone_all_with_bc', 'Etc/GMT+5', 'pass'],
-    ['timezone_all_with_bc', 'Not/A/Zone', 'fail'],
-];
+    array('timezone_all_with_bc', 'Asia/Tokyo', 'pass'),
+    array('timezone_all_with_bc', 'US/Eastern', 'pass'),
+    array('timezone_all_with_bc', 'Asia/Calcutta', 'pass'),
+    array('timezone_all_with_bc', 'Etc/GMT+5', 'pass'),
+    array('timezone_all_with_bc', 'Not/A/Zone', 'fail'),
+);
 
-foreach ($cases as list($type, $input, $expected)) {
+foreach ($cases as $case) {
+    list($type, $input, $expected) = $case; // foreach (... as list()) is PHP 5.5+
     $ctx = null;
     $r = validate($ctx, $input, $basicTypes[$type], VALIDATE_OPT_DISABLE_EXCEPTION);
     $actual = ($ctx instanceof Validate && $ctx->getStatus()) ? 'pass' : 'fail';

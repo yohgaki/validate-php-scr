@@ -1,6 +1,6 @@
 # "Validate" for PHP - An INPUT data validation framework
 
-[![CI](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml/badge.svg?branch=php-7.x)](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml?query=branch%3Aphp-7.x)
+[![CI](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml/badge.svg?branch=php-5.x)](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml?query=branch%3Aphp-5.x)
 
 "Validate" is "input data validation **framework**" that is developed to be useful for "CERT Secure Coding" and "Design by Contract"(DbC). "Validate" is designed to develop [**OWASP TOP 10 A10:2017 vulnerability**](https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring) compliant application. "Validate" is planned to be implemented as C module for PHP.
 
@@ -37,7 +37,7 @@ Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.m
 
 ## Requirements
 
-* PHP 7.0 - 7.4 (this is the `php-7.x` branch; see [Branches](#branches)).
+* PHP 5.3 - 5.6 (this is the `php-5.x` branch; see [Branches](#branches)).
 * No extension is required.
 
 ### Recommended
@@ -61,12 +61,15 @@ Every branch provides the same features with code written for its PHP versions. 
 * `nightly` and `master` in the CI column are [setup-php](https://github.com/shivammathur/setup-php) builds of the next PHP release and of php-src master (8.6 and 8.7.0-dev as of October 2026).
 * `.gitlab-ci.yml` runs the same tests in the official `php` Docker images for the released PHP versions of each branch, except PHP 5.3 / 5.4, whose images current Docker cannot pull (manifest schema 1).
 
-### Differences of `php-7.x` from `master`
+### Differences of `php-5.x` from `master`
 
-* `src/run-tests.php` is the one of PHP 7.4.33. It has no `--show-diff`; a failed test leaves `src/tests/*.diff`.
-* The internal class constants of `Validate` are public (PHP 7.0 has no class constant visibility). Do not use them.
-* `preg_last_error_msg()` (PHP 8.0+) is replaced by an internal function returning the same messages.
-* Some tests set INI values or syntax for PHP 7: `assert.exception=1` (the PHP 8 default), `serialize_precision=14` (PHP 7.0 prints 17 digits), `list()` instead of `[...]` in `foreach`.
+* PHP 5.3 syntax: `array()` instead of `[]`, `isset($a) ? $a : $b` instead of `??`, no `(new Validate)->validate()` one-liner (PHP 5.4+). Callbacks are called with `call_user_func()` / `call_user_func_array()`, since PHP 5.3 cannot call `array($class, $method)` as `$f()`.
+* The `json` basic type does not call `json_decode()`, which accepts `TRUE`, `+1`, `07`, `[1.]`, lone `\ud800` and control characters in strings on PHP 5. It checks the input with the `json_decode()` rules of PHP 8.6+ implemented in `basic_types.php` (`$jsonCheck`, also used by `master` on PHP < 8.6).
+* `VALIDATE_INT` also accepts the GMP resources of PHP 5.3 - 5.5 (GMP objects from PHP 5.6).
+* The internal class constants of `Validate` are public (no class constant visibility before PHP 7.1). Do not use them. `preg_last_error_msg()` (PHP 8.0+) is replaced by an internal function returning the same messages.
+* `src/run-tests.php` is the one of PHP 5.5.38. It has no `--show-diff` (a failed test leaves `src/tests/*.diff`) and exits with a failure status only when `REPORT_EXIT_STATUS=1` is set.
+* Tests differ where PHP 5 prints differently: `assert()` warns instead of throwing `AssertionError`, uncaught exceptions read "Uncaught exception 'X' with message ...", `var_export(1.0)` prints `1` (the float tests use a helper that prints `1.0`).
+* Tools: `random_bytes()` (PHP 7.0+) falls back to `mt_rand()` for log file names; `PHP_INT_MIN` is defined when missing.
 
 ## Basic Behaviors
 
@@ -156,18 +159,18 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array
 // BOTH an INPUT validation spec AND a BUSINESS LOGIC (form) validation spec.
 
 // Username spec — relies on the client form to do basic length/character checks.
-$username = [
+$username = array(
     VALIDATE_STRING,        // "username" is a string.
     VALIDATE_STRING_ALNUM,  // Only alphanumeric characters are allowed.
-    ['min'=> 6, 'max'=> 40, // Length must be between 6 and 40 chars.
-    'error_message'=>'Username is 6 to 40 chars. Alphanumeric char only.']
-];
+    array('min'=> 6, 'max'=> 40, // Length must be between 6 and 40 chars.
+    'error_message'=>'Username is 6 to 40 chars. Alphanumeric char only.')
+);
 
 // "Validate" can be extended with callbacks for rules that don't fit flags.
-$email = [
+$email = array(
     VALIDATE_CALLBACK, // Email is complex, so we write a PHP callback.
     VALIDATE_CALLBACK_ALNUM, // Allow alphanumeric characters.
-    ['min'=> 6, 'max'=> 256, 'ascii'=>'@._-', // 6 to 256 chars plus the symbols '@._-'.
+    array('min'=> 6, 'max'=> 256, 'ascii'=>'@._-', // 6 to 256 chars plus the symbols '@._-'.
     'error_message'=>'Please enter a valid email address. We only accept addresses with a DNS MX record.',
     'callback'=> function($ctx, &$result, $input) {     // Custom rule in plain PHP.
         $parts = explode('@', $input);
@@ -182,25 +185,25 @@ $email = [
             return false;
         }
         return true;
-    }]
-];
+    })
+);
 
-$spec = [ // Combine predefined parameter spec into one spec.
+$spec = array( // Combine predefined parameter spec into one spec.
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min'=>2, 'max'=>10], // Inputs must have 2 to 10 elements.
-    [
+    array('min'=>2, 'max'=>10), // Inputs must have 2 to 10 elements.
+    array(
         // Simply reuse predefined spec for parameters.
         "username" => $username,
         "email"    => $email,
         // You can validate $_GET/$_POST/$_COOKIE/$_SERVER/$_FILES at once by nesting.
-    ]
-];
+    )
+);
 
-$inputs = [
+$inputs = array(
     'username' => 'yohgaki',
     'email' => 'yohgaki@ohgaki.net'
-];
+);
 
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // Disable exception, to check errors, etc.
 $results = validate($ctx, $inputs, $spec, $func_opts); // Now, let's validate and done.
@@ -237,7 +240,7 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array
 // In a real app, build it from the HTTP_* entries of $_SERVER as
 // 95-example.php does. (apache_request_headers() keeps the client's
 // spelling of names — all lower case over HTTP/2.)
-$request_headers_orig = ['a'=>'abc', 'b'=>'456'];
+$request_headers_orig = array('a'=>'abc', 'b'=>'456');
 
 // Known headers. Cookie is optional; User-Agent is optional with a default
 // of '' so the rest of the code can assume it exists.
@@ -252,15 +255,15 @@ $useragent_spec[VALIDATE_OPTIONS]['min']     = 0; // Allow zero-length / empty v
 $other_spec = $basicTypes['header512'];
 $other_spec[VALIDATE_OPTIONS]['min'] = 0; // Allow empty header values.
 
-$spec = [
+$spec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_ARRAY_KEY_ALNUM, // Undeclared header names: alnum, '_' and '-' only.
-    ['min'=>2, 'max'=>20, 'undeclared'=>$other_spec], // Total request must have 2-20 headers.
-    [
+    array('min'=>2, 'max'=>20, 'undeclared'=>$other_spec), // Total request must have 2-20 headers.
+    array(
         'Cookie' => $cookie_spec,
         'User-Agent' => $useragent_spec,
-    ]
-];
+    )
+);
 
 // $request_headers holds only validated values — no control characters, no
 // multibyte characters. validate() removes the values it consumed from
@@ -283,112 +286,112 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines $basicTypes
 // ---- Per-source specs -------------------------------------------------------
 
 // $_GET: only a CSRF token is expected (64-char hex, SHA-256).
-$getSpec = [
+$getSpec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 1, 'max' => 1], // exactly 1 element
-    [
+    array('min' => 1, 'max' => 1), // exactly 1 element
+    array(
         'csrf' => $basicTypes['hex64'],
-    ]
-];
+    )
+);
 
 // $_POST: a registration form.
-$postSpec = [
+$postSpec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 5, 'max' => 5],
-    [
-        'username' => [
+    array('min' => 5, 'max' => 5),
+    array(
+        'username' => array(
             VALIDATE_STRING, VALIDATE_STRING_ALNUM,
-            ['min' => 3, 'max' => 32, 'ascii' => '-_',
-             'error_message' => 'Username must be 3-32 chars (alnum, "-", "_").']
-        ],
+            array('min' => 3, 'max' => 32, 'ascii' => '-_',
+             'error_message' => 'Username must be 3-32 chars (alnum, "-", "_").')
+        ),
         'email'    => $basicTypes['email'],
-        'age'      => [
+        'age'      => array(
             VALIDATE_INT, VALIDATE_FLAG_NONE,
-            ['min' => 13, 'max' => 120,
-             'error_message' => 'Age must be between 13 and 120.']
-        ],
-        'country'  => [
+            array('min' => 13, 'max' => 120,
+             'error_message' => 'Age must be between 13 and 120.')
+        ),
+        'country'  => array(
             VALIDATE_REGEXP, VALIDATE_FLAG_NONE,
-            ['min' => 2, 'max' => 2,
+            array('min' => 2, 'max' => 2,
              'ascii' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
              'regexp' => '/\A(?:JP|US|GB|DE|FR)\z/', // ISO 3166-1 alpha-2 whitelist
-             'error_message' => 'Country must be one of: JP, US, GB, DE, FR.']
-        ],
+             'error_message' => 'Country must be one of: JP, US, GB, DE, FR.')
+        ),
         'accepted_tos' => $basicTypes['accepted'], // "yes"/"on"/"1"/"true"
-    ]
-];
+    )
+);
 
 // $_COOKIE: session id ('sessid' allows the session.sid_length range 22-256; default 32).
-$cookieSpec = [
+$cookieSpec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 1, 'max' => 4], // session + optional UX cookies
-    [
+    array('min' => 1, 'max' => 4), // session + optional UX cookies
+    array(
         'PHPSESSID' => $basicTypes['sessid'],
         'lang'      => array_replace($basicTypes['alpha_dash32'],
-                                     [VALIDATE_FLAGS => VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED]),
+                                     array(VALIDATE_FLAGS => VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED)),
         'theme'     => array_replace($basicTypes['alpha_dash32'],
-                                     [VALIDATE_FLAGS => VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED]),
-    ]
-];
+                                     array(VALIDATE_FLAGS => VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED)),
+    )
+);
 
 // $_FILES: single avatar upload. Each $_FILES[<name>] is itself an array of 5
 // keys: name, type, tmp_name, error, size (plus full_path on PHP 8.1+).
 // Validate every key.
-$uploadSpec = [
+$uploadSpec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 5, 'max' => 6],
-    [
-        'name'     => [VALIDATE_STRING, VALIDATE_STRING_ALNUM,
-                       ['min' => 1, 'max' => 255, 'ascii' => '._-']],
-        'full_path' => [VALIDATE_STRING, VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED,
-                        ['min' => 1, 'max' => 255, 'ascii' => '._-/']],
-        'type'     => [VALIDATE_REGEXP, VALIDATE_FLAG_NONE,
-                       ['min' => 6, 'max' => 32,
+    array('min' => 5, 'max' => 6),
+    array(
+        'name'     => array(VALIDATE_STRING, VALIDATE_STRING_ALNUM,
+                       array('min' => 1, 'max' => 255, 'ascii' => '._-')),
+        'full_path' => array(VALIDATE_STRING, VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED,
+                        array('min' => 1, 'max' => 255, 'ascii' => '._-/')),
+        'type'     => array(VALIDATE_REGEXP, VALIDATE_FLAG_NONE,
+                       array('min' => 6, 'max' => 32,
                         'ascii' => 'abcdefghijklmnopqrstuvwxyz/',
-                        'regexp' => '/\Aimage\/(?:jpeg|png|gif|webp)\z/']],
-        'tmp_name' => [VALIDATE_STRING, VALIDATE_STRING_ALNUM,
-                       ['min' => 1, 'max' => 4096, 'ascii' => '/_.-']],
-        'error'    => [VALIDATE_INT, VALIDATE_FLAG_NONE,
-                       ['min' => 0, 'max' => 8]], // UPLOAD_ERR_OK..UPLOAD_ERR_EXTENSION
-        'size'     => [VALIDATE_INT, VALIDATE_FLAG_NONE,
-                       ['min' => 1, 'max' => 5 * 1024 * 1024]], // up to 5 MiB
-    ]
-];
+                        'regexp' => '/\Aimage\/(?:jpeg|png|gif|webp)\z/')),
+        'tmp_name' => array(VALIDATE_STRING, VALIDATE_STRING_ALNUM,
+                       array('min' => 1, 'max' => 4096, 'ascii' => '/_.-')),
+        'error'    => array(VALIDATE_INT, VALIDATE_FLAG_NONE,
+                       array('min' => 0, 'max' => 8)), // UPLOAD_ERR_OK..UPLOAD_ERR_EXTENSION
+        'size'     => array(VALIDATE_INT, VALIDATE_FLAG_NONE,
+                       array('min' => 1, 'max' => 5 * 1024 * 1024)), // up to 5 MiB
+    )
+);
 
-$filesSpec = [
+$filesSpec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 1, 'max' => 1],
-    [
+    array('min' => 1, 'max' => 1),
+    array(
         'avatar' => $uploadSpec,
-    ]
-];
+    )
+);
 
 // ---- Top-level spec: validate every HTTP input source at once ---------------
 
-$spec = [
+$spec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 4, 'max' => 4],
-    [
+    array('min' => 4, 'max' => 4),
+    array(
         'get'    => $getSpec,
         'post'   => $postSpec,
         'cookie' => $cookieSpec,
         'files'  => $filesSpec,
-    ]
-];
+    )
+);
 
 // Bundle the four superglobals under matching keys.
-$inputs = [
+$inputs = array(
     'get'    => $_GET,
     'post'   => $_POST,
     'cookie' => $_COOKIE,
     'files'  => $_FILES,
-];
+);
 
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // interactive form: collect errors
 $result = validate($ctx, $inputs, $spec, $func_opts);

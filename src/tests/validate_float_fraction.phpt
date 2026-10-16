@@ -13,18 +13,28 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
+// var_export() as in PHP 7.0.2+: a float keeps ".0" (PHP 5 prints 1500.0 as 1500).
+function vexp($v)
+{
+    $s = var_export($v, true);
+    if (is_float($v) && strpbrk($s, '.eEN') === false) {
+        $s .= '.0';
+    }
+    return $s;
+}
+
 function tryone($label, $value, $spec) {
     $ctx = null;
     $r = validate($ctx, $value, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
     printf("[%s] in=%s => out=%s status=%s\n",
         $label,
-        var_export($value, true),
-        var_export($r, true),
+        vexp($value),
+        vexp($r),
         var_export($ctx instanceof Validate ? $ctx->getStatus() : null, true));
 }
 
 echo "**** String inputs ****\n";
-$spec = [VALIDATE_FLOAT, VALIDATE_FLOAT_FRACTION, ['min' => -1000, 'max' => 1000]];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLOAT_FRACTION, array('min' => -1000, 'max' => 1000));
 tryone('1.5',       '1.5',   $spec); // ok
 tryone('1.0',       '1.0',   $spec); // ok — notation has fraction
 tryone('0.0',       '0.0',   $spec); // ok
@@ -44,37 +54,37 @@ tryone('-3.14',    -3.14, $spec); // ok
 tryone('5 (int)',  5,     $spec); // fail — int is validated as string '5', no fraction notation
 
 echo "\n**** Combined with VALIDATE_FLOAT_SCIENTIFIC ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_FRACTION | VALIDATE_FLOAT_SCIENTIFIC,
-    ['min' => 0, 'max' => 1e9],
-];
+    array('min' => 0, 'max' => 1e9),
+);
 tryone('1.5e3',     '1.5e3', $spec); // ok — has fraction
 tryone('1e3',       '1e3',   $spec); // fail — no fraction even though scientific
 tryone('1.0e3',     '1.0e3', $spec); // ok — has fraction notation
 tryone('1.5E2',     '1.5E2', $spec); // ok
 
 echo "\n**** Combined with VALIDATE_FLOAT_POSITIVE_SIGN ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_FRACTION | VALIDATE_FLOAT_POSITIVE_SIGN,
-    ['min' => 0, 'max' => 100],
-];
+    array('min' => 0, 'max' => 100),
+);
 tryone('+1.5',      '+1.5',  $spec); // ok
 tryone('+1',        '+1',    $spec); // fail — no fraction
 tryone('1.5',       '1.5',   $spec); // ok — sign is optional
 
 echo "\n**** AS_STRING preserves textual form ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_FRACTION | VALIDATE_FLOAT_AS_STRING,
-    ['min' => -100, 'max' => 100],
-];
+    array('min' => -100, 'max' => 100),
+);
 tryone('"3.140"',   '3.140', $spec); // string out, trailing zeros kept
 tryone('"3"',       '3',     $spec); // fail
 
 echo "\n**** Range still enforced ****\n";
-$spec = [VALIDATE_FLOAT, VALIDATE_FLOAT_FRACTION, ['min' => -1, 'max' => 1]];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLOAT_FRACTION, array('min' => -1, 'max' => 1));
 tryone('1.5',       '1.5', $spec); // fail — over max
 tryone('-1.5',      '-1.5', $spec); // fail — under min
 tryone('0.5',       '0.5', $spec); // ok

@@ -29,13 +29,13 @@ $f = function($ctx, &$result, $value) {
 	return true;
 };
 
-$spec = [
+$spec = array(
 	VALIDATE_CALLBACK,
 	VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_ALPHA,
-	["min"=>0, "max"=>99999, "callback"=>$f]
-];
+	array("min"=>0, "max"=>99999, "callback"=>$f)
+);
 
-$str = ["data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd"];
+$str = array("data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd");
 
 foreach($str as $s) {
 	var_dump(validate($ctx, $s, $spec, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());
@@ -51,13 +51,13 @@ $f = function($ctx, &$result, $value) {
 };
 
 
-$spec = [
+$spec = array(
 	VALIDATE_CALLBACK,
 	VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_ALPHA,
-	["min"=>0, "max"=>99999, "callback"=>$f]
-];
+	array("min"=>0, "max"=>99999, "callback"=>$f)
+);
 
-$str = ["data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd"];
+$str = array("data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd");
 
 foreach($str as $s) {
 	var_dump(validate($ctx, $s, $spec, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());
@@ -74,13 +74,13 @@ function test($ctx, &$result, $value) {
 };
 
 
-$spec = [
+$spec = array(
 	VALIDATE_CALLBACK,
 	VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_ALPHA,
-	["min"=>0, "max"=>99999, "callback"=>"test"]
-];
+	array("min"=>0, "max"=>99999, "callback"=>"test")
+);
 
-$str = ["data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd"];
+$str = array("data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd");
 
 foreach($str as $s) {
 	var_dump(validate($ctx, $s, $spec, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());
@@ -97,13 +97,13 @@ class test_class {
 	}
 }
 
-$spec = [
+$spec = array(
 	VALIDATE_CALLBACK,
 	VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_ALPHA,
-	["min"=>0, "max"=>99999, "callback"=>["test_class", "test"]]
-];
+	array("min"=>0, "max"=>99999, "callback"=>array("test_class", "test"))
+);
 
-$str = ["data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd"];
+$str = array("data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd");
 
 foreach($str as $s) {
 	var_dump(validate($ctx, $s, $spec, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());
@@ -116,13 +116,13 @@ function test1($ctx, &$result, $value) {
 	$result = strtoupper($value);
 }
 
-$spec = [
+$spec = array(
 	VALIDATE_CALLBACK,
 	VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_ALPHA,
-	["min"=>0, "max"=>99999, "callback"=>"test1"]
-];
+	array("min"=>0, "max"=>99999, "callback"=>"test1")
+);
 
-$str = ["data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd"];
+$str = array("data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd");
 
 foreach($str as $s) {
 	var_dump(validate($ctx, $s, $spec, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());
@@ -137,13 +137,13 @@ function test2($ctx, &$result, $value) {
 	return false;
 };
 
-$spec = [
+$spec = array(
 	VALIDATE_CALLBACK,
 	VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_ALPHA,
-	["min"=>0, "max"=>99999, "callback"=>"test2"]
-];
+	array("min"=>0, "max"=>99999, "callback"=>"test2")
+);
 
-$str = ["data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd"];
+$str = array("data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd");
 
 foreach($str as $s) {
 	var_dump(validate($ctx, $s, $spec, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());
@@ -160,13 +160,13 @@ function test3($ctx, &$result, $value) {
 	return true;
 };
 
-$spec = [
+$spec = array(
 	VALIDATE_CALLBACK,
 	VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_ALPHA,
-	["min"=>0, "max"=>99999, "callback"=>"test3"]
-];
+	array("min"=>0, "max"=>99999, "callback"=>"test3")
+);
 
-$str = ["data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd"];
+$str = array("data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd");
 
 foreach($str as $s) {
 	var_dump(validate($ctx, $s, $spec, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());
@@ -182,13 +182,13 @@ function test4($ctx, &$result, $value) {
 	return true;
 };
 
-$spec = [
+$spec = array(
 	VALIDATE_CALLBACK,
 	VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_ALPHA,
-	["min"=>0, "max"=>99999, "callback"=>"test4"]
-];
+	array("min"=>0, "max"=>99999, "callback"=>"test4")
+);
 
-$str = ["data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd"];
+$str = array("data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd");
 
 foreach($str as $s) {
 	var_dump(validate($ctx, $s, $spec, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());

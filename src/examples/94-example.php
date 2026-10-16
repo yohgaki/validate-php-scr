@@ -15,7 +15,7 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array
 // In a real app, build it from the HTTP_* entries of $_SERVER as
 // 95-example.php does. (apache_request_headers() keeps the client's
 // spelling of names — all lower case over HTTP/2.)
-$request_headers_orig = ['a'=>'abc', 'b'=>'456'];
+$request_headers_orig = array('a'=>'abc', 'b'=>'456');
 
 // Known headers. Cookie is optional; User-Agent is optional with a default
 // of '' so the rest of the code can assume it exists.
@@ -30,15 +30,15 @@ $useragent_spec[VALIDATE_OPTIONS]['min']     = 0; // Allow zero-length / empty v
 $other_spec = $basicTypes['header512'];
 $other_spec[VALIDATE_OPTIONS]['min'] = 0; // Allow empty header values.
 
-$spec = [
+$spec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_ARRAY_KEY_ALNUM, // Undeclared header names: alnum, '_' and '-' only.
-    ['min'=>2, 'max'=>20, 'undeclared'=>$other_spec], // Total request must have 2-20 headers.
-    [
+    array('min'=>2, 'max'=>20, 'undeclared'=>$other_spec), // Total request must have 2-20 headers.
+    array(
         'Cookie' => $cookie_spec,
         'User-Agent' => $useragent_spec,
-    ]
-];
+    )
+);
 
 // $request_headers holds only validated values — no control characters, no
 // multibyte characters. validate() removes the values it consumed from

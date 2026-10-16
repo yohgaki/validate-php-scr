@@ -34,11 +34,11 @@ echo "By default, validate() will not convert inputs.\n";
 foreach ($floats as $float) {
 	try {
 		$result = validate($ctx, $float,
-			[
+			array(
 				VALIDATE_FLOAT,
 				VALIDATE_FLOAT_SCIENTIFIC,
-				['min'=>-10000, 'max'=>10000]
-			]
+				array('min'=>-10000, 'max'=>10000)
+			)
 		);
 		var_dump($result, $ctx->getStatus());
 	} catch (Exception $e) {
@@ -50,18 +50,18 @@ echo "\nApply filter trims strings.\n";
 foreach ($floats as $float) {
 	try {
 		$result = validate($ctx, $float,
-			[
+			array(
 				VALIDATE_FLOAT,
 				VALIDATE_FLOAT_SCIENTIFIC,
-				['min'=>-10000, 'max'=>10000, 'filter'=>
+				array('min'=>-10000, 'max'=>10000, 'filter'=>
 				function($ctx, $input, &$error) {
 					if (!is_scalar($input)) {
 						// Use validate_error()
 						validate_error($ctx, 'Filter error: $input is not a scalar.');
 					}
 					return trim($input);
-				}]
-			]
+				})
+			)
 		);
 		var_dump($result, $ctx->getStatus());
 	} catch (Exception $e) {
@@ -73,14 +73,14 @@ echo "\nSmaller range between -1000 and 1000.\n";
 foreach ($floats as $float) {
 	try {
 		$result = validate($ctx, $float,
-			[
+			array(
 				VALIDATE_FLOAT,
 				VALIDATE_FLOAT_SCIENTIFIC,
-				['min'=>-1000, 'max'=>1000, 'filter'=>
+				array('min'=>-1000, 'max'=>1000, 'filter'=>
 				function($ctx, $input, &$error) {
 					return trim($input);
-				}]
-			]
+				})
+			)
 		);
 		var_dump($result, $ctx->getStatus());
 	} catch (Exception $e) {
@@ -92,14 +92,14 @@ echo "\nNo scientific notation.\n";
 foreach ($floats as $float) {
 	try {
 		$result = validate($ctx, $float,
-			[
+			array(
 				VALIDATE_FLOAT,
 				VALIDATE_FLOAT_POSITIVE_SIGN,
-				['min'=>-1000, 'max'=>1000, 'filter'=>
+				array('min'=>-1000, 'max'=>1000, 'filter'=>
 				function($ctx, $input, &$error) {
 					return trim($input);
-				}]
-			]
+				})
+			)
 		);
 		var_dump($result, $ctx->getStatus());
 	} catch (Exception $e) {

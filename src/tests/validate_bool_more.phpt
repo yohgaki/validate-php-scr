@@ -14,8 +14,8 @@ require_once __DIR__.'/bootstrap.php';
 $func_opts = VALIDATE_OPT_NONE;
 
 echo "**** yes/no ****\n";
-$spec = [VALIDATE_BOOL, VALIDATE_BOOL_YES_NO, []];
-foreach (['yes', 'no', 'maybe'] as $var) {
+$spec = array(VALIDATE_BOOL, VALIDATE_BOOL_YES_NO, array());
+foreach (array('yes', 'no', 'maybe') as $var) {
     try {
         $copy = $var;
         var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
@@ -25,33 +25,33 @@ foreach (['yes', 'no', 'maybe'] as $var) {
 }
 
 echo "\n**** on/off, true/false, t/f as string ****\n";
-$spec = [VALIDATE_BOOL, VALIDATE_BOOL_ON_OFF | VALIDATE_BOOL_AS_STRING, []];
-foreach (['on', 'off'] as $var) {
+$spec = array(VALIDATE_BOOL, VALIDATE_BOOL_ON_OFF | VALIDATE_BOOL_AS_STRING, array());
+foreach (array('on', 'off') as $var) {
     $copy = $var;
     var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 }
-$spec = [VALIDATE_BOOL, VALIDATE_BOOL_TF, []];
-foreach (['T', 'f'] as $var) {
+$spec = array(VALIDATE_BOOL, VALIDATE_BOOL_TF, array());
+foreach (array('T', 'f') as $var) {
     $copy = $var;
     var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 }
 
 echo "\n**** RAW returns original ****\n";
-$spec = [VALIDATE_BOOL, VALIDATE_BOOL_TRUE_FALSE | VALIDATE_FLAG_RAW, []];
+$spec = array(VALIDATE_BOOL, VALIDATE_BOOL_TRUE_FALSE | VALIDATE_FLAG_RAW, array());
 $copy = 'TRUE';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 
 echo "\n**** VALIDATE_FLAG_EMPTY ****\n";
-$spec = [VALIDATE_BOOL, VALIDATE_BOOL_01 | VALIDATE_FLAG_EMPTY, []];
+$spec = array(VALIDATE_BOOL, VALIDATE_BOOL_01 | VALIDATE_FLAG_EMPTY, array());
 $copy = '';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
-$spec = [VALIDATE_BOOL, VALIDATE_BOOL_01 | VALIDATE_BOOL_AS_STRING | VALIDATE_FLAG_EMPTY, []];
+$spec = array(VALIDATE_BOOL, VALIDATE_BOOL_01 | VALIDATE_BOOL_AS_STRING | VALIDATE_FLAG_EMPTY, array());
 $copy = '';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 
 echo "\n**** invalid inputs ****\n";
-$spec = [VALIDATE_BOOL, VALIDATE_BOOL_01, []];
-foreach (['toolong', [1]] as $var) {
+$spec = array(VALIDATE_BOOL, VALIDATE_BOOL_01, array());
+foreach (array('toolong', array(1)) as $var) {
     try {
         $copy = $var;
         var_dump(validate($ctx, $copy, $spec, $func_opts));

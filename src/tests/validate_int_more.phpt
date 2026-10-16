@@ -14,8 +14,8 @@ require_once __DIR__.'/bootstrap.php';
 $func_opts = VALIDATE_OPT_NONE;
 
 echo "**** values option (int keys, no GMP required) ****\n";
-$spec = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['values'=>[1=>true, 5=>true]]];
-foreach ([1, 2, '1', 'abc'] as $var) {
+$spec = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('values'=>array(1=>true, 5=>true)));
+foreach (array(1, 2, '1', 'abc') as $var) {
     try {
         $copy = $var;
         var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
@@ -25,14 +25,14 @@ foreach ([1, 2, '1', 'abc'] as $var) {
 }
 
 echo "\n**** bool / null inputs ****\n";
-$spec = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>100]];
+$spec = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>100));
 try {
     $copy = true;
     var_dump(validate($ctx, $copy, $spec, $func_opts));
 } catch (Exception $e) {
     var_dump($e->getMessage(), $ctx->getStatus());
 }
-$spec = [VALIDATE_INT, VALIDATE_FLAG_NULL, ['min'=>0, 'max'=>100]];
+$spec = array(VALIDATE_INT, VALIDATE_FLAG_NULL, array('min'=>0, 'max'=>100));
 try {
     $copy = null;
     var_dump(validate($ctx, $copy, $spec, $func_opts));
@@ -41,22 +41,22 @@ try {
 }
 
 echo "\n**** VALIDATE_INT_POSITIVE_SIGN ****\n";
-$spec = [VALIDATE_INT, VALIDATE_INT_POSITIVE_SIGN, ['min'=>0, 'max'=>100]];
+$spec = array(VALIDATE_INT, VALIDATE_INT_POSITIVE_SIGN, array('min'=>0, 'max'=>100));
 $copy = '+42';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 
 echo "\n**** VALIDATE_FLAG_EMPTY ****\n";
-$spec = [VALIDATE_INT, VALIDATE_FLAG_EMPTY, ['min'=>0, 'max'=>100]];
+$spec = array(VALIDATE_INT, VALIDATE_FLAG_EMPTY, array('min'=>0, 'max'=>100));
 $copy = '';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
-$spec = [VALIDATE_INT, VALIDATE_INT_AS_STRING | VALIDATE_FLAG_EMPTY, ['min'=>0, 'max'=>100]];
+$spec = array(VALIDATE_INT, VALIDATE_INT_AS_STRING | VALIDATE_FLAG_EMPTY, array('min'=>0, 'max'=>100));
 $copy = '';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 
 echo "\n**** AS_STRING: big int range ****\n";
-$spec = [VALIDATE_INT, VALIDATE_INT_AS_STRING,
-         ['min'=>0, 'max'=>'99999999999999999999999999']];
-foreach (['12345678901234567890123', '199999999999999999999999999'] as $var) {
+$spec = array(VALIDATE_INT, VALIDATE_INT_AS_STRING,
+         array('min'=>0, 'max'=>'99999999999999999999999999'));
+foreach (array('12345678901234567890123', '199999999999999999999999999') as $var) {
     try {
         $copy = $var;
         var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
@@ -66,13 +66,13 @@ foreach (['12345678901234567890123', '199999999999999999999999999'] as $var) {
 }
 
 echo "\n**** AS_STRING + RAW ****\n";
-$spec = [VALIDATE_INT, VALIDATE_INT_AS_STRING | VALIDATE_FLAG_RAW, ['min'=>0, 'max'=>100]];
+$spec = array(VALIDATE_INT, VALIDATE_INT_AS_STRING | VALIDATE_FLAG_RAW, array('min'=>0, 'max'=>100));
 $copy = '42';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 
 echo "\n**** int overflow / float input ****\n";
-$spec = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>PHP_INT_MAX]];
-foreach (['9223372036854775808', 1.5] as $var) {
+$spec = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>PHP_INT_MAX));
+foreach (array('9223372036854775808', 1.5) as $var) {
     try {
         $copy = $var;
         var_dump(validate($ctx, $copy, $spec, $func_opts));
@@ -82,7 +82,7 @@ foreach (['9223372036854775808', 1.5] as $var) {
 }
 
 echo "\n**** out of range ****\n";
-$spec = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>100]];
+$spec = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>100));
 try {
     $copy = '500';
     var_dump(validate($ctx, $copy, $spec, $func_opts));
@@ -91,7 +91,7 @@ try {
 }
 
 echo "\n**** RAW returns original string ****\n";
-$spec = [VALIDATE_INT, VALIDATE_FLAG_RAW, ['min'=>0, 'max'=>100]];
+$spec = array(VALIDATE_INT, VALIDATE_FLAG_RAW, array('min'=>0, 'max'=>100));
 $copy = '42';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 

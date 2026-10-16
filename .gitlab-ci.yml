@@ -23,8 +23,10 @@ default:
     - if [ ! -e /usr/include/gmp.h ]; then ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h; fi
     - docker-php-ext-install -j$(nproc) bcmath gmp > /dev/null
     - php -m | grep -E 'bcmath|gmp|mbstring'
+  variables:
+    REPORT_EXIT_STATUS: "1"   # PHP 5.5 の run-tests.php は、これがないと失敗時も 0 で終了する
   script:
-    # PHP 7.4 の run-tests.php には --show-diff がないので、失敗時に diff を表示する
+    # PHP 5.5 の run-tests.php には --show-diff がないので、失敗時に diff を表示する
     - cd src && php run-tests.php -p $(which php) -q tests || { for f in tests/*.diff; do echo "=== $f"; cat "$f"; done; exit 1; }
   artifacts:
     when: on_failure
@@ -33,32 +35,22 @@ default:
       - src/tests/*.log
 
 # ── PHP バージョンマトリクス ─────────────────────────────────────────────────
-test:php7.0:
+# php:5.3 / php:5.4 のイメージは現行の Docker では pull できない (manifest schema 1)。
+# PHP 5.3 / 5.4 は GitHub Actions (setup-php) でテストする。
+test:php5.5:
   extends: .test
-  image: php:7.0-cli
+  image: php:5.5-cli
 
-test:php7.1:
+test:php5.6:
   extends: .test
-  image: php:7.1-cli
-
-test:php7.2:
-  extends: .test
-  image: php:7.2-cli
-
-test:php7.3:
-  extends: .test
-  image: php:7.3-cli
-
-test:php7.4:
-  extends: .test
-  image: php:7.4-cli
+  image: php:5.6-cli
 
 # ── lint ─────────────────────────────────────────────────────────────────────
 lint:phpcs:
   stage: lint
   image: php:8.3-cli
   needs:
-    - test:php7.4
+    - test:php5.6
   before_script:
     - curl -sSfL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar -o /usr/local/bin/phpcs
     - chmod +x /usr/local/bin/phpcs

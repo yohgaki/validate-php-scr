@@ -17,7 +17,8 @@
  */
 
 // Wrap in an IIFE so locals don't pollute the request's global scope.
-(function () {
+// PHP 5 cannot call (function () {...})() directly.
+call_user_func(function () {
     // Directory the per-request log files are written to.
     $path = rtrim(getenv('VALIDATE_TOOLS_DIR') ?: '/var/tmp/validate', '/');
     if (!is_dir($path) && !@mkdir($path, 0700, true)) {
@@ -34,11 +35,12 @@
     // input_analyzer.php pull it in with include() instead of unserializing.
     $log = '<?php
 $inputs = ';
-    $log .= var_export(["_GET"=>$_GET, "_POST"=>$_POST, "_COOKIE"=>$_COOKIE, "_SERVER"=>$_SERVER], true) . ";\n";
+    $log .= var_export(array("_GET"=>$_GET, "_POST"=>$_POST, "_COOKIE"=>$_COOKIE, "_SERVER"=>$_SERVER), true) . ";\n";
     // microtime + random suffix gives a unique filename per request without
-    // coordinating between processes.
-    $file = $path.'/'.microtime(true).'-'.bin2hex(random_bytes(4)).'-log.php';
+    // coordinating between processes. random_bytes() is PHP 7.0+.
+    $rand = function_exists('random_bytes') ? bin2hex(random_bytes(4)) : sprintf('%08x', mt_rand());
+    $file = $path.'/'.microtime(true).'-'.$rand.'-log.php';
     $umask = umask(0077);
     file_put_contents($file, $log, LOCK_EX);
     umask($umask);
-})();
+});

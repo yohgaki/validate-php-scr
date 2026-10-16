@@ -12,11 +12,11 @@ error_reporting=-1
 require_once __DIR__.'/bootstrap.php';
 
 echo "User error\n";
-$spec = [
+$spec = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
-    ['min'=>2, 'max'=>3, '_user_opt'=>'USER_OPT', 'error_message'=>'WARING ERROR min={{min}} max={{max}} _user_opt={{_user_opt}}'],
-];
+    array('min'=>2, 'max'=>3, '_user_opt'=>'USER_OPT', 'error_message'=>'WARING ERROR min={{min}} max={{max}} _user_opt={{_user_opt}}'),
+);
 $val = 'a';
 
 try {
@@ -28,11 +28,11 @@ try {
 }
 
 echo "\nUser warning\n";
-$spec = [
+$spec = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_WARNING,
-    ['min'=>2, 'max'=>3, '_user_opt'=>'USER_OPT', 'error_message'=>'WARING ERROR min={{min}} max={{max}} _user_opt={{_user_opt}}'],
-];
+    array('min'=>2, 'max'=>3, '_user_opt'=>'USER_OPT', 'error_message'=>'WARING ERROR min={{min}} max={{max}} _user_opt={{_user_opt}}'),
+);
 $val = 'a';
 
 $ctx = validate_init();
@@ -40,11 +40,11 @@ validate($ctx, $val, $spec);
 var_dump(validate_get_system_errors($ctx), validate_get_user_errors($ctx));
 
 echo "\nUser notice\n";
-$spec = [
+$spec = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NOTICE,
-    ['min'=>2, 'max'=>3, '_user_opt'=>'USER_OPT', 'error_message'=>'NOTICE ERROR min={{min}} max={{max}} _user_opt={{_user_opt}}'],
-];
+    array('min'=>2, 'max'=>3, '_user_opt'=>'USER_OPT', 'error_message'=>'NOTICE ERROR min={{min}} max={{max}} _user_opt={{_user_opt}}'),
+);
 $val = 'a';
 
 $ctx = validate_init();

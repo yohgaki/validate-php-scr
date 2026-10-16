@@ -26,7 +26,7 @@ function cp2utf8($cp)
 }
 
 // One representative per RFC 3454 appendix C branch in validateStringUnicodeCntrl().
-$prohibited = [
+$prohibited = array(
     // C.1.2 non-ASCII space characters
     0x00A0, 0x1680, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006,
     0x2007, 0x2008, 0x2009, 0x200A, 0x200B, 0x202F, 0x205F, 0x3000,
@@ -47,10 +47,10 @@ $prohibited = [
     0x0340, 0x0341, 0x200E, 0x200F, 0x202A, 0x202B, 0x202C, 0x202D, 0x202E,
     // C.9 tagging characters
     0xE0001, 0xE0020, 0xE007F,
-];
+);
 
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION;
-$spec = [VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB, ['min'=>0, 'max'=>10]];
+$spec = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB, array('min'=>0, 'max'=>10));
 
 echo "**** prohibited code points are rejected ****\n";
 $ng = 0;
@@ -72,30 +72,30 @@ $copy = 'a'.cp2utf8(0x3042).'b'; // HIRAGANA A
 var_dump(validate($ctx, $copy, $spec, $func_opts) === $copy, $ctx->getStatus());
 
 echo "\n**** VALIDATE_STRING_RFC3454_C allows prohibited chars ****\n";
-$spec_c = [VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB | VALIDATE_STRING_RFC3454_C,
-           ['min'=>0, 'max'=>10]];
+$spec_c = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB | VALIDATE_STRING_RFC3454_C,
+           array('min'=>0, 'max'=>10));
 $ctx = validate_init();
 $copy = 'a'.cp2utf8(0x00A0).'b';
 var_dump(validate($ctx, $copy, $spec_c, $func_opts) === $copy, $ctx->getStatus());
 
 echo "\n**** \"unicode\" option map overrides ****\n";
 // Explicitly allowed prohibited char
-$spec_u = [VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
-           ['min'=>0, 'max'=>10, 'unicode'=>[0x00A0=>true]]];
+$spec_u = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
+           array('min'=>0, 'max'=>10, 'unicode'=>array(0x00A0=>true)));
 $ctx = validate_init();
 $copy = 'a'.cp2utf8(0x00A0).'b';
 var_dump(validate($ctx, $copy, $spec_u, $func_opts) === $copy, $ctx->getStatus());
 
 // Explicitly disallowed normal char
-$spec_u = [VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
-           ['min'=>0, 'max'=>10, 'unicode'=>[0x3042=>false]]];
+$spec_u = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
+           array('min'=>0, 'max'=>10, 'unicode'=>array(0x3042=>false)));
 $ctx = validate_init();
 $copy = 'a'.cp2utf8(0x3042).'b';
 var_dump(validate($ctx, $copy, $spec_u, $func_opts), $ctx->getStatus());
 
 echo "\n**** non-UTF-8 encoding skips the unicode cntrl check ****\n";
-$spec_e = [VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
-           ['min'=>0, 'max'=>10, 'encoding'=>'ISO-8859-1']];
+$spec_e = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
+           array('min'=>0, 'max'=>10, 'encoding'=>'ISO-8859-1'));
 $ctx = validate_init();
 $copy = "caf\xE9"; // latin-1 e-acute; would be a broken byte in UTF-8
 var_dump(validate($ctx, $copy, $spec_e, $func_opts) === $copy, $ctx->getStatus());

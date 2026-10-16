@@ -30,8 +30,8 @@ class ObjNg
 $func_opts = VALIDATE_OPT_NONE;
 
 echo "**** VALIDATE_OBJECT ****\n";
-$spec = [VALIDATE_OBJECT, VALIDATE_FLAG_NONE, ['callback'=>'check']];
-$vals = [new ObjOk, new ObjNg, 42];
+$spec = array(VALIDATE_OBJECT, VALIDATE_FLAG_NONE, array('callback'=>'check'));
+$vals = array(new ObjOk, new ObjNg, 42);
 foreach ($vals as $var) {
     try {
         $copy = $var;
@@ -43,7 +43,7 @@ foreach ($vals as $var) {
 }
 
 // Callback method that does not exist
-$spec = [VALIDATE_OBJECT, VALIDATE_FLAG_NONE, ['callback'=>'no_such_method']];
+$spec = array(VALIDATE_OBJECT, VALIDATE_FLAG_NONE, array('callback'=>'no_such_method'));
 try {
     $copy = new ObjOk;
     var_dump(validate($ctx, $copy, $spec, $func_opts));
@@ -52,7 +52,7 @@ try {
 }
 
 echo "\n**** VALIDATE_RESOURCE ****\n";
-$spec = [VALIDATE_RESOURCE, VALIDATE_FLAG_NONE, ['resource'=>'stream']];
+$spec = array(VALIDATE_RESOURCE, VALIDATE_FLAG_NONE, array('resource'=>'stream'));
 // Not a resource at all
 try {
     $copy = 42;
@@ -61,7 +61,7 @@ try {
     var_dump($e->getMessage(), $ctx->getStatus());
 }
 // Type mismatch: stream passed but "curl" expected
-$spec = [VALIDATE_RESOURCE, VALIDATE_FLAG_NONE, ['resource'=>'curl']];
+$spec = array(VALIDATE_RESOURCE, VALIDATE_FLAG_NONE, array('resource'=>'curl'));
 try {
     $copy = fopen('php://memory', 'r');
     var_dump(validate($ctx, $copy, $spec, $func_opts));
@@ -69,7 +69,7 @@ try {
     var_dump($e->getMessage(), $ctx->getStatus());
 }
 // Success
-$spec = [VALIDATE_RESOURCE, VALIDATE_FLAG_NONE, ['resource'=>'stream']];
+$spec = array(VALIDATE_RESOURCE, VALIDATE_FLAG_NONE, array('resource'=>'stream'));
 $copy = fopen('php://memory', 'r');
 var_dump(is_resource(validate($ctx, $copy, $spec, $func_opts)), $ctx->getStatus());
 

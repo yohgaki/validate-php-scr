@@ -24,86 +24,88 @@ function run($label, $input, $spec, $opts = VALIDATE_OPT_CHECK_SPEC)
     }
     echo "$label: ", var_export(validate_get_status($ctx), true),
          ' result=', json_encode($result), ' left=', json_encode($input), "\n";
-    foreach (validate_get_system_errors($ctx)['error'] as $param => $errors) {
+    $_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+    foreach ($_tmp['error'] as $param => $errors) {
         foreach ($errors as $error) {
             echo "  [$param] ", $error['message'], ' value=', json_encode($error['value']), "\n";
         }
     }
 }
 
-$value = [VALIDATE_STRING, VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE, ['min' => 0, 'max' => 16]];
-$headers = [
+$value = array(VALIDATE_STRING, VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE, array('min' => 0, 'max' => 16));
+$headers = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_ARRAY_KEY_ALNUM,
-    ['min' => 1, 'max' => 4, 'undeclared' => $value],
-    [
-        'Host' => [VALIDATE_STRING, VALIDATE_STRING_ALNUM, ['min' => 1, 'max' => 16, 'ascii' => '.']],
-    ]
-];
+    array('min' => 1, 'max' => 4, 'undeclared' => $value),
+    array(
+        'Host' => array(VALIDATE_STRING, VALIDATE_STRING_ALNUM, array('min' => 1, 'max' => 16, 'ascii' => '.')),
+    )
+);
 
 echo "**** declared and undeclared keys ****\n";
-run('ok', ['X-Foo' => 'bar baz', 'Host' => 'example.com', 'Accept' => 'x'], $headers);
-run('empty undeclared', ['Host' => 'example.com'], $headers);
-run('bad value', ['Host' => 'example.com', 'X-Foo' => "bar\n", 'Accept' => 'x'], $headers);
-run('count includes undeclared', ['Host' => 'h', 'a' => '1', 'b' => '2', 'c' => '3', 'd' => '4'], $headers);
+run('ok', array('X-Foo' => 'bar baz', 'Host' => 'example.com', 'Accept' => 'x'), $headers);
+run('empty undeclared', array('Host' => 'example.com'), $headers);
+run('bad value', array('Host' => 'example.com', 'X-Foo' => "bar\n", 'Accept' => 'x'), $headers);
+run('count includes undeclared', array('Host' => 'h', 'a' => '1', 'b' => '2', 'c' => '3', 'd' => '4'), $headers);
 
 echo "\n**** undeclared keys are checked ****\n";
-run('KEY_ALNUM', ['Host' => 'h', 'X Foo' => 'bar'], $headers);
+run('KEY_ALNUM', array('Host' => 'h', 'X Foo' => 'bar'), $headers);
 $plain = $headers;
 $plain[VALIDATE_FLAGS] = VALIDATE_FLAG_NONE;
-run('default key rule', ['Host' => 'h', 7 => 'int key', 'X-Foo' => 'bar'], $plain);
+run('default key rule', array('Host' => 'h', 7 => 'int key', 'X-Foo' => 'bar'), $plain);
 $cb = $plain;
 $cb[VALIDATE_OPTIONS]['key_callback'] = function ($ctx, $key) {
     return strncmp((string)$key, 'X-', 2) === 0;
 };
-run('key_callback', ['Host' => 'h', 'X-Foo' => 'bar', 'Y' => 'z'], $cb);
+run('key_callback', array('Host' => 'h', 'X-Foo' => 'bar', 'Y' => 'z'), $cb);
 
 echo "\n**** options ****\n";
-run('UNVALIDATED has no effect', ['Host' => 'h', 'X-Foo' => "bad\n"], $headers, VALIDATE_OPT_UNVALIDATED);
-run('KEEP_INPUTS', ['Host' => 'h', 'X-Foo' => 'bar'], $headers, VALIDATE_OPT_KEEP_INPUTS);
+run('UNVALIDATED has no effect', array('Host' => 'h', 'X-Foo' => "bad\n"), $headers, VALIDATE_OPT_UNVALIDATED);
+run('KEEP_INPUTS', array('Host' => 'h', 'X-Foo' => 'bar'), $headers, VALIDATE_OPT_KEEP_INPUTS);
 
 echo "\n**** nested VALIDATE_ARRAY as undeclared spec ****\n";
-$rows = [
+$rows = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_ARRAY_KEY_ALNUM,
-    ['min' => 0, 'max' => 3, 'undeclared' => [
+    array('min' => 0, 'max' => 3, 'undeclared' => array(
         VALIDATE_ARRAY,
         VALIDATE_FLAG_NONE,
-        ['min' => 1, 'max' => 2],
-        [
-            'id' => [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min' => 1, 'max' => 9]],
-            'name' => [VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_FLAG_UNDEFINED, ['min' => 1, 'max' => 5]],
-        ]
-    ]],
-    []
-];
-run('ok', ['a' => ['id' => '3'], 'b' => ['id' => 4, 'name' => 'xy']], $rows);
-run('inner undeclared key', ['a' => ['id' => '3', 'zz' => 1]], $rows);
+        array('min' => 1, 'max' => 2),
+        array(
+            'id' => array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min' => 1, 'max' => 9)),
+            'name' => array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_FLAG_UNDEFINED, array('min' => 1, 'max' => 5)),
+        )
+    )),
+    array()
+);
+run('ok', array('a' => array('id' => '3'), 'b' => array('id' => 4, 'name' => 'xy')), $rows);
+run('inner undeclared key', array('a' => array('id' => '3', 'zz' => 1)), $rows);
 
 echo "\n**** VALIDATE_MULTI_OR alternative stays silent ****\n";
-$loose = [VALIDATE_ARRAY, VALIDATE_FLAG_ARRAY_KEY_ALNUM, ['min' => 0, 'max' => 4,
-          'undeclared' => [VALIDATE_STRING, VALIDATE_STRING_ALNUM | VALIDATE_STRING_LF, ['min' => 0, 'max' => 16]]], []];
-run('or', ['Host' => 'h', 'X-Foo' => "bar\n"], [VALIDATE_MULTI, VALIDATE_MULTI_OR, [], [$headers, $loose]]);
+$loose = array(VALIDATE_ARRAY, VALIDATE_FLAG_ARRAY_KEY_ALNUM, array('min' => 0, 'max' => 4,
+          'undeclared' => array(VALIDATE_STRING, VALIDATE_STRING_ALNUM | VALIDATE_STRING_LF, array('min' => 0, 'max' => 16))), array());
+run('or', array('Host' => 'h', 'X-Foo' => "bar\n"), array(VALIDATE_MULTI, VALIDATE_MULTI_OR, array(), array($headers, $loose)));
 
 echo "\n**** spec check ****\n";
-run('not an array', ['a' => 1], [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 1, 'undeclared' => 'x'], []]);
-run('bad inner spec', ['a' => 1], [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 1,
-    'undeclared' => [VALIDATE_INT, VALIDATE_FLAG_NONE, []]], []]);
-run('key_callback not callable', ['a' => 1], [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 1,
-    'undeclared' => $value, 'key_callback' => 'no_such_function'], []]);
-$specs = [
+run('not an array', array('a' => 1), array(VALIDATE_ARRAY, VALIDATE_FLAG_NONE, array('min' => 0, 'max' => 1, 'undeclared' => 'x'), array()));
+run('bad inner spec', array('a' => 1), array(VALIDATE_ARRAY, VALIDATE_FLAG_NONE, array('min' => 0, 'max' => 1,
+    'undeclared' => array(VALIDATE_INT, VALIDATE_FLAG_NONE, array())), array()));
+run('key_callback not callable', array('a' => 1), array(VALIDATE_ARRAY, VALIDATE_FLAG_NONE, array('min' => 0, 'max' => 1,
+    'undeclared' => $value, 'key_callback' => 'no_such_function'), array()));
+$specs = array(
     'good' => $headers,
-    'typo' => [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 1, 'undeclard' => $value, '_mine' => 1], []],
-    'KEY_ALNUM without undeclared' => [VALIDATE_ARRAY, VALIDATE_FLAG_ARRAY_KEY_ALNUM, ['min' => 0, 'max' => 1], []],
-    'key_callback without undeclared' => [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 1, 'key_callback' => 'is_string'], []],
-    'KEY_ALNUM with key_callback' => [VALIDATE_ARRAY, VALIDATE_FLAG_ARRAY_KEY_ALNUM, ['min' => 0, 'max' => 1,
-        'undeclared' => $value, 'key_callback' => 'is_string'], []],
-];
+    'typo' => array(VALIDATE_ARRAY, VALIDATE_FLAG_NONE, array('min' => 0, 'max' => 1, 'undeclard' => $value, '_mine' => 1), array()),
+    'KEY_ALNUM without undeclared' => array(VALIDATE_ARRAY, VALIDATE_FLAG_ARRAY_KEY_ALNUM, array('min' => 0, 'max' => 1), array()),
+    'key_callback without undeclared' => array(VALIDATE_ARRAY, VALIDATE_FLAG_NONE, array('min' => 0, 'max' => 1, 'key_callback' => 'is_string'), array()),
+    'KEY_ALNUM with key_callback' => array(VALIDATE_ARRAY, VALIDATE_FLAG_ARRAY_KEY_ALNUM, array('min' => 0, 'max' => 1,
+        'undeclared' => $value, 'key_callback' => 'is_string'), array()),
+);
 foreach ($specs as $label => $spec) {
     $ctx = null;
     $unvalidated = null;
     echo "$label: ", var_export(validate_spec($spec, $unvalidated, $ctx), true), "\n";
-    foreach (validate_get_system_errors($ctx)['warning'] as $warning) {
+    $_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+    foreach ($_tmp['warning'] as $warning) {
         echo '  warning: ', $warning['message'], "\n";
     }
 }

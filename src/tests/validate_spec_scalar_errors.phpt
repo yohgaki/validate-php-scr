@@ -18,7 +18,7 @@ function check($title, $spec)
     $un = null;
     var_dump(validate_spec($spec, $un, $ctx));
     $errs = validate_get_system_errors($ctx);
-    foreach (['error', 'warning', 'notice'] as $t) {
+    foreach (array('error', 'warning', 'notice') as $t) {
         foreach ($errs[$t] as $e) {
             echo strtoupper($t), ': ', $e['message'],
                  ($e['flags'] !== '' ? ' ['.$e['flags'].']' : ''), "\n";
@@ -27,119 +27,119 @@ function check($title, $spec)
     echo "\n";
 }
 
-$mm = ['min'=>0, 'max'=>10];
+$mm = array('min'=>0, 'max'=>10);
 
-check('too few elements', [0=>VALIDATE_INT, 2=>$mm]);
-check('too many elements', [VALIDATE_INT, 0, $mm, 'extra']);
+check('too few elements', array(0=>VALIDATE_INT, 2=>$mm));
+check('too many elements', array(VALIDATE_INT, 0, $mm, 'extra'));
 
 check('STRING all flags incl. dangerous ones',
-      [VALIDATE_STRING,
+      array(VALIDATE_STRING,
        VALIDATE_STRING_SPACE | VALIDATE_STRING_DIGIT | VALIDATE_STRING_TAB
        | VALIDATE_STRING_CRLF | VALIDATE_STRING_CRLF_MIXED
        | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB
        | VALIDATE_STRING_BINARY | VALIDATE_STRING_RFC3454_D,
-       $mm]);
-check('STRING invalid type-flag bit', [VALIDATE_STRING, 1 << 13, $mm]);
-check('invalid common-flag bit', [VALIDATE_INT, 1 << 30, $mm]);
-check('INT type flags', [VALIDATE_INT,
-      VALIDATE_INT_AS_STRING | VALIDATE_INT_POSITIVE_SIGN | VALIDATE_INT_NEGATIVE_SIGN, $mm]);
-check('INT invalid type-flag bit', [VALIDATE_INT, 1 << 6, $mm]);
-check('FLOAT type flags', [VALIDATE_FLOAT,
+       $mm));
+check('STRING invalid type-flag bit', array(VALIDATE_STRING, 1 << 13, $mm));
+check('invalid common-flag bit', array(VALIDATE_INT, 1 << 30, $mm));
+check('INT type flags', array(VALIDATE_INT,
+      VALIDATE_INT_AS_STRING | VALIDATE_INT_POSITIVE_SIGN | VALIDATE_INT_NEGATIVE_SIGN, $mm));
+check('INT invalid type-flag bit', array(VALIDATE_INT, 1 << 6, $mm));
+check('FLOAT type flags', array(VALIDATE_FLOAT,
       VALIDATE_FLOAT_AS_STRING | VALIDATE_FLOAT_FRACTION | VALIDATE_FLOAT_THOUSAND
       | VALIDATE_FLOAT_SCIENTIFIC | VALIDATE_FLOAT_POSITIVE_SIGN | VALIDATE_FLOAT_NEGATIVE_SIGN,
-      $mm]);
-check('NULL AS_STRING flag', [VALIDATE_NULL, VALIDATE_NULL_AS_STRING, []]);
-check('BOOL all format flags', [VALIDATE_BOOL,
+      $mm));
+check('NULL AS_STRING flag', array(VALIDATE_NULL, VALIDATE_NULL_AS_STRING, array()));
+check('BOOL all format flags', array(VALIDATE_BOOL,
       VALIDATE_BOOL_AS_STRING | VALIDATE_BOOL_01 | VALIDATE_BOOL_TF
-      | VALIDATE_BOOL_TRUE_FALSE | VALIDATE_BOOL_ON_OFF | VALIDATE_BOOL_YES_NO, []]);
-check('BOOL without format flags', [VALIDATE_BOOL, VALIDATE_BOOL_AS_STRING, []]);
+      | VALIDATE_BOOL_TRUE_FALSE | VALIDATE_BOOL_ON_OFF | VALIDATE_BOOL_YES_NO, array()));
+check('BOOL without format flags', array(VALIDATE_BOOL, VALIDATE_BOOL_AS_STRING, array()));
 
 check('default: FLAG_ARRAY needs array default',
-      [VALIDATE_INT, VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
-       $mm + ['amin'=>0, 'amax'=>3, 'default'=>5]]);
+      array(VALIDATE_INT, VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
+       $mm + array('amin'=>0, 'amax'=>3, 'default'=>5)));
 check('default: OBJECT object default is accepted',
-      [VALIDATE_OBJECT, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
-       ['callback'=>'check', 'default'=>new stdClass]]);
+      array(VALIDATE_OBJECT, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
+       array('callback'=>'check', 'default'=>new stdClass)));
 check('default: OBJECT scalar default is rejected',
-      [VALIDATE_OBJECT, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
-       ['callback'=>'check', 'default'=>'x']]);
+      array(VALIDATE_OBJECT, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
+       array('callback'=>'check', 'default'=>'x')));
 check('default: RESOURCE cannot have default',
-      [VALIDATE_RESOURCE, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
-       ['resource'=>'stream', 'default'=>'x']]);
-check('default without *_TO_DEFAULT flag', [VALIDATE_INT, 0, $mm + ['default'=>1]]);
+      array(VALIDATE_RESOURCE, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
+       array('resource'=>'stream', 'default'=>'x')));
+check('default without *_TO_DEFAULT flag', array(VALIDATE_INT, 0, $mm + array('default'=>1)));
 check('UNDEFINED_TO_DEFAULT without default',
-      [VALIDATE_INT, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, $mm]);
+      array(VALIDATE_INT, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, $mm));
 check('EMPTY_TO_DEFAULT without default',
-      [VALIDATE_INT, VALIDATE_FLAG_EMPTY_TO_DEFAULT, $mm]);
+      array(VALIDATE_INT, VALIDATE_FLAG_EMPTY_TO_DEFAULT, $mm));
 
-check('non-scalar option value', [VALIDATE_INT, 0, ['min'=>[], 'max'=>10]]);
-check('unknown option', [VALIDATE_INT, 0, $mm + ['foo'=>1]]);
-check('user option with underscore prefix', [VALIDATE_INT, 0, $mm + ['_custom'=>1]]);
+check('non-scalar option value', array(VALIDATE_INT, 0, array('min'=>array(), 'max'=>10)));
+check('unknown option', array(VALIDATE_INT, 0, $mm + array('foo'=>1)));
+check('user option with underscore prefix', array(VALIDATE_INT, 0, $mm + array('_custom'=>1)));
 
-check('STRING min/max not int', [VALIDATE_STRING, 0, ['min'=>'a', 'max'=>'b']]);
-check('STRING min/max missing', [VALIDATE_STRING, 0, ['max'=>5]]);
-check('STRING min>max', [VALIDATE_STRING, 0, ['min'=>5, 'max'=>1]]);
-check('INT min/max missing', [VALIDATE_INT, 0, []]);
-check('INT min>max (bigint)', [VALIDATE_INT, VALIDATE_INT_AS_STRING,
-      ['min'=>'99999999999999999999999999', 'max'=>0]]);
-check('FLOAT min/max missing', [VALIDATE_FLOAT, 0, []]);
-check('FLOAT min>max', [VALIDATE_FLOAT, 0, ['min'=>5.0, 'max'=>1.0]]);
-check('BOOL with max only warns (no effect)', [VALIDATE_BOOL, VALIDATE_BOOL_01, ['max'=>5]]);
+check('STRING min/max not int', array(VALIDATE_STRING, 0, array('min'=>'a', 'max'=>'b')));
+check('STRING min/max missing', array(VALIDATE_STRING, 0, array('max'=>5)));
+check('STRING min>max', array(VALIDATE_STRING, 0, array('min'=>5, 'max'=>1)));
+check('INT min/max missing', array(VALIDATE_INT, 0, array()));
+check('INT min>max (bigint)', array(VALIDATE_INT, VALIDATE_INT_AS_STRING,
+      array('min'=>'99999999999999999999999999', 'max'=>0)));
+check('FLOAT min/max missing', array(VALIDATE_FLOAT, 0, array()));
+check('FLOAT min>max', array(VALIDATE_FLOAT, 0, array('min'=>5.0, 'max'=>1.0)));
+check('BOOL with max only warns (no effect)', array(VALIDATE_BOOL, VALIDATE_BOOL_01, array('max'=>5)));
 
-check('STRING encoding without MB flag', [VALIDATE_STRING, 0, $mm + ['encoding'=>'UTF-8']]);
-check('INT with encoding / float-only options', [VALIDATE_INT, 0,
-      $mm + ['encoding'=>'UTF-8', 'length'=>10]]);
-check('FLOAT with encoding', [VALIDATE_FLOAT, 0, $mm + ['encoding'=>'UTF-8']]);
-check('FLOAT invalid decimal separator', [VALIDATE_FLOAT, 0, $mm + ['decimal'=>'5']]);
-check('FLOAT thousand option without flag', [VALIDATE_FLOAT, 0, $mm + ['thousand'=>' ']]);
-check('FLOAT decimal == thousand', [VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND,
-      $mm + ['decimal'=>',', 'thousand'=>',']]);
-check('FLOAT invalid length', [VALIDATE_FLOAT, 0, $mm + ['length'=>0]]);
+check('STRING encoding without MB flag', array(VALIDATE_STRING, 0, $mm + array('encoding'=>'UTF-8')));
+check('INT with encoding / float-only options', array(VALIDATE_INT, 0,
+      $mm + array('encoding'=>'UTF-8', 'length'=>10)));
+check('FLOAT with encoding', array(VALIDATE_FLOAT, 0, $mm + array('encoding'=>'UTF-8')));
+check('FLOAT invalid decimal separator', array(VALIDATE_FLOAT, 0, $mm + array('decimal'=>'5')));
+check('FLOAT thousand option without flag', array(VALIDATE_FLOAT, 0, $mm + array('thousand'=>' ')));
+check('FLOAT decimal == thousand', array(VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND,
+      $mm + array('decimal'=>',', 'thousand'=>',')));
+check('FLOAT invalid length', array(VALIDATE_FLOAT, 0, $mm + array('length'=>0)));
 
-check('CALLBACK without callback', [VALIDATE_CALLBACK, 0, $mm]);
-check('CALLBACK not callable', [VALIDATE_CALLBACK, 0, $mm + ['callback'=>'no_such_func']]);
-check('OBJECT without callback', [VALIDATE_OBJECT, 0, []]);
-check('INT with useless callback', [VALIDATE_INT, 0, $mm + ['callback'=>'strlen']]);
+check('CALLBACK without callback', array(VALIDATE_CALLBACK, 0, $mm));
+check('CALLBACK not callable', array(VALIDATE_CALLBACK, 0, $mm + array('callback'=>'no_such_func')));
+check('OBJECT without callback', array(VALIDATE_OBJECT, 0, array()));
+check('INT with useless callback', array(VALIDATE_INT, 0, $mm + array('callback'=>'strlen')));
 
-check('FLAG_ARRAY without amin/amax', [VALIDATE_INT, VALIDATE_FLAG_ARRAY, $mm]);
-check('amin/amax not int', [VALIDATE_INT, VALIDATE_FLAG_ARRAY,
-      $mm + ['amin'=>'a', 'amax'=>3]]);
-check('amin > amax', [VALIDATE_INT, VALIDATE_FLAG_ARRAY,
-      $mm + ['amin'=>5, 'amax'=>3]]);
-check('key_callback without FLAG_ARRAY', [VALIDATE_INT, 0,
-      $mm + ['key_callback'=>'strlen']]);
-check('KEY_ALNUM without FLAG_ARRAY', [VALIDATE_INT, VALIDATE_FLAG_ARRAY_KEY_ALNUM, $mm]);
-check('alimit without FLAG_ARRAY', [VALIDATE_INT, 0, $mm + ['alimit'=>10]]);
-check('RECURSIVE without FLAG_ARRAY', [VALIDATE_INT, VALIDATE_FLAG_ARRAY_RECURSIVE, $mm]);
-check('filter not callable', [VALIDATE_INT, 0, $mm + ['filter'=>'no_such_func']]);
-check('key_callback not callable', [VALIDATE_INT,
+check('FLAG_ARRAY without amin/amax', array(VALIDATE_INT, VALIDATE_FLAG_ARRAY, $mm));
+check('amin/amax not int', array(VALIDATE_INT, VALIDATE_FLAG_ARRAY,
+      $mm + array('amin'=>'a', 'amax'=>3)));
+check('amin > amax', array(VALIDATE_INT, VALIDATE_FLAG_ARRAY,
+      $mm + array('amin'=>5, 'amax'=>3)));
+check('key_callback without FLAG_ARRAY', array(VALIDATE_INT, 0,
+      $mm + array('key_callback'=>'strlen')));
+check('KEY_ALNUM without FLAG_ARRAY', array(VALIDATE_INT, VALIDATE_FLAG_ARRAY_KEY_ALNUM, $mm));
+check('alimit without FLAG_ARRAY', array(VALIDATE_INT, 0, $mm + array('alimit'=>10)));
+check('RECURSIVE without FLAG_ARRAY', array(VALIDATE_INT, VALIDATE_FLAG_ARRAY_RECURSIVE, $mm));
+check('filter not callable', array(VALIDATE_INT, 0, $mm + array('filter'=>'no_such_func')));
+check('key_callback not callable', array(VALIDATE_INT,
       VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM,
-      $mm + ['amin'=>0, 'amax'=>3, 'key_callback'=>'no_such_func']]);
+      $mm + array('amin'=>0, 'amax'=>3, 'key_callback'=>'no_such_func')));
 
-check('INT with BINARY / RAW flags', [VALIDATE_INT,
-      VALIDATE_STRING_BINARY | VALIDATE_FLAG_RAW, $mm]);
-check('STRING ascii option not a string', [VALIDATE_STRING, 0, $mm + ['ascii'=>5]]);
-check('STRING ascii option with non-ascii char', [VALIDATE_STRING, 0, $mm + ['ascii'=>"\x80"]]);
-check('STRING values not an array', [VALIDATE_STRING, 0, ['values'=>'x']]);
-check('STRING values with non-bool value', [VALIDATE_STRING, 0, ['values'=>['a'=>1]]]);
+check('INT with BINARY / RAW flags', array(VALIDATE_INT,
+      VALIDATE_STRING_BINARY | VALIDATE_FLAG_RAW, $mm));
+check('STRING ascii option not a string', array(VALIDATE_STRING, 0, $mm + array('ascii'=>5)));
+check('STRING ascii option with non-ascii char', array(VALIDATE_STRING, 0, $mm + array('ascii'=>"\x80")));
+check('STRING values not an array', array(VALIDATE_STRING, 0, array('values'=>'x')));
+check('STRING values with non-bool value', array(VALIDATE_STRING, 0, array('values'=>array('a'=>1))));
 
-check('REGEXP ascii not a string', [VALIDATE_REGEXP, 0,
-      $mm + ['regexp'=>'/a/', 'ascii'=>5]]);
-check('REGEXP ascii with non-ascii char', [VALIDATE_REGEXP, 0,
-      $mm + ['regexp'=>'/a/', 'ascii'=>"\x80"]]);
-check('REGEXP without regexp option', [VALIDATE_REGEXP, 0, $mm]);
-check('REGEXP with broken pattern', [VALIDATE_REGEXP, 0, $mm + ['regexp'=>'/[/']]);
+check('REGEXP ascii not a string', array(VALIDATE_REGEXP, 0,
+      $mm + array('regexp'=>'/a/', 'ascii'=>5)));
+check('REGEXP ascii with non-ascii char', array(VALIDATE_REGEXP, 0,
+      $mm + array('regexp'=>'/a/', 'ascii'=>"\x80")));
+check('REGEXP without regexp option', array(VALIDATE_REGEXP, 0, $mm));
+check('REGEXP with broken pattern', array(VALIDATE_REGEXP, 0, $mm + array('regexp'=>'/[/')));
 
-check('CALLBACK ascii not a string', [VALIDATE_CALLBACK, 0,
-      $mm + ['callback'=>'is_string', 'ascii'=>5]]);
-check('CALLBACK ascii with non-ascii char', [VALIDATE_CALLBACK, 0,
-      $mm + ['callback'=>'is_string', 'ascii'=>"\x80"]]);
-check('INT values not an array', [VALIDATE_INT, 0, ['values'=>'x']]);
-check('INT values with non-bool value', [VALIDATE_INT, 0, ['values'=>[1=>'x']]]);
-check('INT values with non-int key', [VALIDATE_INT, 0, ['values'=>['abc'=>true]]]);
+check('CALLBACK ascii not a string', array(VALIDATE_CALLBACK, 0,
+      $mm + array('callback'=>'is_string', 'ascii'=>5)));
+check('CALLBACK ascii with non-ascii char', array(VALIDATE_CALLBACK, 0,
+      $mm + array('callback'=>'is_string', 'ascii'=>"\x80")));
+check('INT values not an array', array(VALIDATE_INT, 0, array('values'=>'x')));
+check('INT values with non-bool value', array(VALIDATE_INT, 0, array('values'=>array(1=>'x'))));
+check('INT values with non-int key', array(VALIDATE_INT, 0, array('values'=>array('abc'=>true))));
 
-check('RESOURCE without resource option', [VALIDATE_RESOURCE, 0, []]);
-check('RESOURCE resource option not string', [VALIDATE_RESOURCE, 0, ['resource'=>5]]);
+check('RESOURCE without resource option', array(VALIDATE_RESOURCE, 0, array()));
+check('RESOURCE resource option not string', array(VALIDATE_RESOURCE, 0, array('resource'=>5)));
 
 ?>
 --EXPECT--

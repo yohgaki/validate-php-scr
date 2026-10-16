@@ -29,78 +29,78 @@ require_once __DIR__.'/../validate_defs.php';
 // AS_STRING specs ('uint64', 'int128', 'uint128' everywhere) return the value
 // as a string, also for int input.
 // ---------------------------------------------------------------------------
-$basicTypes['int8'] = [
+$basicTypes['int8'] = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => -128, 'max' => 127]
-];
+    array('min' => -128, 'max' => 127)
+);
 
-$basicTypes['uint8'] = [
+$basicTypes['uint8'] = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => 0, 'max' => 255]
-];
+    array('min' => 0, 'max' => 255)
+);
 
-$basicTypes['int16'] = [
+$basicTypes['int16'] = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => -32768, 'max' => 32767]
-];
+    array('min' => -32768, 'max' => 32767)
+);
 
-$basicTypes['uint16'] = [
+$basicTypes['uint16'] = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => 0, 'max' => 65535]
-];
+    array('min' => 0, 'max' => 65535)
+);
 
-$basicTypes['int32'] = [
+$basicTypes['int32'] = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => -2147483647 - 1, 'max' => 2147483647] // -2147483648 written as a literal is a float on 32-bit builds.
-];
+    array('min' => -2147483647 - 1, 'max' => 2147483647) // -2147483648 written as a literal is a float on 32-bit builds.
+);
 
-$basicTypes['uint32'] = [
+$basicTypes['uint32'] = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => 0, 'max' => '4294967295']
-];
+    array('min' => 0, 'max' => '4294967295')
+);
 
 // int53: safe integer range for IEEE 754 double / JavaScript Number (±(2^53-1))
-$basicTypes['int53'] = [
+$basicTypes['int53'] = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => '-9007199254740991', 'max' => '9007199254740991']
-];
+    array('min' => '-9007199254740991', 'max' => '9007199254740991')
+);
 
-$basicTypes['uint53'] = [
+$basicTypes['uint53'] = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => 0, 'max' => '9007199254740991']
-];
+    array('min' => 0, 'max' => '9007199254740991')
+);
 
-$basicTypes['int64'] = [
+$basicTypes['int64'] = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => '-9223372036854775808', 'max' => '9223372036854775807']
-];
+    array('min' => '-9223372036854775808', 'max' => '9223372036854775807')
+);
 
-$basicTypes['uint64'] = [
+$basicTypes['uint64'] = array(
     VALIDATE_INT,
     VALIDATE_INT_AS_STRING,
-    ['min' => 0, 'max' => '18446744073709551615']
-];
+    array('min' => 0, 'max' => '18446744073709551615')
+);
 
-$basicTypes['int128'] = [
+$basicTypes['int128'] = array(
     VALIDATE_INT,
     VALIDATE_INT_AS_STRING,
-    ['min' => '-170141183460469231731687303715884105728', 'max' => '170141183460469231731687303715884105727']
-];
+    array('min' => '-170141183460469231731687303715884105728', 'max' => '170141183460469231731687303715884105727')
+);
 
-$basicTypes['uint128'] = [
+$basicTypes['uint128'] = array(
     VALIDATE_INT,
     VALIDATE_INT_AS_STRING,
-    ['min' => 0, 'max' => '340282366920938463463374607431768211455']
-];
+    array('min' => 0, 'max' => '340282366920938463463374607431768211455')
+);
 
 // On 32-bit PHP builds, integers wider than PHP_INT_MAX (2^31-1) cannot be
 // represented natively. Flip the affected specs to AS_STRING mode so the
@@ -116,28 +116,28 @@ if (PHP_INT_SIZE === 4) {
 
 // Boolean — accepts PHP true/false. Add VALIDATE_BOOL_* flags below to also
 // accept textual forms like "true"/"false", "yes"/"no", etc.
-$basicTypes['bool'] = [
+$basicTypes['bool'] = array(
     VALIDATE_BOOL,
     VALIDATE_FLAG_NONE,
-    []
-];
+    array()
+);
 
 // ---------------------------------------------------------------------------
 // Floats. 'float' has no useful range by default — every caller must narrow
 // min/max for their domain (e.g. price, latitude, percent).
 // ---------------------------------------------------------------------------
-$basicTypes['float'] = [
+$basicTypes['float'] = array(
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
-    ['min' => -INF, 'max' => INF]
-];
+    array('min' => -INF, 'max' => INF)
+);
 
 // Non-negative float (price, distance, etc.).
-$basicTypes['float_pos'] = [
+$basicTypes['float_pos'] = array(
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
-    ['min' => 0, 'max' => INF]
-];
+    array('min' => 0, 'max' => INF)
+);
 
 // ===========================================================================
 // TEXT specs
@@ -149,102 +149,102 @@ $basicTypes['float_pos'] = [
 // 768 leaves room for passphrases. NOTE: bcrypt (PASSWORD_BCRYPT /
 // PASSWORD_DEFAULT) only uses the first 72 bytes; lower 'max' to 72 or use
 // PASSWORD_ARGON2ID if longer inputs must count in full.
-$basicTypes['password'] = [
+$basicTypes['password'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_SPACE,
-    [
+    array(
         'min' => 8, 'max' => 768,
-    ]
-];
+    )
+);
 
 // ---------------------------------------------------------------------------
 // Single-line text — letters only (no spaces, no digits).
 // The bare 'alpha' has min=max=0 as placeholders; override before use.
 // Numbered variants (alpha32 etc.) cap the byte length.
 // ---------------------------------------------------------------------------
-$basicTypes['alpha'] =  [
+$basicTypes['alpha'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALPHA,
-    [
+    array(
         'min' => 0, 'max' => 0,
-    ]
-];
+    )
+);
 
-$basicTypes['alpha32'] =  [
+$basicTypes['alpha32'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALPHA,
-    [
+    array(
         'min' => 0, 'max' => 32,
-    ]
-];
+    )
+);
 
-$basicTypes['alpha64'] =  [
+$basicTypes['alpha64'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALPHA,
-    [
+    array(
         'min' => 0, 'max' => 64,
-    ]
-];
+    )
+);
 
-$basicTypes['alpha128'] =  [
+$basicTypes['alpha128'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALPHA,
-    [
+    array(
         'min' => 0, 'max' => 128,
-    ]
-];
+    )
+);
 
-$basicTypes['alpha256'] =  [
+$basicTypes['alpha256'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALPHA,
-    [
+    array(
         'min' => 0, 'max' => 256,
-    ]
-];
+    )
+);
 
 // ---------------------------------------------------------------------------
 // Single-line text — letters + digits (no spaces, no symbols).
 // Bare 'alnum' is a placeholder (min=max=0); override the length before use.
 // ---------------------------------------------------------------------------
-$basicTypes['alnum'] =  [
+$basicTypes['alnum'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 0, 'max' => 0,
-    ]
-];
+    )
+);
 
-$basicTypes['alnum32'] =  [
+$basicTypes['alnum32'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 0, 'max' => 32,
-    ]
-];
+    )
+);
 
-$basicTypes['alnum64'] =  [
+$basicTypes['alnum64'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 0, 'max' => 64,
-    ]
-];
+    )
+);
 
-$basicTypes['alnum128'] =  [
+$basicTypes['alnum128'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 0, 'max' => 128,
-    ]
-];
+    )
+);
 
-$basicTypes['alnum256'] =  [
+$basicTypes['alnum256'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 0, 'max' => 256,
-    ]
-];
+    )
+);
 
 
 // ---------------------------------------------------------------------------
@@ -253,101 +253,101 @@ $basicTypes['alnum256'] =  [
 // 'line*_s'  : ALNUM + MB + SPACE + all ASCII SYMBOLS — looser, use with care.
 // The bare 'line'/'line_s' have min=max=0 placeholders; override before use.
 // ---------------------------------------------------------------------------
-$basicTypes['line'] =  [
+$basicTypes['line'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 0,
-    ]
-];
+    )
+);
 
-$basicTypes['line_s'] =  [
+$basicTypes['line_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 0,
-    ]
-];
+    )
+);
 
-$basicTypes['line32'] =  [
+$basicTypes['line32'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 32,
-    ]
-];
+    )
+);
 
-$basicTypes['line32_s'] =  [
+$basicTypes['line32_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 32,
-    ]
-];
+    )
+);
 
-$basicTypes['line64'] =  [
+$basicTypes['line64'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 64,
-    ]
-];
+    )
+);
 
-$basicTypes['line64_s'] =  [
+$basicTypes['line64_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 64,
-    ]
-];
+    )
+);
 
-$basicTypes['line128'] =  [
+$basicTypes['line128'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 128,
-    ]
-];
+    )
+);
 
-$basicTypes['line128_s'] =  [
+$basicTypes['line128_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 128,
-    ]
-];
+    )
+);
 
-$basicTypes['line256'] =  [
+$basicTypes['line256'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 256,
-    ]
-];
+    )
+);
 
-$basicTypes['line256_s'] =  [
+$basicTypes['line256_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 256,
-    ]
-];
+    )
+);
 
-$basicTypes['line512'] =  [
+$basicTypes['line512'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 512,
-    ]
-];
+    )
+);
 
-$basicTypes['line512_s'] =  [
+$basicTypes['line512_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 512,
-    ]
-];
+    )
+);
 
 // ---------------------------------------------------------------------------
 // Multi-line UTF-8 text. LF is the only newline accepted in every variant.
@@ -357,133 +357,133 @@ $basicTypes['line512_s'] =  [
 // NOTE: HTML <textarea> already normalizes CRLF/CR to LF on submit, which
 // matches the LF-only policy below.
 // ---------------------------------------------------------------------------
-$basicTypes['text'] =  [
+$basicTypes['text'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 0,
-    ]
-];
+    )
+);
 
-$basicTypes['text_s'] =  [
+$basicTypes['text_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 0,
-    ]
-];
+    )
+);
 
-$basicTypes['text128'] =  [
+$basicTypes['text128'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 128,
-    ]
-];
+    )
+);
 
-$basicTypes['text128_s'] =  [
+$basicTypes['text128_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 128,
-    ]
-];
+    )
+);
 
-$basicTypes['text256'] =  [
+$basicTypes['text256'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 256,
-    ]
-];
+    )
+);
 
-$basicTypes['text256_s'] =  [
+$basicTypes['text256_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 256,
-    ]
-];
+    )
+);
 
-$basicTypes['text512'] =  [
+$basicTypes['text512'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 512,
-    ]
-];
+    )
+);
 
-$basicTypes['text512_s'] =  [
+$basicTypes['text512_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 512,
-    ]
-];
+    )
+);
 
-$basicTypes['text1024'] =  [
+$basicTypes['text1024'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 1024,
-    ]
-];
+    )
+);
 
-$basicTypes['text1024_s'] =  [
+$basicTypes['text1024_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 1024,
-    ]
-];
+    )
+);
 
-$basicTypes['text2048'] =  [
+$basicTypes['text2048'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 2048,
-    ]
-];
+    )
+);
 
-$basicTypes['text2048_s'] =  [
+$basicTypes['text2048_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 2048,
-    ]
-];
+    )
+);
 
-$basicTypes['text4096'] =  [
+$basicTypes['text4096'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 4096,
-    ]
-];
+    )
+);
 
-$basicTypes['text4096_s'] =  [
+$basicTypes['text4096_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 4096,
-    ]
-];
+    )
+);
 
-$basicTypes['text8192'] =  [
+$basicTypes['text8192'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 8192,
-    ]
-];
+    )
+);
 
-$basicTypes['text8192_s'] =  [
+$basicTypes['text8192_s'] =  array(
     VALIDATE_STRING,
     VALIDATE_STRING_LF | VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 0, 'max' => 8192,
-    ]
-];
+    )
+);
 
 // ---------------------------------------------------------------------------
 // SQL identifiers — alnum + underscore, first char must be a letter or '_'.
@@ -491,25 +491,25 @@ $basicTypes['text8192_s'] =  [
 //   sqlident63  : PostgreSQL default NAMEDATALEN limit (63 bytes).
 //   sqlident127 : SQL-92 standard limit (127 bytes); also matches MySQL.
 // ---------------------------------------------------------------------------
-$basicTypes['sqlident63'] = [
+$basicTypes['sqlident63'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 1, 'max' => 63,
         'ascii' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_',
         'regexp' => '/\A[a-zA-Z_][a-zA-Z0-9_]*\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['sqlident127'] = [
+$basicTypes['sqlident127'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 1, 'max' => 127,
         'ascii' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_',
         'regexp' => '/\A[a-zA-Z_][a-zA-Z0-9_]*\z/',
-    ]
-];
+    )
+);
 
 
 // ---------------------------------------------------------------------------
@@ -520,14 +520,14 @@ $basicTypes['sqlident127'] = [
 // (22-256, default 32; the setting is deprecated as of PHP 8.4). Narrow
 // 'min'/'max' to your configured length for a tighter check.
 // ---------------------------------------------------------------------------
-$basicTypes['sessid'] = [
+$basicTypes['sessid'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 22, 'max' => 256,
         'ascii' => '-,',
-    ]
-];
+    )
+);
 
 
 // ---------------------------------------------------------------------------
@@ -537,55 +537,55 @@ $basicTypes['sessid'] = [
 // group (so "====", "a=b" and 5-char "abcde" are rejected).
 // See https://en.wikipedia.org/wiki/Base64
 // ---------------------------------------------------------------------------
-$basicTypes['base64'] = [
+$basicTypes['base64'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 1,
         'ascii' => '+/=',
         'regexp' => '/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}(?:==)?|[A-Za-z0-9+\/]{3}=?)?\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['base64_32'] = [
+$basicTypes['base64_32'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 32,
         'ascii' => '+/=',
         'regexp' => '/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}(?:==)?|[A-Za-z0-9+\/]{3}=?)?\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['base64_64'] = [
+$basicTypes['base64_64'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 64,
         'ascii' => '+/=',
         'regexp' => '/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}(?:==)?|[A-Za-z0-9+\/]{3}=?)?\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['base64_128'] = [
+$basicTypes['base64_128'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 128,
         'ascii' => '+/=',
         'regexp' => '/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}(?:==)?|[A-Za-z0-9+\/]{3}=?)?\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['base64_256'] = [
+$basicTypes['base64_256'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 256,
         'ascii' => '+/=',
         'regexp' => '/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}(?:==)?|[A-Za-z0-9+\/]{3}=?)?\z/',
-    ]
-];
+    )
+);
 
 
 // ---------------------------------------------------------------------------
@@ -594,55 +594,55 @@ $basicTypes['base64_256'] = [
 // 'base64'. Common in JWT and OAuth tokens.
 // 'base64url' has min=max=1 placeholders; override before use.
 // ---------------------------------------------------------------------------
-$basicTypes['base64url'] = [
+$basicTypes['base64url'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 1,
         'ascii' => '-_=',
         'regexp' => '/\A(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}(?:==)?|[A-Za-z0-9_-]{3}=?)?\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['base64url_32'] = [
+$basicTypes['base64url_32'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 32,
         'ascii' => '-_=',
         'regexp' => '/\A(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}(?:==)?|[A-Za-z0-9_-]{3}=?)?\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['base64url_64'] = [
+$basicTypes['base64url_64'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 64,
         'ascii' => '-_=',
         'regexp' => '/\A(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}(?:==)?|[A-Za-z0-9_-]{3}=?)?\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['base64url_128'] = [
+$basicTypes['base64url_128'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 128,
         'ascii' => '-_=',
         'regexp' => '/\A(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}(?:==)?|[A-Za-z0-9_-]{3}=?)?\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['base64url_256'] = [
+$basicTypes['base64url_256'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 256,
         'ascii' => '-_=',
         'regexp' => '/\A(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}(?:==)?|[A-Za-z0-9_-]{3}=?)?\z/',
-    ]
-];
+    )
+);
 
 
 // ---------------------------------------------------------------------------
@@ -651,55 +651,55 @@ $basicTypes['base64url_256'] = [
 // application/x-www-form-urlencoded; '%' only as a "%HH" escape (two hex digits).
 // 'urle' has min=max=1 placeholders; override before use.
 // ---------------------------------------------------------------------------
-$basicTypes['urle'] = [
+$basicTypes['urle'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 1,
         'ascii' => '%-_.~+',
         'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['urle32'] = [
+$basicTypes['urle32'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 32,
         'ascii' => '%-_.~+',
         'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['urle64'] = [
+$basicTypes['urle64'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 64,
         'ascii' => '%-_.~+',
         'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['urle128'] = [
+$basicTypes['urle128'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 128,
         'ascii' => '%-_.~+',
         'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
-    ]
-];
+    )
+);
 
-$basicTypes['urle256'] = [
+$basicTypes['urle256'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 256,
         'ascii' => '%-_.~+',
         'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
-    ]
-];
+    )
+);
 
 
 // ---------------------------------------------------------------------------
@@ -708,68 +708,68 @@ $basicTypes['urle256'] = [
 // reaching the validator. Assumes LF for newlines.
 // 'htmle' has min=max=1 placeholders; override before use.
 // ---------------------------------------------------------------------------
-$basicTypes['htmle'] = [
+$basicTypes['htmle'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 1,
         'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
-    ]
-];
+    )
+);
 
-$basicTypes['htmle32'] = [
+$basicTypes['htmle32'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 32,
         'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
-    ]
-];
+    )
+);
 
-$basicTypes['htmle64'] = [
+$basicTypes['htmle64'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 64,
         'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
-    ]
-];
+    )
+);
 
-$basicTypes['htmle128'] = [
+$basicTypes['htmle128'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 128,
         'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
-    ]
-];
+    )
+);
 
-$basicTypes['htmle256'] = [
+$basicTypes['htmle256'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 256,
         'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
-    ]
-];
+    )
+);
 
-$basicTypes['htmle512'] = [
+$basicTypes['htmle512'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 512,
         'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
-    ]
-];
+    )
+);
 
-$basicTypes['htmle1024'] = [
+$basicTypes['htmle1024'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 1024,
         'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
-    ]
-];
+    )
+);
 
 
 
@@ -778,103 +778,103 @@ $basicTypes['htmle1024'] = [
 // 'hex'           : generic placeholder — set min/max yourself.
 // 'hex8' .. 'hex128' : exact length matching common hash output sizes (see comments).
 // ---------------------------------------------------------------------------
-$basicTypes['hex'] = [
+$basicTypes['hex'] = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 0, 'max' => 0,
         'ascii' => 'abcdefABCDEF0123456789',
-    ]
-];
+    )
+);
 
-$basicTypes['hex8'] = [
+$basicTypes['hex8'] = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 8, 'max' => 8,
         'ascii' => 'abcdefABCDEF0123456789',
-    ]
-];
+    )
+);
 
 // 64-bit hash (e.g. SipHash-64)
-$basicTypes['hex16'] = [
+$basicTypes['hex16'] = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 16, 'max' => 16,
         'ascii' => 'abcdefABCDEF0123456789',
-    ]
-];
+    )
+);
 
 // 96-bit hash
-$basicTypes['hex24'] = [
+$basicTypes['hex24'] = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 24, 'max' => 24,
         'ascii' => 'abcdefABCDEF0123456789',
-    ]
-];
+    )
+);
 
 // MD5 / RIPEMD-128 (128 bits = 16 bytes = 32 hex chars)
-$basicTypes['hex32'] = [
+$basicTypes['hex32'] = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 32, 'max' => 32,
         'ascii' => 'abcdefABCDEF0123456789',
-    ]
-];
+    )
+);
 
 // SHA1 / RIPEMD-160 (160 bits = 20 bytes = 40 hex chars)
-$basicTypes['hex40'] = [
+$basicTypes['hex40'] = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 40, 'max' => 40,
         'ascii' => 'abcdefABCDEF0123456789',
-    ]
-];
+    )
+);
 
 // SHA224 / SHA3-224 (224 bits = 28 bytes = 56 hex chars)
-$basicTypes['hex56'] = [
+$basicTypes['hex56'] = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 56, 'max' => 56,
         'ascii' => 'abcdefABCDEF0123456789',
-    ]
-];
+    )
+);
 
 // SHA256 / SHA3-256 (256 bits = 32 bytes = 64 hex chars)
-$basicTypes['hex64'] = [
+$basicTypes['hex64'] = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 64, 'max' => 64,
         'ascii' => 'abcdefABCDEF0123456789',
-    ]
-];
+    )
+);
 
 // SHA384 / SHA3-384 (384 bits = 48 bytes = 96 hex chars)
-$basicTypes['hex96'] = [
+$basicTypes['hex96'] = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 96, 'max' => 96,
         'ascii' => 'abcdefABCDEF0123456789',
-    ]
-];
+    )
+);
 
 // SHA512 / SHA3-512 (512 bits = 64 bytes = 128 hex chars)
-$basicTypes['hex128'] = [
+$basicTypes['hex128'] = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 128, 'max' => 128,
         'ascii' => 'abcdefABCDEF0123456789',
-    ]
-];
+    )
+);
 
 
 // ---------------------------------------------------------------------------
@@ -882,10 +882,10 @@ $basicTypes['hex128'] = [
 // the filter so spec consumers receive a normalized value.
 // See https://en.wikipedia.org/wiki/Universally_unique_identifier
 // ---------------------------------------------------------------------------
-$basicTypes['uuid'] = [
+$basicTypes['uuid'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 36, 'max' => 36,
         'filter' => function ($ctx, $input, &$error) {
             if (!is_string($input)) {
@@ -896,8 +896,8 @@ $basicTypes['uuid'] = [
         },
         'ascii' => 'abcdef0123456789-',
         'regexp' => '/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/',
-    ]
-];
+    )
+);
 
 // ---------------------------------------------------------------------------
 // Date / Time — regex-based ISO 8601 forms. These accept syntactically valid
@@ -905,62 +905,62 @@ $basicTypes['uuid'] = [
 // Combine with a follow-up checkdate() call if calendar correctness matters.
 // ---------------------------------------------------------------------------
 // ISO 8601 date: YYYY-MM-DD
-$basicTypes['date'] = [
+$basicTypes['date'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 10, 'max' => 10,
         'ascii' => '0123456789-',
         'regexp' => '/\A\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\z/',
-    ]
-];
+    )
+);
 
 // ISO 8601 time: HH:MM, HH:MM:SS or HH:MM:SS.fraction (1-9 digits, as sent
 // by <input type="time" step="0.001">).
-$basicTypes['time'] = [
+$basicTypes['time'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 5, 'max' => 18,
         'ascii' => '0123456789:.',
         'regexp' => '/\A([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?\z/',
-    ]
-];
+    )
+);
 
 // ISO 8601 datetime: YYYY-MM-DDTHH:MM[:SS[.fraction]][Z|±HH:MM] or space
 // separator. The fraction (1-9 digits) covers JavaScript's
 // Date.prototype.toISOString() output ("2025-01-02T03:04:05.678Z").
-$basicTypes['datetime'] = [
+$basicTypes['datetime'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 16, 'max' => 35,
         'ascii' => '0123456789T :-+Z.',
         'regexp' => '/\A\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[T ]([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?'
                     .'(?:Z|[+-](?:0\d|1[0-4]):[0-5]\d)?\z/',
-    ]
-];
+    )
+);
 
 
 // ---------------------------------------------------------------------------
 // IP addresses and CIDR ranges (textual form). Regex-based — does not
 // distinguish public/private/loopback ranges; layer your own policy on top.
 // ---------------------------------------------------------------------------
-$basicTypes['ipv4'] = [
+$basicTypes['ipv4'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 7, 'max' => 15,
         'ascii' => '0123456789.',
         // Dotted decimal without leading zeros ("010" would be octal for inet_aton()).
         'regexp' => '/\A((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\z/'
-    ]
-];
+    )
+);
 
-$basicTypes['ipv6'] = [
+$basicTypes['ipv6'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 2, 'max' => 45, // "::" .. IPv4-embedded forms. Zone IDs ("%eth0") are not accepted.
         'ascii' => '0123456789abcdefABCDEF:.',
         'callback' => function ($ctx, &$result, $input) {
@@ -971,19 +971,19 @@ $basicTypes['ipv6'] = [
             $result = $input;
             return true;
         },
-    ]
-];
+    )
+);
 
 // IPv4 CIDR notation (e.g. 192.168.0.0/24)
-$basicTypes['cidr4'] = [
+$basicTypes['cidr4'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 9, 'max' => 18,
         'ascii' => '0123456789./',
         'regexp' => '/\A((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\/(3[0-2]|[12]?\d)\z/',
-    ]
-];
+    )
+);
 
 
 // ---------------------------------------------------------------------------
@@ -1001,10 +1001,10 @@ $dnsResolvable = function ($host) {
     return (bool)@dns_get_record(rtrim($host, '.').'.', DNS_A | DNS_AAAA | DNS_CNAME | DNS_MX);
 };
 
-$basicTypes['fqdn'] = [
+$basicTypes['fqdn'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 3, 'max' => 253,
         'ascii' => '.-_',
         'callback' => function ($ctx, &$result, $input) use ($dnsResolvable) {
@@ -1021,34 +1021,34 @@ $basicTypes['fqdn'] = [
             }
             $result = $input;
             return true;
-        }]
-];
+        })
+);
 
 // Hostname only — one RFC 1123 label: alnum and '-', not at either end.
-$basicTypes['hostname'] = [
+$basicTypes['hostname'] = array(
     VALIDATE_REGEXP,
     VALIDATE_REGEXP_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 63,
         'ascii' => '-',
         'regexp' => '/\A[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\z/',
-    ]
-];
+    )
+);
 
 // Domain name - format validation only, no DNS lookup (see 'fqdn' for DNS-verified version)
 // RFC 1123: labels 1-63 chars, total max 253, must have at least one dot.
 // The TLD is alphabetic or an IDNA A-label ("xn--p1ai"); pass IDNs through
 // idn_to_ascii() first, as Unicode labels are rejected.
-$basicTypes['domain'] = [
+$basicTypes['domain'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 3, 'max' => 253,
         'ascii' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-',
         'regexp' => '/\A(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+'
                     .'(?:[a-zA-Z]{2,63}|[xX][nN]--[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,57}[a-zA-Z0-9])?)\z/',
-    ]
-];
+    )
+);
 
 // HTTP Host header value (RFC 9110 §7.2): host [":" port], format only.
 // host is a name of RFC 1123 labels (one label such as "localhost" is fine;
@@ -1056,10 +1056,10 @@ $basicTypes['domain'] = [
 // address ("[::1]"). A name whose last label is all digits must be a valid
 // IPv4 address, so "999.1.1.1" is rejected. port is 1-65535 without leading
 // zeros. Compare the result against the host names your app serves.
-$basicTypes['http_host'] = [
+$basicTypes['http_host'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 259, // 253-char name + ":65535"
         'ascii' => '.-:[]',
         'callback' => function ($ctx, &$result, $input) {
@@ -1087,15 +1087,15 @@ $basicTypes['http_host'] = [
             $result = $input;
             return true;
         },
-    ]
-];
+    )
+);
 
 // Email address - format validation only (RFC 5321/5322 practical subset)
 // Max 64 chars local-part, max 255 chars domain, max 254 chars total
-$basicTypes['email'] = [
+$basicTypes['email'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
-    [
+    array(
         'min' => 6, 'max' => 254,
         'callback' => function ($ctx, &$result, $input) {
             if (!filter_var($input, FILTER_VALIDATE_EMAIL)) {
@@ -1105,19 +1105,19 @@ $basicTypes['email'] = [
             $result = $input;
             return true;
         },
-    ]
-];
+    )
+);
 
 // URL slug: lowercase alnum and hyphens, no leading/trailing hyphen
-$basicTypes['slug'] = [
+$basicTypes['slug'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 1, 'max' => 255,
         'ascii' => 'abcdefghijklmnopqrstuvwxyz0123456789-',
         'regexp' => '/\A[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\z/',
-    ]
-];
+    )
+);
 
 
 // ===========================================================================
@@ -1139,205 +1139,209 @@ $vtrim = function ($ctx, $input, &$error) {
 // grammar (e.g. Content-Length is a uint), prefer a more specific spec —
 // $basicTypes['uint32'] for Content-Length, $basicTypes['http_host'] for Host, etc.
 // Bare 'header' has min=max=0 placeholders; override before use.
-$basicTypes['header'] = [
+$basicTypes['header'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 0, 'max' => 0,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
 // Length-bounded HTTP header variants. The `u` suffix additionally allows
 // UTF-8 multibyte characters (rarely used in practice but legal in obs-text
 // per RFC 7230 §3.2.4). Pick the tightest length that fits the header you
 // are checking — accepting more than you need is gratuitous attack surface.
-$basicTypes['header64'] = [
+$basicTypes['header64'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 64,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
 // UTF-8 is legal per RFC but seen rarely; only use the `u` variants when you
 // actually expect multibyte data (e.g. some Cookie or referrer payloads).
-$basicTypes['header64u'] = [
+$basicTypes['header64u'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 64,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header128'] = [
+$basicTypes['header128'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 128,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header128u'] = [
+$basicTypes['header128u'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 128,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header256'] = [
+$basicTypes['header256'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 256,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header256u'] = [
+$basicTypes['header256u'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 256,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header512'] = [
+$basicTypes['header512'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 512,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header512u'] = [
+$basicTypes['header512u'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 512,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header1024'] = [
+$basicTypes['header1024'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 1024,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header1024u'] = [
+$basicTypes['header1024u'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 1024,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header2048'] = [
+$basicTypes['header2048'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 2048,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header2048u'] = [
+$basicTypes['header2048u'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 2048,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
 $basicTypes['header4096'] =
-[
+array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 4096,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
 $basicTypes['header4096u'] =
-[
+array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 4096,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header8192'] = [
+$basicTypes['header8192'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 8192,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header8192u'] = [
+$basicTypes['header8192u'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 8192,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header32k'] = [
+$basicTypes['header32k'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 32768,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
-$basicTypes['header32ku'] = [
+$basicTypes['header32ku'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM | VALIDATE_STRING_MB,
-    [
+    array(
         'min' => 1, 'max' => 32768,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 
 // ---------------------------------------------------------------------------
-// JSON string. The callback runs json_decode and reports a failure if the
-// input cannot be parsed. VALIDATE_CALLBACK_SYMBOL is required so the
-// surrounding character whitelist accepts JSON delimiters ({ } [ ] " \ , : etc.).
-// The decoded value is discarded — only $input (the original string) is stored.
+// JSON string. The callback checks the input with $jsonCheck (php-5.x; see
+// below) and reports a failure if it is not JSON. VALIDATE_CALLBACK_SYMBOL is
+// required so the surrounding character whitelist accepts JSON delimiters
+// ({ } [ ] " \ , : etc.). Only $input (the original string) is stored.
 // Error messages come from $jsonErrors, not json_last_error_msg(), whose text
 // depends on the PHP version (8.6 appends the error location). PHP < 8.6
 // reports an unterminated string as a control character error (code 3) and
 // PHP 8.6+ as a syntax error (4); on PHP < 8.6 $jsonCheck, which follows the
 // json_decode() rules of PHP 8.6+, tells the two apart, so the message is the
 // same on every PHP version.
+//
+// php-5.x: json_decode() of PHP 5 accepts input that PHP 7+ rejects (TRUE,
+// +1, 07, [1.], lone \ud800, control characters in strings) and classifies
+// some errors differently, so the callback uses $jsonCheck alone.
 // ---------------------------------------------------------------------------
-$jsonErrors = [ // json_last_error() codes
+$jsonErrors = array( // json_last_error() codes
     1 => 'Maximum stack depth exceeded',                              // JSON_ERROR_DEPTH
     2 => 'State mismatch (invalid or malformed JSON)',                // JSON_ERROR_STATE_MISMATCH
     3 => 'Control character error, possibly incorrectly encoded',     // JSON_ERROR_CTRL_CHAR
     4 => 'Syntax error',                                              // JSON_ERROR_SYNTAX
     5 => 'Malformed UTF-8 characters, possibly incorrectly encoded',  // JSON_ERROR_UTF8
     10 => 'Single unpaired UTF-16 surrogate in unicode escape',       // JSON_ERROR_UTF16
-];
+);
 // One token of $json at $pos (skips whitespace first): one of '{' '}' '[' ']'
 // ':' ',', 'STR', 'VAL' (number or literal), 'EOI', or an error code (int).
 $jsonToken = function ($json, &$pos) {
@@ -1391,7 +1395,7 @@ $jsonToken = function ($json, &$pos) {
         $pos += strlen($m[0]);
         return 'VAL';
     }
-    foreach (['true', 'false', 'null'] as $literal) {
+    foreach (array('true', 'false', 'null') as $literal) {
         if (substr($json, $pos, strlen($literal)) === $literal) {
             $pos += strlen($literal);
             return 'VAL';
@@ -1406,7 +1410,7 @@ $jsonCheck = function ($json) use ($jsonToken) {
         return 5; // not reached through the json spec: VALIDATE_CALLBACK_MB rejects it first
     }
     $pos = 0;
-    $stack = []; // open '[' / '{'
+    $stack = array(); // open '[' / '{'
     $t = $jsonToken($json, $pos);
     while (true) {
         // $t starts a value.
@@ -1477,33 +1481,29 @@ $jsonCheck = function ($json) use ($jsonToken) {
         }
     }
 };
-$basicTypes['json'] = [
+$basicTypes['json'] = array(
     VALIDATE_CALLBACK,
     // JSON whitespace may be any of SP, HTAB, LF, CR, so line endings are not
     // forced to strict CRLF (VALIDATE_CALLBACK_CRLF_MIXED).
     VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_SPACE
      | VALIDATE_CALLBACK_CRLF_MIXED | VALIDATE_CALLBACK_TAB | VALIDATE_CALLBACK_MB,
-    [
+    array(
         'min' => 2, 'max' => 65535,
         'callback' => function ($ctx, &$result, $input) use ($jsonErrors, $jsonCheck) {
             if (!is_string($input)) {
                 validate_error($ctx, 'Invalid JSON: input must be a string.');
                 return false;
             }
-            json_decode($input, true); // arrays: any key is valid, as in JSON
-            $code = json_last_error();
-            if ($code === JSON_ERROR_CTRL_CHAR && PHP_VERSION_ID < 80600) {
-                $code = $jsonCheck($input); // 3 or 4 (unterminated string)
-            }
+            $code = $jsonCheck($input); // json_decode($input, true) of PHP 8.6+
             if ($code !== JSON_ERROR_NONE) {
-                validate_error($ctx, 'Invalid JSON: ' . ($jsonErrors[$code] ?? 'Unknown error'));
+                validate_error($ctx, 'Invalid JSON: ' . (isset($jsonErrors[$code]) ? $jsonErrors[$code] : 'Unknown error'));
                 return false;
             }
             $result = $input;
             return true;
         },
-    ]
-];
+    )
+);
 
 
 // Aliases — convenient, opinionated names for common HTTP headers. They
@@ -1529,38 +1529,38 @@ $basicTypes['port'] = $basicTypes['uint16'];
 // MAC address — 6 hex octets separated by ':' or '-' (e.g. "AA:BB:CC:DD:EE:FF"),
 // one separator throughout. The Cisco dotted form ("AABB.CCDD.EEFF") that
 // Laravel's FILTER_VALIDATE_MAC also accepts is not.
-$basicTypes['mac_address'] = [
+$basicTypes['mac_address'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 17, 'max' => 17,
         'ascii' => '0123456789abcdefABCDEF:-',
         'regexp' => '/\A[0-9A-Fa-f]{2}([:-])(?:[0-9A-Fa-f]{2}\1){4}[0-9A-Fa-f]{2}\z/',
-    ]
-];
+    )
+);
 
 // ULID - 26 chars, Crockford Base32 (excludes I, L, O, U), case-insensitive.
 // 26 chars hold 130 bits; a ULID is 128, so the first char is at most '7'.
-$basicTypes['ulid'] = [
+$basicTypes['ulid'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 26, 'max' => 26,
         'ascii' => '0123456789ABCDEFGHJKMNPQRSTVWXYZabcdefghjkmnpqrstvwxyz',
         'regexp' => '/\A[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}\z/',
-    ]
-];
+    )
+);
 
 // HTML hex color: #RGB, #RGBA, #RRGGBB, #RRGGBBAA
-$basicTypes['hex_color'] = [
+$basicTypes['hex_color'] = array(
     VALIDATE_REGEXP,
     VALIDATE_FLAG_NONE,
-    [
+    array(
         'min' => 4, 'max' => 9,
         'ascii' => '#0123456789abcdefABCDEF',
         'regexp' => '/\A#(?:[0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})\z/',
-    ]
-];
+    )
+);
 
 // URL — format check via filter_var(FILTER_VALIDATE_URL), restricted to the
 // http/https schemes (FILTER_VALIDATE_URL alone accepts "javascript:",
@@ -1608,7 +1608,7 @@ $httpUrlHost = function ($url) use ($hostnameOk) {
     }
     if (PHP_VERSION_ID >= 80200) {
         if (filter_var($url, FILTER_VALIDATE_URL) === false
-            || !in_array(strtolower((string)parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
+            || !in_array(strtolower((string)parse_url($url, PHP_URL_SCHEME)), array('http', 'https'), true)) {
             return false;
         }
         return parse_url($url, PHP_URL_HOST);
@@ -1661,10 +1661,10 @@ $httpUrlHost = function ($url) use ($hostnameOk) {
     }
     return $host;
 };
-$basicTypes['url'] = [
+$basicTypes['url'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
-    [
+    array(
         'min' => 7, 'max' => 2048,
         'callback' => function ($ctx, &$result, $input) use ($httpUrlHost) {
             if ($httpUrlHost($input) === false) {
@@ -1674,14 +1674,14 @@ $basicTypes['url'] = [
             $result = $input;
             return true;
         },
-    ]
-];
+    )
+);
 
 // URL with a DNS resolution check on the host portion (analogous to 'fqdn').
-$basicTypes['active_url'] = [
+$basicTypes['active_url'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
-    [
+    array(
         'min' => 7, 'max' => 2048,
         'callback' => function ($ctx, &$result, $input) use ($httpUrlHost, $dnsResolvable) {
             $host = $httpUrlHost($input);
@@ -1696,166 +1696,166 @@ $basicTypes['active_url'] = [
             $result = $input;
             return true;
         },
-    ]
-];
+    )
+);
 
 // Alpha-dash — alnum + '-' + '_' (Laravel's alpha_dash rule). Bare 'alpha_dash'
 // has min=max=0 as a placeholder; override before use.
-$basicTypes['alpha_dash'] = [
+$basicTypes['alpha_dash'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 0, 'max' => 0, 'ascii' => '-_']
-];
-$basicTypes['alpha_dash32'] = [
+    array('min' => 0, 'max' => 0, 'ascii' => '-_')
+);
+$basicTypes['alpha_dash32'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 0, 'max' => 32, 'ascii' => '-_']
-];
-$basicTypes['alpha_dash64'] = [
+    array('min' => 0, 'max' => 32, 'ascii' => '-_')
+);
+$basicTypes['alpha_dash64'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 0, 'max' => 64, 'ascii' => '-_']
-];
-$basicTypes['alpha_dash128'] = [
+    array('min' => 0, 'max' => 64, 'ascii' => '-_')
+);
+$basicTypes['alpha_dash128'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 0, 'max' => 128, 'ascii' => '-_']
-];
-$basicTypes['alpha_dash256'] = [
+    array('min' => 0, 'max' => 128, 'ascii' => '-_')
+);
+$basicTypes['alpha_dash256'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 0, 'max' => 256, 'ascii' => '-_']
-];
+    array('min' => 0, 'max' => 256, 'ascii' => '-_')
+);
 
 // Printable ASCII only (no multibyte, no control chars beyond SPACE).
 $asciiFlags = VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_SYMBOL;
-$basicTypes['ascii'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 0]];
-$basicTypes['ascii32'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 32]];
-$basicTypes['ascii64'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 64]];
-$basicTypes['ascii128'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 128]];
-$basicTypes['ascii256'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 256]];
-$basicTypes['ascii512'] = [VALIDATE_STRING, $asciiFlags, ['min' => 0, 'max' => 512]];
+$basicTypes['ascii'] = array(VALIDATE_STRING, $asciiFlags, array('min' => 0, 'max' => 0));
+$basicTypes['ascii32'] = array(VALIDATE_STRING, $asciiFlags, array('min' => 0, 'max' => 32));
+$basicTypes['ascii64'] = array(VALIDATE_STRING, $asciiFlags, array('min' => 0, 'max' => 64));
+$basicTypes['ascii128'] = array(VALIDATE_STRING, $asciiFlags, array('min' => 0, 'max' => 128));
+$basicTypes['ascii256'] = array(VALIDATE_STRING, $asciiFlags, array('min' => 0, 'max' => 256));
+$basicTypes['ascii512'] = array(VALIDATE_STRING, $asciiFlags, array('min' => 0, 'max' => 512));
 unset($asciiFlags);
 
 // Lowercase ASCII letters only
-$basicTypes['lowercase'] = [
+$basicTypes['lowercase'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA,
-    ['min' => 0, 'max' => 0]
-];
-$basicTypes['lowercase32'] = [
+    array('min' => 0, 'max' => 0)
+);
+$basicTypes['lowercase32'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA,
-    ['min' => 0, 'max' => 32]
-];
-$basicTypes['lowercase64'] = [
+    array('min' => 0, 'max' => 32)
+);
+$basicTypes['lowercase64'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA,
-    ['min' => 0, 'max' => 64]
-];
-$basicTypes['lowercase128'] = [
+    array('min' => 0, 'max' => 64)
+);
+$basicTypes['lowercase128'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA,
-    ['min' => 0, 'max' => 128]
-];
-$basicTypes['lowercase256'] = [
+    array('min' => 0, 'max' => 128)
+);
+$basicTypes['lowercase256'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA,
-    ['min' => 0, 'max' => 256]
-];
+    array('min' => 0, 'max' => 256)
+);
 
 // Uppercase ASCII letters only
-$basicTypes['uppercase'] = [
+$basicTypes['uppercase'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_UPPER_ALPHA,
-    ['min' => 0, 'max' => 0]
-];
-$basicTypes['uppercase32'] = [
+    array('min' => 0, 'max' => 0)
+);
+$basicTypes['uppercase32'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_UPPER_ALPHA,
-    ['min' => 0, 'max' => 32]
-];
-$basicTypes['uppercase64'] = [
+    array('min' => 0, 'max' => 32)
+);
+$basicTypes['uppercase64'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_UPPER_ALPHA,
-    ['min' => 0, 'max' => 64]
-];
-$basicTypes['uppercase128'] = [
+    array('min' => 0, 'max' => 64)
+);
+$basicTypes['uppercase128'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_UPPER_ALPHA,
-    ['min' => 0, 'max' => 128]
-];
-$basicTypes['uppercase256'] = [
+    array('min' => 0, 'max' => 128)
+);
+$basicTypes['uppercase256'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_UPPER_ALPHA,
-    ['min' => 0, 'max' => 256]
-];
+    array('min' => 0, 'max' => 256)
+);
 
 // Digit strings of exact length (Laravel's `digits:n`). Generates
 // $basicTypes['digits1'] through $basicTypes['digits10'].
 for ($n = 1; $n <= 10; $n++) {
-    $basicTypes['digits' . $n] = [
+    $basicTypes['digits' . $n] = array(
         VALIDATE_STRING,
         VALIDATE_STRING_DIGIT,
-        ['min' => $n, 'max' => $n]
-    ];
+        array('min' => $n, 'max' => $n)
+    );
 }
 unset($n);
 
 // Digit string with a 1..10 length range (Laravel's `digits_between:1,10`).
-$basicTypes['digits_between_1_10'] = [
+$basicTypes['digits_between_1_10'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_DIGIT,
-    ['min' => 1, 'max' => 10]
-];
+    array('min' => 1, 'max' => 10)
+);
 
 // Laravel accepted: input must be exactly one of "yes", "on", "1", 1, true,
 // or "true" (case-sensitive). On success $result is set to bool true.
-$basicTypes['accepted'] = [
+$basicTypes['accepted'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 5,
         'callback' => function ($ctx, &$result, $input) {
-            if (in_array($input, [true, 1, '1', 'on', 'yes', 'true'], true)) {
+            if (in_array($input, array(true, 1, '1', 'on', 'yes', 'true'), true)) {
                 $result = true;
                 return true;
             }
             validate_error($ctx, 'Value must be accepted (yes/on/1/true).');
             return false;
         },
-    ]
-];
+    )
+);
 
 // Laravel declined: input must be exactly one of "no", "off", "0", 0, false,
 // or "false" (case-sensitive). On success $result is set to bool false.
-$basicTypes['declined'] = [
+$basicTypes['declined'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 5,
         'callback' => function ($ctx, &$result, $input) {
-            if (in_array($input, [false, 0, '0', 'off', 'no', 'false'], true)) {
+            if (in_array($input, array(false, 0, '0', 'off', 'no', 'false'), true)) {
                 $result = false;
                 return true;
             }
             validate_error($ctx, 'Value must be declined (no/off/0/false).');
             return false;
         },
-    ]
-];
+    )
+);
 
 // IANA timezone identifier (e.g., "Asia/Tokyo", "UTC"). Like Laravel's
 // 'timezone' rule, only canonical names (DateTimeZone::ALL) are accepted.
-$basicTypes['timezone'] = [
+$basicTypes['timezone'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 64,
         'ascii' => '/_+-',
         'callback' => function ($ctx, &$result, $input) {
             static $ids = null;
-            $ids = $ids ?? array_flip(DateTimeZone::listIdentifiers());
+            $ids = isset($ids) ? $ids : array_flip(DateTimeZone::listIdentifiers());
             if (!is_string($input) || !isset($ids[$input])) {
                 validate_error($ctx, 'Invalid timezone identifier.');
                 return false;
@@ -1863,22 +1863,22 @@ $basicTypes['timezone'] = [
             $result = $input;
             return true;
         },
-    ]
-];
+    )
+);
 
 // IANA timezone identifier including backward-compatible links
 // (DateTimeZone::ALL_WITH_BC; Laravel 'timezone:all_with_bc'): "US/Eastern",
 // "Etc/GMT+5", and renamed zones such as "Asia/Calcutta" or "Europe/Kiev",
 // which browsers still report via Intl.DateTimeFormat().resolvedOptions().
-$basicTypes['timezone_all_with_bc'] = [
+$basicTypes['timezone_all_with_bc'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM,
-    [
+    array(
         'min' => 1, 'max' => 64,
         'ascii' => '/_+-',
         'callback' => function ($ctx, &$result, $input) {
             static $ids = null;
-            $ids = $ids ?? array_flip(DateTimeZone::listIdentifiers(DateTimeZone::ALL_WITH_BC));
+            $ids = isset($ids) ? $ids : array_flip(DateTimeZone::listIdentifiers(DateTimeZone::ALL_WITH_BC));
             if (!is_string($input) || !isset($ids[$input])) {
                 validate_error($ctx, 'Invalid timezone identifier.');
                 return false;
@@ -1886,14 +1886,14 @@ $basicTypes['timezone_all_with_bc'] = [
             $result = $input;
             return true;
         },
-    ]
-];
+    )
+);
 
 // Email with DNS lookup on domain part (Laravel 'email:dns')
-$basicTypes['email_dns'] = [
+$basicTypes['email_dns'] = array(
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
-    [
+    array(
         'min' => 6, 'max' => 254,
         'callback' => function ($ctx, &$result, $input) {
             if (!filter_var($input, FILTER_VALIDATE_EMAIL)) {
@@ -1911,8 +1911,8 @@ $basicTypes['email_dns'] = [
             $result = $input;
             return true;
         },
-    ]
-];
+    )
+);
 
 // Helper closures were captured by the specs above; keep them out of the
 // including scope.

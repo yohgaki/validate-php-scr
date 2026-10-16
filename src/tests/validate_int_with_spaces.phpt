@@ -26,7 +26,7 @@ $vals = array(
 $spec = array(
 	VALIDATE_INT,
 	VALIDATE_FLAG_NONE,
-	['min'=>-100, 'max'=>150]
+	array('min'=>-100, 'max'=>150)
 );
 
 foreach ($vals as $var) {

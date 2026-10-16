@@ -14,115 +14,116 @@ require_once __DIR__.'/../lib/basic_types.php';
 
 // Table-driven test: [$basicTypes key, input value, expected outcome].
 // Passing cases also print the result (type matters for the int specs).
-$cases = [
+$cases = array(
     // sessid: session.sid_length accepts 22-256.
-    ['sessid', str_repeat('a', 21), 'fail'],
-    ['sessid', str_repeat('a', 22), 'pass'],
-    ['sessid', 'abcdefghijklmnopqrstuvwxyz-,0123', 'pass'],
-    ['sessid', str_repeat('a', 256), 'pass'],
-    ['sessid', str_repeat('a', 257), 'fail'],
+    array('sessid', str_repeat('a', 21), 'fail'),
+    array('sessid', str_repeat('a', 22), 'pass'),
+    array('sessid', 'abcdefghijklmnopqrstuvwxyz-,0123', 'pass'),
+    array('sessid', str_repeat('a', 256), 'pass'),
+    array('sessid', str_repeat('a', 257), 'fail'),
 
     // base64: '=' only as trailing padding of the last group; padding optional.
-    ['base64_32', 'YWJj', 'pass'],
-    ['base64_32', 'YQ==', 'pass'],
-    ['base64_32', 'YQ', 'pass'],
-    ['base64_32', 'YWI=', 'pass'],
-    ['base64_32', 'ab+/', 'pass'],
-    ['base64_32', '====', 'fail'],
-    ['base64_32', 'a=b', 'fail'],
-    ['base64_32', 'YQ=', 'fail'],
-    ['base64_32', 'abcde', 'fail'],
-    ['base64_32', 'ab-_', 'fail'],
+    array('base64_32', 'YWJj', 'pass'),
+    array('base64_32', 'YQ==', 'pass'),
+    array('base64_32', 'YQ', 'pass'),
+    array('base64_32', 'YWI=', 'pass'),
+    array('base64_32', 'ab+/', 'pass'),
+    array('base64_32', '====', 'fail'),
+    array('base64_32', 'a=b', 'fail'),
+    array('base64_32', 'YQ=', 'fail'),
+    array('base64_32', 'abcde', 'fail'),
+    array('base64_32', 'ab-_', 'fail'),
 
     // base64url: '-' and '_' instead of '+' and '/'.
-    ['base64url_32', 'ab-_', 'pass'],
-    ['base64url_32', 'YQ', 'pass'],
-    ['base64url_32', 'YQ==', 'pass'],
-    ['base64url_32', '====', 'fail'],
-    ['base64url_32', 'ab+/', 'fail'],
+    array('base64url_32', 'ab-_', 'pass'),
+    array('base64url_32', 'YQ', 'pass'),
+    array('base64url_32', 'YQ==', 'pass'),
+    array('base64url_32', '====', 'fail'),
+    array('base64url_32', 'ab+/', 'fail'),
 
     // urle: '%' only as a "%HH" escape.
-    ['urle32', 'a%20b', 'pass'],
-    ['urle32', 'A%2Fb+c-_.~', 'pass'],
-    ['urle32', 'a%zz', 'fail'],
-    ['urle32', '%', 'fail'],
-    ['urle32', '%2', 'fail'],
-    ['urle32', 'a b', 'fail'],
+    array('urle32', 'a%20b', 'pass'),
+    array('urle32', 'A%2Fb+c-_.~', 'pass'),
+    array('urle32', 'a%zz', 'fail'),
+    array('urle32', '%', 'fail'),
+    array('urle32', '%2', 'fail'),
+    array('urle32', 'a b', 'fail'),
 
     // time: optional seconds, optional 1-9 digit fraction after seconds.
-    ['time', '12:34', 'pass'],
-    ['time', '12:34:56', 'pass'],
-    ['time', '12:34:56.789', 'pass'],
-    ['time', '12:34:56.123456789', 'pass'],
-    ['time', '12:34.5', 'fail'],
-    ['time', '12:34:56.', 'fail'],
-    ['time', '12:34:56.1234567890', 'fail'],
-    ['time', '24:00', 'fail'],
+    array('time', '12:34', 'pass'),
+    array('time', '12:34:56', 'pass'),
+    array('time', '12:34:56.789', 'pass'),
+    array('time', '12:34:56.123456789', 'pass'),
+    array('time', '12:34.5', 'fail'),
+    array('time', '12:34:56.', 'fail'),
+    array('time', '12:34:56.1234567890', 'fail'),
+    array('time', '24:00', 'fail'),
 
     // datetime: JavaScript toISOString() output and RFC 3339 offsets.
-    ['datetime', '2025-01-02T03:04:05.678Z', 'pass'],
-    ['datetime', '2025-01-02T03:04:05.123456789+09:00', 'pass'],
-    ['datetime', '2025-01-02 03:04', 'pass'],
-    ['datetime', '2025-01-02T03:04:05-05:00', 'pass'],
-    ['datetime', '2025-01-02T03:04.5Z', 'fail'],
-    ['datetime', '2025-01-02T03:04:05.Z', 'fail'],
-    ['datetime', '2025-13-02T03:04', 'fail'],
+    array('datetime', '2025-01-02T03:04:05.678Z', 'pass'),
+    array('datetime', '2025-01-02T03:04:05.123456789+09:00', 'pass'),
+    array('datetime', '2025-01-02 03:04', 'pass'),
+    array('datetime', '2025-01-02T03:04:05-05:00', 'pass'),
+    array('datetime', '2025-01-02T03:04.5Z', 'fail'),
+    array('datetime', '2025-01-02T03:04:05.Z', 'fail'),
+    array('datetime', '2025-13-02T03:04', 'fail'),
 
     // domain: alphabetic TLD or IDNA A-label TLD.
-    ['domain', 'example.com', 'pass'],
-    ['domain', 'sub.example.co.jp', 'pass'],
-    ['domain', 'example.xn--p1ai', 'pass'],
-    ['domain', 'xn--80ak6aa92e.xn--p1ai', 'pass'],
-    ['domain', 'example.XN--P1AI', 'pass'],
-    ['domain', 'example.xn--', 'fail'],
-    ['domain', 'example.xn--a-', 'fail'],
-    ['domain', 'example.123', 'fail'],
-    ['domain', 'example.c', 'fail'],
-    ['domain', 'localhost', 'fail'],
+    array('domain', 'example.com', 'pass'),
+    array('domain', 'sub.example.co.jp', 'pass'),
+    array('domain', 'example.xn--p1ai', 'pass'),
+    array('domain', 'xn--80ak6aa92e.xn--p1ai', 'pass'),
+    array('domain', 'example.XN--P1AI', 'pass'),
+    array('domain', 'example.xn--', 'fail'),
+    array('domain', 'example.xn--a-', 'fail'),
+    array('domain', 'example.123', 'fail'),
+    array('domain', 'example.c', 'fail'),
+    array('domain', 'localhost', 'fail'),
 
     // http_host: host name or IP address with an optional port.
-    ['http_host', 'example.com', 'pass'],
-    ['http_host', 'example.com:8080', 'pass'],
-    ['http_host', 'localhost', 'pass'],
-    ['http_host', '127.0.0.1:8080', 'pass'],
-    ['http_host', '[::1]', 'pass'],
-    ['http_host', '[2001:db8::1]:443', 'pass'],
-    ['http_host', 'example.com:0', 'fail'],
-    ['http_host', 'example.com:65536', 'fail'],
-    ['http_host', 'example.com:080', 'fail'],
-    ['http_host', 'example.com:', 'fail'],
-    ['http_host', 'example.com.', 'fail'],
-    ['http_host', '999.1.1.1', 'fail'],
-    ['http_host', '010.0.0.1', 'fail'],
-    ['http_host', '[::1', 'fail'],
-    ['http_host', '::1', 'fail'],
-    ['http_host', 'a_b.com', 'fail'],
-    ['http_host', 'user@example.com', 'fail'],
+    array('http_host', 'example.com', 'pass'),
+    array('http_host', 'example.com:8080', 'pass'),
+    array('http_host', 'localhost', 'pass'),
+    array('http_host', '127.0.0.1:8080', 'pass'),
+    array('http_host', '[::1]', 'pass'),
+    array('http_host', '[2001:db8::1]:443', 'pass'),
+    array('http_host', 'example.com:0', 'fail'),
+    array('http_host', 'example.com:65536', 'fail'),
+    array('http_host', 'example.com:080', 'fail'),
+    array('http_host', 'example.com:', 'fail'),
+    array('http_host', 'example.com.', 'fail'),
+    array('http_host', '999.1.1.1', 'fail'),
+    array('http_host', '010.0.0.1', 'fail'),
+    array('http_host', '[::1', 'fail'),
+    array('http_host', '::1', 'fail'),
+    array('http_host', 'a_b.com', 'fail'),
+    array('http_host', 'user@example.com', 'fail'),
 
     // VALIDATE_INT_AS_STRING returns a string for int input too.
-    ['uint64', 5, 'pass'],
-    ['uint64', PHP_INT_MAX, 'pass'],
-    ['uint64', '18446744073709551615', 'pass'],
-    ['uint64', '18446744073709551616', 'fail'],
-    ['uint64', -1, 'fail'],
-    ['uint128', 7, 'pass'],
-    ['int64', 5, 'pass'], // native int spec on 64-bit builds
+    array('uint64', 5, 'pass'),
+    array('uint64', PHP_INT_MAX, 'pass'),
+    array('uint64', '18446744073709551615', 'pass'),
+    array('uint64', '18446744073709551616', 'fail'),
+    array('uint64', -1, 'fail'),
+    array('uint128', 7, 'pass'),
+    array('int64', 5, 'pass'), // native int spec on 64-bit builds
     // url: the PHP 8.2+ FILTER_VALIDATE_URL rules on every PHP version
-    ['url', 'http://example.com:0/', 'pass'],
-    ['url', 'http://[2001:db8::1]:8080/', 'pass'],
-    ['url', 'http://user@[::1]/', 'pass'],
-    ['url', 'http://a@b@[::1]/', 'fail'],
-    ['url', 'http://a@b@example.com/', 'fail'],
-    ['url', 'http://example.com\\@evil.com/', 'fail'],
-    ['url', 'http://%41b:c@example.com/', 'pass'],
-    ['url', 'http://example-/', 'fail'],
-    ['url', 'http://example..com/', 'fail'],
-    ['url', 'http://example.com./', 'pass'],
-    ['url', 'http://example.com:65536/', 'fail'],
-    ['url', 'http://[1.2.3.4]/', 'fail'],
-];
+    array('url', 'http://example.com:0/', 'pass'),
+    array('url', 'http://[2001:db8::1]:8080/', 'pass'),
+    array('url', 'http://user@[::1]/', 'pass'),
+    array('url', 'http://a@b@[::1]/', 'fail'),
+    array('url', 'http://a@b@example.com/', 'fail'),
+    array('url', 'http://example.com\\@evil.com/', 'fail'),
+    array('url', 'http://%41b:c@example.com/', 'pass'),
+    array('url', 'http://example-/', 'fail'),
+    array('url', 'http://example..com/', 'fail'),
+    array('url', 'http://example.com./', 'pass'),
+    array('url', 'http://example.com:65536/', 'fail'),
+    array('url', 'http://[1.2.3.4]/', 'fail'),
+);
 
-foreach ($cases as list($type, $input, $expected)) {
+foreach ($cases as $case) {
+    list($type, $input, $expected) = $case; // foreach (... as list()) is PHP 5.5+
     $ctx = null;
     $r = validate($ctx, $input, $basicTypes[$type], VALIDATE_OPT_DISABLE_EXCEPTION);
     $actual = ($ctx instanceof Validate && $ctx->getStatus()) ? 'pass' : 'fail';
@@ -134,7 +135,7 @@ foreach ($cases as list($type, $input, $expected)) {
 }
 
 echo "\n**** VALIDATE_INT_AS_STRING with 'values' ****\n";
-$spec = [VALIDATE_INT, VALIDATE_INT_AS_STRING, ['values' => [1 => true, 3 => true]]];
+$spec = array(VALIDATE_INT, VALIDATE_INT_AS_STRING, array('values' => array(1 => true, 3 => true)));
 $int = 3;
 $str = '1';
 var_dump(validate($ctx, $int, $spec), validate($ctx, $str, $spec));

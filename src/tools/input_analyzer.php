@@ -16,6 +16,9 @@
  *        group/world writable: every *-log.php in it is include()d.
  */
 require_once __DIR__.'/../Validate.php';
+if (!defined('PHP_INT_MIN')) {
+    define('PHP_INT_MIN', -PHP_INT_MAX - 1); // PHP 7.0+ constant
+}
 
 $spec_path = rtrim(getenv('VALIDATE_TOOLS_DIR') ?: '/var/tmp/validate', '/');
 
@@ -27,7 +30,7 @@ define('VALIDATE_COUNT', 'count');
 define('VALIDATE_MAX_VALUES', 999); // Distinct sample values kept per node (caps memory growth).
 define('VALIDATE_ASCII_MAP', 'ascii_map');
 
-$log_dir = rtrim($argv[1] ?? $spec_path, '/');
+$log_dir = rtrim(isset($argv[1]) ? $argv[1] : $spec_path, '/');
 $stat_file = $log_dir . '/stat.php';
 $spec_file = $log_dir . '/spec.php';
 if (!is_dir($log_dir)) {
@@ -104,7 +107,7 @@ function analyze_log($log_dir)
         assert(is_array($inputs));
         assert(isset($inputs['_SERVER']['REQUEST_URI']));
         $uri = parse_url($inputs['_SERVER']['REQUEST_URI'], PHP_URL_PATH);
-        $method = $inputs['_SERVER']['REQUEST_METHOD'] ?? '';
+        $method = isset($inputs['_SERVER']['REQUEST_METHOD']) ? $inputs['_SERVER']['REQUEST_METHOD'] : '';
         analyze_log_impl($stat[$method. ':' .$uri], $inputs);
     }
 
@@ -129,8 +132,8 @@ function analyze_log_impl(&$stat, $inputs)
     if (empty($stat[VALIDATE_ID])) {
         $stat[VALIDATE_ID] = VALIDATE_ARRAY;
         $stat[VALIDATE_FLAGS] = VALIDATE_FLAG_NONE;
-        $stat_opts['lmin'] = $stat[VALIDATE_PARAMS]['lmin'] ?? PHP_INT_MAX; // Set large enough value
-        $stat_opts['lmax'] = $stat[VALIDATE_PARAMS]['lmax'] ?? 0;
+        $stat_opts['lmin'] = isset($stat[VALIDATE_PARAMS]['lmin']) ? $stat[VALIDATE_PARAMS]['lmin'] : PHP_INT_MAX; // Set large enough value
+        $stat_opts['lmax'] = isset($stat[VALIDATE_PARAMS]['lmax']) ? $stat[VALIDATE_PARAMS]['lmax'] : 0;
         $stat[VALIDATE_PARAMS] = array();
     }
     if ($stat[VALIDATE_ID] !== VALIDATE_ARRAY) {
@@ -178,8 +181,8 @@ function analyze_int_log(&$stat, $input)
         $stat[VALIDATE_ID] = VALIDATE_INT;
         $stat[VALIDATE_FLAGS] = VALIDATE_FLAG_NONE;
         $stat_opts = &$stat[VALIDATE_OPTIONS];
-        $stat_opts['lmin'] = $stat[VALIDATE_PARAMS]['lmin'] ?? PHP_INT_MAX; // Set large enough value
-        $stat_opts['lmax'] = $stat[VALIDATE_PARAMS]['lmax'] ?? PHP_INT_MIN;
+        $stat_opts['lmin'] = isset($stat[VALIDATE_PARAMS]['lmin']) ? $stat[VALIDATE_PARAMS]['lmin'] : PHP_INT_MAX; // Set large enough value
+        $stat_opts['lmax'] = isset($stat[VALIDATE_PARAMS]['lmax']) ? $stat[VALIDATE_PARAMS]['lmax'] : PHP_INT_MIN;
     }
     if ($stat[VALIDATE_ID] !== VALIDATE_INT) {
         trigger_error('Type mismatch.');
@@ -202,8 +205,8 @@ function analyze_float_log(&$stat, $input)
     if (empty($stat[VALIDATE_ID])) {
         $stat[VALIDATE_ID] = VALIDATE_FLOAT;
         $stat[VALIDATE_FLAGS] = VALIDATE_FLAG_NONE;
-        $stat_opts['lmin'] = $stat[VALIDATE_PARAMS]['lmin'] ?? INF; // Set large enough value
-        $stat_opts['lmax'] = $stat[VALIDATE_PARAMS]['lmax'] ?? -INF;
+        $stat_opts['lmin'] = isset($stat[VALIDATE_PARAMS]['lmin']) ? $stat[VALIDATE_PARAMS]['lmin'] : INF; // Set large enough value
+        $stat_opts['lmax'] = isset($stat[VALIDATE_PARAMS]['lmax']) ? $stat[VALIDATE_PARAMS]['lmax'] : -INF;
     }
     if ($stat[VALIDATE_ID] !== VALIDATE_FLOAT) {
         trigger_error('Type mismatch.');
@@ -257,7 +260,7 @@ function analyze_string_ascii_map(&$stat, $input)
     assert(is_string($input));
 
     $map = array_fill(0, 128, 0);
-    $tmp = $stat[VALIDATE_ASCII_MAP] ?? array(); // Carry forward the counts from earlier samples.
+    $tmp = isset($stat[VALIDATE_ASCII_MAP]) ? $stat[VALIDATE_ASCII_MAP] : array(); // Carry forward the counts from earlier samples.
     foreach ($tmp as $key => $val) {
         $map[$key] = $val;
     }
@@ -290,9 +293,9 @@ function analyze_store_values(&$stat, $input)
     }
     $type = gettype($input);
 
-    $stat[VALIDATE_TYPES][$type] = $stat[VALIDATE_TYPES][$type] ?? 0;
-    $stat[VALIDATE_VALUES][$in] = $stat[VALIDATE_VALUES][$in] ?? 0;
-    $stat[VALIDATE_COUNT] = $stat[VALIDATE_COUNT] ?? 0;
+    $stat[VALIDATE_TYPES][$type] = isset($stat[VALIDATE_TYPES][$type]) ? $stat[VALIDATE_TYPES][$type] : 0;
+    $stat[VALIDATE_VALUES][$in] = isset($stat[VALIDATE_VALUES][$in]) ? $stat[VALIDATE_VALUES][$in] : 0;
+    $stat[VALIDATE_COUNT] = isset($stat[VALIDATE_COUNT]) ? $stat[VALIDATE_COUNT] : 0;
 
     $stat[VALIDATE_TYPES][$type]++;
     $stat[VALIDATE_VALUES][$in]++;
@@ -341,7 +344,7 @@ function optimize_stat_recursive(&$stat)
 
 function optimize_scalar_stat(&$stat)
 {
-    if (count($stat[VALIDATE_TYPES] ?? []) > 1) {
+    if (count(isset($stat[VALIDATE_TYPES]) ? $stat[VALIDATE_TYPES] : array()) > 1) {
         print_r($stat);
         trigger_error('Mixed types are not supported: '.join(', ', $stat[VALIDATE_TYPES]));
         $stat[VALIDATE_ID] = VALIDATE_STRING;
@@ -404,8 +407,8 @@ function optimize_string_stat(&$stat)
     } else {
         $stat[VALIDATE_OPTIONS]['omax'] = 100;
     }
-    $stat[VALIDATE_OPTIONS]['oflags'] = $stat[VALIDATE_OPTIONS]['oflags'] ?? 0;
-    foreach ($stat[VALIDATE_ASCII_MAP] ?? [] as $key => $val) {
+    $stat[VALIDATE_OPTIONS]['oflags'] = isset($stat[VALIDATE_OPTIONS]['oflags']) ? $stat[VALIDATE_OPTIONS]['oflags'] : 0;
+    foreach ((isset($stat[VALIDATE_ASCII_MAP]) ? $stat[VALIDATE_ASCII_MAP] : array()) as $key => $val) {
         if (!$val) {
             continue; // Byte never seen in traffic.
         }
@@ -489,7 +492,7 @@ function create_spec_recursive(&$spec, $stat)
     // every optional parameter, so a strict max would cause false rejects.
     // See README TODO list — replace with proper optional-param detection.
     $spec[VALIDATE_OPTIONS]['max'] = $stat[VALIDATE_OPTIONS]['lmax'] + 10;
-    $params = [];
+    $params = array();
     foreach ($stat[VALIDATE_PARAMS] as $key => $val) {
         $child = null;
         $child = create_spec_recursive($child, $val);
@@ -529,7 +532,7 @@ function create_int_spec($spec, $stat)
 {
     assert($stat[VALIDATE_ID] === VALIDATE_INT);
     $spec[VALIDATE_ID] = VALIDATE_INT;
-    $spec[VALIDATE_FLAGS] = ($stat[VALIDATE_OPTIONS]['oflags'] ?? 0);
+    $spec[VALIDATE_FLAGS] = (isset($stat[VALIDATE_OPTIONS]['oflags']) ? $stat[VALIDATE_OPTIONS]['oflags'] : 0);
     $spec[VALIDATE_OPTIONS]['min'] = $stat[VALIDATE_OPTIONS]['omin'];
     $spec[VALIDATE_OPTIONS]['max'] = $stat[VALIDATE_OPTIONS]['omax'];
     return $spec;
@@ -540,7 +543,7 @@ function create_float_spec($spec, $stat)
 {
     assert($stat[VALIDATE_ID] === VALIDATE_FLOAT);
     $spec[VALIDATE_ID] = VALIDATE_FLOAT;
-    $spec[VALIDATE_FLAGS] = ($stat[VALIDATE_OPTIONS]['oflags'] ?? 0);
+    $spec[VALIDATE_FLAGS] = (isset($stat[VALIDATE_OPTIONS]['oflags']) ? $stat[VALIDATE_OPTIONS]['oflags'] : 0);
     $spec[VALIDATE_OPTIONS]['min'] = $stat[VALIDATE_OPTIONS]['omin'];
     $spec[VALIDATE_OPTIONS]['max'] = $stat[VALIDATE_OPTIONS]['omax'];
     return $spec;
@@ -551,7 +554,7 @@ function create_string_spec($spec, $stat)
 {
     assert($stat[VALIDATE_ID] === VALIDATE_STRING);
     $spec[VALIDATE_ID] = VALIDATE_STRING;
-    $spec[VALIDATE_FLAGS] = ($stat[VALIDATE_OPTIONS]['oflags'] ?? 0);
+    $spec[VALIDATE_FLAGS] = (isset($stat[VALIDATE_OPTIONS]['oflags']) ? $stat[VALIDATE_OPTIONS]['oflags'] : 0);
     $spec[VALIDATE_OPTIONS]['min'] = $stat[VALIDATE_OPTIONS]['omin'];
     $spec[VALIDATE_OPTIONS]['max'] = $stat[VALIDATE_OPTIONS]['omax'];
     if (!empty($stat[VALIDATE_ASCII_MAP])) {

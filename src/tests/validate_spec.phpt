@@ -39,14 +39,15 @@ $test_spec = array(
 
 $ctx = validate_init();
 var_dump(validate_spec($test_spec, $result, $ctx), $result);
-var_dump('Error counts:', count(validate_get_system_errors($ctx)['error']), validate_get_system_errors($ctx));
+$_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+var_dump('Error counts:', count($_tmp['error']), validate_get_system_errors($ctx));
 
 
 echo "\nValid spec\n";
 $test_spec = array(
 	VALIDATE_ARRAY,
 	VALIDATE_FLAG_NONE,
-	['min' => 2, 'max' => 2],
+	array('min' => 2, 'max' => 2),
 	array(
 		array(
 			VALIDATE_STRING, // 1st: Validator ID
@@ -71,18 +72,20 @@ $test_spec = array(
 
 $ctx = validate_init();
 var_dump(validate_spec($test_spec, $result), $result);
-var_dump('Error counts:', count(validate_get_system_errors($ctx)['error']), validate_get_system_errors($ctx));
+$_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+var_dump('Error counts:', count($_tmp['error']), validate_get_system_errors($ctx));
 
 echo "\nUser option\n";
 $test_spec = array(
 	VALIDATE_INT,
 	VALIDATE_FLAG_NONE,
-	['min' => 2, 'max' => 2, '_user_option'=>'foo'],
+	array('min' => 2, 'max' => 2, '_user_option'=>'foo'),
 );
 
 $ctx = validate_init();
 var_dump(validate_spec($test_spec, $result), $result);
-var_dump('Error counts:', count(validate_get_system_errors($ctx)['error']), validate_get_system_errors($ctx));
+$_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+var_dump('Error counts:', count($_tmp['error']), validate_get_system_errors($ctx));
 
 ?>
 --EXPECTF--

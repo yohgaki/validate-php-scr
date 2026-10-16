@@ -14,7 +14,7 @@ require_once __DIR__.'/bootstrap.php';
 $v = new Validate();
 $in = 5;
 // 'min'>'max' is a spec error; unknown option 'foo' is a spec warning.
-$spec = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>5, 'max'=>1, 'foo'=>1]];
+$spec = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>5, 'max'=>1, 'foo'=>1));
 try {
     $v->validate($in, $spec, VALIDATE_OPT_CHECK_SPEC);
     echo "not reached\n";
@@ -25,7 +25,8 @@ try {
     $errors = validate_get_system_errors($e->getContext());
     var_dump(count($errors['error']), count($errors['warning']));
     // Spec problems are not mixed into the value-validation context.
-    var_dump($v->getSystemErrors()['error'], $v->getStatus());
+    $_tmp = $v->getSystemErrors(); // PHP 5.3 cannot index a call result
+    var_dump($_tmp['error'], $v->getStatus());
 }
 
 echo "\n**** procedural validate() throws the same exception ****\n";
@@ -37,7 +38,8 @@ try {
 
 echo "\n**** validate_spec() itself never throws for a bad spec ****\n";
 var_dump(validate_spec($spec, $unvalidated, $sctx));
-var_dump($sctx->getSystemErrors()['error'][0]['message']);
+$_tmp = $sctx->getSystemErrors(); // PHP 5.3 cannot index a call result
+var_dump($_tmp['error'][0]['message']);
 
 ?>
 --EXPECT--

@@ -16,35 +16,35 @@ $values = array(
 );
 
 echo "\n** Successful case**\n";
-$spec = [
+$spec = array(
 	VALIDATE_ARRAY,
 	VALIDATE_FLAG_NONE,
-	['min'=>0, 'max'=>10],
-	[
-		'foo' => [
+	array('min'=>0, 'max'=>10),
+	array(
+		'foo' => array(
 			VALIDATE_INT,
 			VALIDATE_FLAG_NONE,
-			['min'=>1000, 'max'=>10000],
-		],
-		'bar' => [ // Undefined in $values
+			array('min'=>1000, 'max'=>10000),
+		),
+		'bar' => array( // Undefined in $values
 			VALIDATE_STRING,
 			VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
 			 | VALIDATE_STRING_SPACE | VALIDATE_STRING_ALNUM,
-			['min'=>0, 'max'=>100, 'default'=>'value was not defined']
-		],
-		'baz' => [ // Undefined in $values
+			array('min'=>0, 'max'=>100, 'default'=>'value was not defined')
+		),
+		'baz' => array( // Undefined in $values
 			VALIDATE_INT,
 			VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
-			['min'=>0, 'max'=>100, 'default'=>1 ]
-		],
-		'hoge' => [ // Undefined in $values
+			array('min'=>0, 'max'=>100, 'default'=>1 )
+		),
+		'hoge' => array( // Undefined in $values
 			VALIDATE_STRING,
 			VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
 			 | VALIDATE_STRING_SPACE | VALIDATE_STRING_UPPER_ALPHA,
-			['min'=>0, 'max'=>100, 'default'=>'TEXT']
-		],
-	],
-];
+			array('min'=>0, 'max'=>100, 'default'=>'TEXT')
+		),
+	),
+);
 
 try {
 	// 'foo' is not declared: VALIDATE_OPT_UNVALIDATED allows the leftover.
@@ -60,30 +60,30 @@ $values = array(
 );
 
 echo "\n** Failure case**\n";
-$spec = [
+$spec = array(
 	VALIDATE_ARRAY,
 	VALIDATE_FLAG_NONE,
-	['min'=>0, 'max'=>10],
-	[
-		'bar' => [ // Undefined in $values
+	array('min'=>0, 'max'=>10),
+	array(
+		'bar' => array( // Undefined in $values
 			VALIDATE_STRING,
 			VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
 			 | VALIDATE_STRING_SPACE | VALIDATE_STRING_LOWER_ALPHA,
-			['min'=>0, 'max'=>100, 'default'=>'value was not defined']
-		],
-		'baz' => [ // Undefined in $values
+			array('min'=>0, 'max'=>100, 'default'=>'value was not defined')
+		),
+		'baz' => array( // Undefined in $values
 			VALIDATE_INT,
 			VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
-			['min'=>0, 'max'=>100, 'default'=>-1 ] // Invalid default is error
-		],
-		'hoge' => [ // Undefined in $values
+			array('min'=>0, 'max'=>100, 'default'=>-1 ) // Invalid default is error
+		),
+		'hoge' => array( // Undefined in $values
 			VALIDATE_STRING,
 			VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
 			 | VALIDATE_STRING_SPACE | VALIDATE_STRING_UPPER_ALPHA,
-			['min'=>0, 'max'=>100, 'default'=>'text'] // Lower case is illegal.
-		],
-	],
-];
+			array('min'=>0, 'max'=>100, 'default'=>'text') // Lower case is illegal.
+		),
+	),
+);
 
 try {
 	$ctx = validate_init();

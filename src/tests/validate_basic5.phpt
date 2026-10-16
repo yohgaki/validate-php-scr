@@ -11,73 +11,73 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
-$spec = [
+$spec = array(
 	VALIDATE_ARRAY,
 	VALIDATE_FLAG_NONE,
-	[ // 'min'/'max' bound the element count for VALIDATE_ARRAY (not byte length).
+	array( // 'min'/'max' bound the element count for VALIDATE_ARRAY (not byte length).
 		'min' => 0,
 		'max' => 10,
-	],
-	[ // VALIDATE_PARAMS slot — sub-specs keyed by the expected input keys.
-		'missing' => [ // Absent in $input — VALIDATE_FLAG_UNDEFINED makes that OK.
+	),
+	array( // VALIDATE_PARAMS slot — sub-specs keyed by the expected input keys.
+		'missing' => array( // Absent in $input — VALIDATE_FLAG_UNDEFINED makes that OK.
 			VALIDATE_STRING,
 			VALIDATE_FLAG_UNDEFINED,
-			[
+			array(
 				'min' => 0,
 				'max' => 10,
-			],
-		],
-		0 => [
+			),
+		),
+		0 => array(
 			VALIDATE_STRING,
 			VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
-			[
+			array(
 				'min' => 0,
 				'max' => 10,
-			],
-		],
-		'key' => [
+			),
+		),
+		'key' => array(
 			VALIDATE_STRING,
 			VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
-			[
+			array(
 				'min' => 0,
 				'max' => 30,
-			],
-		],
-		'nested_arr' => [ // Nested VALIDATE_ARRAY sub-specs are allowed to any depth.
+			),
+		),
+		'nested_arr' => array( // Nested VALIDATE_ARRAY sub-specs are allowed to any depth.
 			VALIDATE_ARRAY,
 			VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
-			[
+			array(
 				'min' => 0,
 				'max' => 10,
-			],
-			[
-				'el1' => [
+			),
+			array(
+				'el1' => array(
 					VALIDATE_STRING,
 					VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
-					['min' => 0, 'max' => 10],
-				],
-				'el2' => [
+					array('min' => 0, 'max' => 10),
+				),
+				'el2' => array(
 					VALIDATE_STRING,
 					VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
-					['min' => 0, 'max' => 10],
-				],
-			],
-		],
-	],
-];
+					array('min' => 0, 'max' => 10),
+				),
+			),
+		),
+	),
+);
 
 // $input has no 'missing' key, plus an 'extra' key not declared in $spec.
 // VALIDATE_OPT_UNVALIDATED tells validate() to leave undeclared keys in
 // $input rather than raising "Unvalidated value remains."
-$input = [
+$input = array(
 	"key" => "abc日本語",
 	0 => "qwert",
-	"nested_arr"=> [
+	"nested_arr"=> array(
 		"el1" => "sadf",
 		"el2" => "uiop",
-	],
+	),
 	"extra" => 1234,
-];
+);
 var_dump(validate($ctx, $input, $spec, VALIDATE_OPT_UNVALIDATED), $ctx->getStatus(), $input);
 var_dump($ctx->getSystemErrors());
 ?>

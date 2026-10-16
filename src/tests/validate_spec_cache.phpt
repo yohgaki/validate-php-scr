@@ -18,7 +18,7 @@ function cache_state()
     if (PHP_VERSION_ID < 80100) {
         $rp->setAccessible(true);
     }
-    $state = [];
+    $state = array();
     foreach ($rp->getValue() as $entry) {
         $state[] = $entry[1] ? 'trusted' : 'untrusted';
     }
@@ -31,7 +31,7 @@ function clear_cache()
     if (PHP_VERSION_ID < 80100) {
         $rp->setAccessible(true);
     }
-    $rp->setValue(null, []);
+    $rp->setValue(null, array());
 }
 
 // validate() with the default VALIDATE_OPT_CHECK_SPEC; prints the outcome.
@@ -47,7 +47,7 @@ function check($label, $input, $spec)
     echo ' / cache ', cache_state(), "\n";
 }
 
-$int = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 10]];
+$int = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min' => 0, 'max' => 10));
 
 echo "**** first use, reuse, hit ****\n";
 check('1st', '5', $int);
@@ -71,8 +71,8 @@ check('changed copy again', '5', $bad);
 
 echo "\n**** PHP references inside a spec ****\n";
 clear_cache();
-$opts = ['min' => 0, 'max' => 10];
-$ref = [VALIDATE_INT, VALIDATE_FLAG_NONE, &$opts];
+$opts = array('min' => 0, 'max' => 10);
+$ref = array(VALIDATE_INT, VALIDATE_FLAG_NONE, &$opts);
 check('1st', '5', $ref);
 $opts['max'] = 'x';
 check('changed via reference while untrusted', '5', $ref);
@@ -87,11 +87,11 @@ check('restored again', '5', $ref);
 echo "\n**** objects match by instance ****\n";
 clear_cache();
 $make = function () {
-    return [VALIDATE_CALLBACK, VALIDATE_CALLBACK_DIGIT, ['min' => 1, 'max' => 2,
+    return array(VALIDATE_CALLBACK, VALIDATE_CALLBACK_DIGIT, array('min' => 1, 'max' => 2,
         'callback' => function ($ctx, &$result, $input) {
             $result = (int)$input;
             return true;
-        }]];
+        }));
 };
 $cb = $make();
 check('1st', '5', $cb);
@@ -100,13 +100,13 @@ check('new closure instance', '5', $make());
 
 echo "\n**** recursive array stays untrusted ****\n";
 clear_cache();
-$rec = [1];
+$rec = array(1);
 $rec[] = &$rec;
-$recSpec = [VALIDATE_CALLBACK, VALIDATE_CALLBACK_DIGIT, ['min' => 1, 'max' => 2, 'default' => $rec,
+$recSpec = array(VALIDATE_CALLBACK, VALIDATE_CALLBACK_DIGIT, array('min' => 1, 'max' => 2, 'default' => $rec,
     'callback' => function ($ctx, &$result, $input) {
         $result = $input;
         return true;
-    }]];
+    }));
 check('1st', '5', $recSpec);
 check('2nd', '5', $recSpec);
 check('3rd', '5', $recSpec);
@@ -116,19 +116,20 @@ clear_cache();
 for ($i = 0; $i < 70; $i++) {
     $ctx = null;
     $in = '1';
-    validate($ctx, $in, [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => $i + 1]]);
+    validate($ctx, $in, array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min' => 0, 'max' => $i + 1)));
 }
 echo 'after 70 specs: ', cache_state() === '64 ['.implode(', ', array_fill(0, 64, 'untrusted')).']' ? '64 untrusted' : cache_state(), "\n";
 
 echo "\n**** validate_spec() always checks ****\n";
 clear_cache();
-$warn = [VALIDATE_ARRAY, VALIDATE_FLAG_ARRAY_KEY_ALNUM, ['min' => 0, 'max' => 1], []];
-check('1st', [], $warn);
-check('2nd', [], $warn);
+$warn = array(VALIDATE_ARRAY, VALIDATE_FLAG_ARRAY_KEY_ALNUM, array('min' => 0, 'max' => 1), array());
+check('1st', array(), $warn);
+check('2nd', array(), $warn);
 $ctx = null;
 $unvalidated = null;
 var_dump(validate_spec($warn, $unvalidated, $ctx));
-echo count(validate_get_system_errors($ctx)['warning']), " warning(s)\n";
+$_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+echo count($_tmp['warning']), " warning(s)\n";
 ?>
 --EXPECT--
 **** first use, reuse, hit ****

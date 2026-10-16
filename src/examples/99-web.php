@@ -31,7 +31,7 @@ $other_header = $basicTypes['header1024'];
 // CONTENT_TYPE. The rest of $_SERVER is server and environment variables
 // (never echo $_SERVER to a page: it may hold secrets) and request-line
 // values such as REQUEST_URI; validate those where you use them.
-$headers = [];
+$headers = array();
 foreach ($_SERVER as $key => $value) {
     if (strncmp($key, 'HTTP_', 5) === 0 || $key === 'CONTENT_LENGTH' || $key === 'CONTENT_TYPE') {
         $headers[$key] = $value;
@@ -40,24 +40,24 @@ foreach ($_SERVER as $key => $value) {
 
 // Compose the per-field specs (loaded above) into a request-level spec.
 // Each spec array follows the [type, flags, options, sub-specs] layout.
-$spec = [
+$spec = array(
     VALIDATE_ARRAY,           // [0] validator type
     VALIDATE_FLAG_NONE,       // [1] flag bitfield
-    ['min' => 3, 'max' => 3], // [2] options — exactly three top-level groups
-    [                         // [3] sub-specs (VALIDATE_PARAMS slot)
-        'get' => [            // Query string: 0..2 declared params.
+    array('min' => 3, 'max' => 3), // [2] options — exactly three top-level groups
+    array(                         // [3] sub-specs (VALIDATE_PARAMS slot)
+        'get' => array(            // Query string: 0..2 declared params.
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
-            ['min' => 0, 'max' => 2],
-            [
+            array('min' => 0, 'max' => 2),
+            array(
                 'debug' => $debug, // VALIDATE_FLAG_REJECT — request fails if 'debug' is present.
-            ]
-        ],
-        'post' => [           // Form body — 6..7 declared fields.
+            )
+        ),
+        'post' => array(           // Form body — 6..7 declared fields.
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
-            ['min' => 6, 'max' => 7],
-            [
+            array('min' => 6, 'max' => 7),
+            array(
                 'username' => $username,
                 'email'    => $email,
                 'age'      => $age,
@@ -66,26 +66,26 @@ $spec = [
                 'comment'  => $comment,
                 // The submit button is an input too: declare it, or it is
                 // an undeclared (leftover) key.
-                'submit'   => [VALIDATE_STRING, VALIDATE_STRING_LOWER_ALPHA | VALIDATE_FLAG_UNDEFINED,
-                               ['values' => ['submit' => true]]],
-            ],
-        ],
-        'header' => [ // HTTP headers: known ones strictly, every other one
+                'submit'   => array(VALIDATE_STRING, VALIDATE_STRING_LOWER_ALPHA | VALIDATE_FLAG_UNDEFINED,
+                               array('values' => array('submit' => true))),
+            ),
+        ),
+        'header' => array( // HTTP headers: known ones strictly, every other one
                       // through $other_header.
             VALIDATE_ARRAY,
             VALIDATE_FLAG_ARRAY_KEY_ALNUM, // Undeclared header names: alnum, '_' and '-' only.
             // The 3 declared headers every form POST carries; reject
             // obviously bloated header sets.
-            ['min' => 3, 'max' => 50, 'undeclared' => $other_header],
-            [
+            array('min' => 3, 'max' => 50, 'undeclared' => $other_header),
+            array(
                 'HTTP_HOST' => $basicTypes['http_host'],
                 // PHP stores these two request headers without the HTTP_ prefix.
                 'CONTENT_LENGTH' => $content_length,
                 'CONTENT_TYPE' => $content_type,
-            ]
-        ]
-    ],
-];
+            )
+        )
+    ),
+);
 
 ?>
 <html>
@@ -116,14 +116,14 @@ $spec = [
     </div>
     <div>
     <ul>
-        <li><div>Username: </div><input type="text" name="username" value="<?php echo h($_POST['username'] ?? 'Test User');?>" /></li>
-        <li><div>Email: </div><input type="text" name="email" value="<?php echo h($_POST['email'] ?? 'user@example.com');?>" /></li>
-        <li><div>Age: </div><input type="text" name="age" value="<?php echo h($_POST['age'] ?? '34');?>"  /></li>
-        <li><div>Weight: </div><input type="text" name="weight" value="<?php echo h($_POST['weight'] ?? '62.5');?>"  /></li>
+        <li><div>Username: </div><input type="text" name="username" value="<?php echo h(isset($_POST['username']) ? $_POST['username'] : 'Test User');?>" /></li>
+        <li><div>Email: </div><input type="text" name="email" value="<?php echo h(isset($_POST['email']) ? $_POST['email'] : 'user@example.com');?>" /></li>
+        <li><div>Age: </div><input type="text" name="age" value="<?php echo h(isset($_POST['age']) ? $_POST['age'] : '34');?>"  /></li>
+        <li><div>Weight: </div><input type="text" name="weight" value="<?php echo h(isset($_POST['weight']) ? $_POST['weight'] : '62.5');?>"  /></li>
         <li><div>Country: </div>
         <input type="radio" name="country" value="japan" <?php if (isset($_POST['country']) && $_POST['country']=='japan') echo 'checked="checked"'; ?> />Japan<br />
         <input type="radio" name="country" value="other" <?php if (isset($_POST['country']) && $_POST['country']=='other') echo 'checked="checked"'; ?> />Other<br /></li>
-        <li><div>Comment: </div><textarea name="comment"><?php echo h($_POST['comment'] ?? 'Write comment');?></textarea>
+        <li><div>Comment: </div><textarea name="comment"><?php echo h(isset($_POST['comment']) ? $_POST['comment'] : 'Write comment');?></textarea>
         <li><div>Send These!</div><input type="submit" name="submit" value="submit" /></li>
     </ul>
     </div>
@@ -135,7 +135,7 @@ if (!empty($_POST)):
     // Validate ALL inputs the request brings in — $_POST, $_GET, $_COOKIE,
     // $_FILES and the request headers. This example covers GET / POST /
     // headers; cookies and files would be added the same way.
-    $inputs = ['get' => $_GET, 'post' => $_POST, 'header' => $headers];
+    $inputs = array('get' => $_GET, 'post' => $_POST, 'header' => $headers);
 
     // One call validates everything. Validated values are removed from
     // $inputs (the engine unsets them by reference). An unknown GET/POST key
@@ -143,7 +143,7 @@ if (!empty($_POST)):
     $result = validate($ctx, $inputs, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
     $status = $ctx->getStatus();
     $partial_result = $ctx->getValidated();
-    // Equivalent OO one-liner (no separate $ctx):
+    // Equivalent OO one-liner on PHP 5.4+ (no separate $ctx):
     //   $result = (new Validate)->validate($inputs, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 ?>
 
@@ -164,7 +164,7 @@ if (!empty($_POST)):
 <hr />
 <br />
 <h1>INPUTS</h1><br />
-<?php echo htmlspecialchars(print_r(['get' => $_GET, 'post' => $_POST, 'header' => $headers], true)); ?>
+<?php echo htmlspecialchars(print_r(array('get' => $_GET, 'post' => $_POST, 'header' => $headers), true)); ?>
 <br />
 <h1>UNVALIDATED INPUTS</h1>
 NOTE: validate() removes every value it validated, so whatever is left here

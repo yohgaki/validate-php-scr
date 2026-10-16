@@ -12,18 +12,28 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
+// var_export() as in PHP 7.0.2+: a float keeps ".0" (PHP 5 prints 1500.0 as 1500).
+function vexp($v)
+{
+    $s = var_export($v, true);
+    if (is_float($v) && strpbrk($s, '.eEN') === false) {
+        $s .= '.0';
+    }
+    return $s;
+}
+
 function tryone($label, $value, $spec) {
     $ctx = null;
     $r = validate($ctx, $value, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
     printf("[%s] in=%s => out=%s status=%s\n",
         $label,
-        var_export($value, true),
-        var_export($r, true),
+        vexp($value),
+        vexp($r),
         var_export($ctx instanceof Validate ? $ctx->getStatus() : null, true));
 }
 
 echo "**** Grouped integer parts (default ',' separator) ****\n";
-$spec = [VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, ['min' => 0, 'max' => 1.0e13]];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, array('min' => 0, 'max' => 1.0e13));
 tryone('1,234',         '1,234',         $spec); // ok
 tryone('12,345',        '12,345',        $spec); // ok
 tryone('123,456',       '123,456',       $spec); // ok
@@ -50,39 +60,39 @@ tryone('1,234.567',     '1,234.567',     $spec); // ok
 tryone('1,234.',        '1,234.',        $spec); // fail — bare dot
 
 echo "\n**** Combined with sign ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_THOUSAND | VALIDATE_FLOAT_POSITIVE_SIGN,
-    ['min' => -1.0e6, 'max' => 1.0e6],
-];
+    array('min' => -1.0e6, 'max' => 1.0e6),
+);
 tryone('+1,234',        '+1,234',        $spec); // ok
 tryone('-1,234',        '-1,234',        $spec); // ok (min < 0 implies neg)
 tryone('1,234',         '1,234',         $spec); // ok — sign optional
 
 echo "\n**** Combined with SCIENTIFIC ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_THOUSAND | VALIDATE_FLOAT_SCIENTIFIC,
-    ['min' => 0, 'max' => 1.0e10],
-];
+    array('min' => 0, 'max' => 1.0e10),
+);
 tryone('1,234.5e2',     '1,234.5e2',     $spec); // ok
 tryone('1,234e3',       '1,234e3',       $spec); // ok
 
 echo "\n**** Native double inputs unaffected by THOUSAND flag ****\n";
-$spec = [VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, ['min' => 0, 'max' => 1.0e10]];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, array('min' => 0, 'max' => 1.0e10));
 tryone('1234.5 (dbl)',  1234.5,          $spec); // ok
 tryone('0.0 (dbl)',     0.0,             $spec); // ok
 
 echo "\n**** AS_STRING returns the canonical numeric string ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_THOUSAND | VALIDATE_FLOAT_AS_STRING,
-    ['min' => 0, 'max' => 1.0e6],
-];
+    array('min' => 0, 'max' => 1.0e6),
+);
 tryone('"1,234.5"',     '1,234.5',       $spec); // string out, separators removed
 
 echo "\n**** Range applies to numeric value, not raw string ****\n";
-$spec = [VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, ['min' => 0, 'max' => 1000]];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, array('min' => 0, 'max' => 1000));
 tryone('1,234',         '1,234',         $spec); // fail — 1234 > 1000
 tryone('999',           '999',           $spec); // ok
 

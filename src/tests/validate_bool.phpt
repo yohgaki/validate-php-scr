@@ -34,11 +34,11 @@ $booleans = array(
 );
 
 foreach($booleans as $val=>$exp) {
-	$spec = [
+	$spec = array(
 		VALIDATE_BOOL,
 		VALIDATE_BOOL_01|VALIDATE_BOOL_TF|VALIDATE_BOOL_TRUE_FALSE|VALIDATE_BOOL_ON_OFF,
-		 []
-	];
+		 array()
+	);
 	try {
 		$result = validate($ctx, $val, $spec, VALIDATE_OPT_NONE);
 		var_dump($result, $ctx->getStatus());

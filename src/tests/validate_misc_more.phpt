@@ -11,13 +11,14 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
-$int_spec = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>100]];
+$int_spec = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>100));
 
 echo "**** setRootName / getCurrentParam / getContext ****\n";
 $ctx = validate_init('MYROOT');
 $copy = 'x';
 validate($ctx, $copy, $int_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-var_dump(array_keys(validate_get_system_errors($ctx)['error']));
+$_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+var_dump(array_keys($_tmp['error']));
 $ctx->setRootName('RENAMED');
 var_dump($ctx->getCurrentParam());
 var_dump($ctx->getContext() instanceof Validate);
@@ -37,15 +38,16 @@ $copy = 'x';
 validate($ctx, $copy, $int_spec, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_LOG_ERROR);
 
 echo "\n**** error storage modes ****\n";
-$specs = [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>10],
-          ['a'=>[VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>10],
-                ['b'=>$int_spec]]]];
-foreach (['FULL'=>VALIDATE_OPT_ERROR_FULL, 'PARAM'=>VALIDATE_OPT_ERROR_PARAM,
-          'SQUASH'=>VALIDATE_OPT_ERROR_SQUASH] as $mode => $opt) {
+$specs = array(VALIDATE_ARRAY, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>10),
+          array('a'=>array(VALIDATE_ARRAY, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>10),
+                array('b'=>$int_spec))));
+foreach (array('FULL'=>VALIDATE_OPT_ERROR_FULL, 'PARAM'=>VALIDATE_OPT_ERROR_PARAM,
+          'SQUASH'=>VALIDATE_OPT_ERROR_SQUASH) as $mode => $opt) {
     $ctx = validate_init();
-    $copy = ['a'=>['b'=>'bad']];
+    $copy = array('a'=>array('b'=>'bad'));
     validate($ctx, $copy, $specs, VALIDATE_OPT_DISABLE_EXCEPTION | $opt);
-    $err = validate_get_system_errors($ctx)['error'];
+    $_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+    $err = $_tmp['error'];
     echo "$mode:\n";
     if ($mode === 'FULL') {
         var_dump(isset($err['ROOT']['a']['b'][0]['message']) ? $err['ROOT']['a']['b'][0]['message'] : null);
@@ -57,15 +59,16 @@ foreach (['FULL'=>VALIDATE_OPT_ERROR_FULL, 'PARAM'=>VALIDATE_OPT_ERROR_PARAM,
 echo "\n**** unvalidated input remains ****\n";
 // An input key the VALIDATE_ARRAY spec does not declare is an error by
 // default; it stays in $inputs either way.
-$specs = [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>10], ['a'=>$int_spec]];
+$specs = array(VALIDATE_ARRAY, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>10), array('a'=>$int_spec));
 $ctx = validate_init();
-$copy = ['a'=>5, 'extra'=>'x'];
+$copy = array('a'=>5, 'extra'=>'x');
 var_dump(validate($ctx, $copy, $specs, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());
 var_dump($copy);
-var_dump(validate_get_system_errors($ctx)['error']['ROOT'][0]['message']);
+$_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+var_dump($_tmp['error']['ROOT'][0]['message']);
 // VALIDATE_OPT_UNVALIDATED allows leftovers (multi-stage validation).
 $ctx = validate_init();
-$copy = ['a'=>5, 'extra'=>'x'];
+$copy = array('a'=>5, 'extra'=>'x');
 var_dump(validate($ctx, $copy, $specs, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_UNVALIDATED),
          $ctx->getStatus());
 var_dump($copy);
@@ -73,7 +76,7 @@ var_dump($copy);
 echo "\n**** OO validate() with spec warnings only ****\n";
 $v = new Validate();
 $in = 5;
-$bad_spec = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>100, 'foo'=>1]];
+$bad_spec = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>100, 'foo'=>1));
 var_dump(@$v->validate($in, $bad_spec, VALIDATE_OPT_CHECK_SPEC));
 
 echo "\n**** procedural wrapper argument errors ****\n";

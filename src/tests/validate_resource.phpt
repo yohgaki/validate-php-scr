@@ -12,11 +12,11 @@ error_reporting=-1
 require_once __DIR__.'/bootstrap.php';
 
 echo "Stream resource\n";
-$spec = [
+$spec = array(
     VALIDATE_RESOURCE,
     VALIDATE_FLAG_NONE,
-    ['resource' => 'stream']
-];
+    array('resource' => 'stream')
+);
 
 $fp = fopen(__FILE__, 'r');
 
@@ -28,11 +28,11 @@ try {
 }
 
 echo "\nBad resource\n";
-$spec = [
+$spec = array(
     VALIDATE_RESOURCE,
     VALIDATE_FLAG_NONE,
-    ['resource' => 'does not exist']
-];
+    array('resource' => 'does not exist')
+);
 
 $fp = fopen(__FILE__, 'r');
 
@@ -44,11 +44,11 @@ try {
 }
 
 echo "\nNull\n";
-$spec = [
+$spec = array(
     VALIDATE_RESOURCE,
     VALIDATE_FLAG_NONE,
-    ['resource' => 'does not exist']
-];
+    array('resource' => 'does not exist')
+);
 
 $fp = null;
 
@@ -60,11 +60,11 @@ try {
 }
 
 echo "\nObject\n";
-$spec = [
+$spec = array(
     VALIDATE_RESOURCE,
     VALIDATE_FLAG_NONE,
-    ['resource' => 'does not exist']
-];
+    array('resource' => 'does not exist')
+);
 
 $fp = new StdClass;
 

@@ -20,7 +20,8 @@
  */
 
 // Wrap in an IIFE so locals don't pollute the request's global scope.
-(function () {
+// PHP 5 cannot call (function () {...})() directly.
+call_user_func(function () {
     // Path to validate_func.php (provides validate() and the constants).
     $validate_path = __DIR__.'/../validate_func.php';
     // Spec file produced by input_analyzer.php.
@@ -46,13 +47,13 @@
 
     // Specs are keyed by "METHOD:PATH". If logger never saw this endpoint
     // there is nothing meaningful to validate against — silently bail.
-    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-    $method = $_SERVER['REQUEST_METHOD'] ?? '';
+    $uri = parse_url(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '', PHP_URL_PATH);
+    $method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '';
     $key = $method. ':' .$uri;
     if (empty($spec[$key])) {
         return;
     }
-    $input = ["_GET"=>$_GET, "_POST"=>$_POST, "_COOKIE"=>$_COOKIE, "_SERVER"=>$_SERVER];
+    $input = array("_GET"=>$_GET, "_POST"=>$_POST, "_COOKIE"=>$_COOKIE, "_SERVER"=>$_SERVER);
     $func_opt = $exception ? VALIDATE_OPT_NONE : VALIDATE_OPT_DISABLE_EXCEPTION;
 
     $ctx = null;
@@ -63,13 +64,13 @@
         // ops tooling, $GLOBALS['_validate_errors_'] for the app to inspect.
         $system_err = validate_get_system_errors($ctx);
         $user_err   = validate_get_user_errors($ctx);
-        $summary = [];
+        $summary = array();
         foreach ($system_err['error'] as $param => $errors) {
             foreach ($errors as $error) {
                 $summary[] = $param.': '.$error['message'];
             }
         }
         error_log('Validate: '.$key.' '.json_encode($summary));
-        $GLOBALS['_validate_errors_'] = [$system_err, $user_err];
+        $GLOBALS['_validate_errors_'] = array($system_err, $user_err);
     }
-})();
+});

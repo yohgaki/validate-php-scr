@@ -18,7 +18,7 @@ function check($title, $spec)
     $un = null;
     var_dump(validate_spec($spec, $un, $ctx));
     $errs = validate_get_system_errors($ctx);
-    foreach (['error', 'warning', 'notice'] as $t) {
+    foreach (array('error', 'warning', 'notice') as $t) {
         foreach ($errs[$t] as $e) {
             echo strtoupper($t), ': ', $e['message'], "\n";
         }
@@ -26,31 +26,31 @@ function check($title, $spec)
     echo "\n";
 }
 
-$sub = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>10]];
+$sub = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>10));
 
-check('ID missing', []);
-check('ID is not int', ['x', 0, []]);
-check('ID out of range', [999, 0, []]);
-check('FLAGS missing (options present)', [0=>VALIDATE_INT, 2=>['min'=>0, 'max'=>1]]);
-check('OPTIONS missing', [VALIDATE_INT, VALIDATE_FLAG_NONE]);
-check('OPTIONS is not array', [VALIDATE_INT, VALIDATE_FLAG_NONE, 'x']);
-check('VALIDATE_UNVALIDATED passes', [VALIDATE_UNVALIDATED, 0, []]);
+check('ID missing', array());
+check('ID is not int', array('x', 0, array()));
+check('ID out of range', array(999, 0, array()));
+check('FLAGS missing (options present)', array(0=>VALIDATE_INT, 2=>array('min'=>0, 'max'=>1)));
+check('OPTIONS missing', array(VALIDATE_INT, VALIDATE_FLAG_NONE));
+check('OPTIONS is not array', array(VALIDATE_INT, VALIDATE_FLAG_NONE, 'x'));
+check('VALIDATE_UNVALIDATED passes', array(VALIDATE_UNVALIDATED, 0, array()));
 
-check('MULTI needs 4 elements', [VALIDATE_MULTI, VALIDATE_MULTI_AND, []]);
-check('MULTI params slot missing', [0=>VALIDATE_MULTI, 1=>VALIDATE_MULTI_AND, 2=>[], 5=>[]]);
-check('MULTI both AND and OR', [VALIDATE_MULTI, VALIDATE_MULTI_AND | VALIDATE_MULTI_OR, [], [$sub]]);
-check('MULTI missing AND/OR', [VALIDATE_MULTI, 0, [], [$sub]]);
-check('MULTI extra flag bits', [VALIDATE_MULTI, VALIDATE_MULTI_AND | (1 << 5), [], [$sub]]);
-check('MULTI useless options', [VALIDATE_MULTI, VALIDATE_MULTI_AND, ['x'=>1], [$sub]]);
-check('MULTI with VALIDATE_FLAG_ARRAY', [VALIDATE_MULTI, VALIDATE_MULTI_AND | VALIDATE_FLAG_ARRAY, [], [$sub]]);
-check('MULTI with broken sub-spec', [VALIDATE_MULTI, VALIDATE_MULTI_AND, [], ['broken']]);
+check('MULTI needs 4 elements', array(VALIDATE_MULTI, VALIDATE_MULTI_AND, array()));
+check('MULTI params slot missing', array(0=>VALIDATE_MULTI, 1=>VALIDATE_MULTI_AND, 2=>array(), 5=>array()));
+check('MULTI both AND and OR', array(VALIDATE_MULTI, VALIDATE_MULTI_AND | VALIDATE_MULTI_OR, array(), array($sub)));
+check('MULTI missing AND/OR', array(VALIDATE_MULTI, 0, array(), array($sub)));
+check('MULTI extra flag bits', array(VALIDATE_MULTI, VALIDATE_MULTI_AND | (1 << 5), array(), array($sub)));
+check('MULTI useless options', array(VALIDATE_MULTI, VALIDATE_MULTI_AND, array('x'=>1), array($sub)));
+check('MULTI with VALIDATE_FLAG_ARRAY', array(VALIDATE_MULTI, VALIDATE_MULTI_AND | VALIDATE_FLAG_ARRAY, array(), array($sub)));
+check('MULTI with broken sub-spec', array(VALIDATE_MULTI, VALIDATE_MULTI_AND, array(), array('broken')));
 
-check('ARRAY params missing', [VALIDATE_ARRAY, 0, ['min'=>0, 'max'=>10]]);
-check('ARRAY params not array', [VALIDATE_ARRAY, 0, ['min'=>0, 'max'=>10], 'x']);
-check('ARRAY min/max missing', [VALIDATE_ARRAY, 0, [], ['p'=>$sub]]);
-check('ARRAY invalid min/max', [VALIDATE_ARRAY, 0, ['min'=>-1, 'max'=>-2], ['p'=>$sub]]);
-check('ARRAY sub-spec is not array', [VALIDATE_ARRAY, 0, ['min'=>0, 'max'=>10], ['p'=>'broken']]);
-check('ARRAY valid nested', [VALIDATE_ARRAY, 0, ['min'=>0, 'max'=>10], ['p'=>$sub]]);
+check('ARRAY params missing', array(VALIDATE_ARRAY, 0, array('min'=>0, 'max'=>10)));
+check('ARRAY params not array', array(VALIDATE_ARRAY, 0, array('min'=>0, 'max'=>10), 'x'));
+check('ARRAY min/max missing', array(VALIDATE_ARRAY, 0, array(), array('p'=>$sub)));
+check('ARRAY invalid min/max', array(VALIDATE_ARRAY, 0, array('min'=>-1, 'max'=>-2), array('p'=>$sub)));
+check('ARRAY sub-spec is not array', array(VALIDATE_ARRAY, 0, array('min'=>0, 'max'=>10), array('p'=>'broken')));
+check('ARRAY valid nested', array(VALIDATE_ARRAY, 0, array('min'=>0, 'max'=>10), array('p'=>$sub)));
 
 echo "== exceptions from procedural wrappers ==\n";
 try {

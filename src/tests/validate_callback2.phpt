@@ -29,13 +29,13 @@ $f = function($ctx, &$result, $value) {
 	return true;
 };
 
-$spec = [
+$spec = array(
 	VALIDATE_CALLBACK,
 	VALIDATE_CALLBACK_ALPHA | VALIDATE_CALLBACK_SYMBOL,
-	["min"=>0, "max"=>99999, "callback"=>$f]
-];
+	array("min"=>0, "max"=>99999, "callback"=>$f)
+);
 
-$str = ["data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd"];
+$str = array("data", "~!@#$%^&*()_<>?\"}{:", "AbCd", "abcd");
 
 for ($i = 0; $i < 100; $i++) {
 	foreach($str as $s) {

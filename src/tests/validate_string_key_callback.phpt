@@ -11,10 +11,10 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
-$spec = [
+$spec = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_FLAG_ARRAY,
-    [
+    array(
         'min' => 1,
         'max' => 3,
         'amin' => 1,
@@ -34,15 +34,15 @@ $spec = [
             }
             return true;
         }
-    ]
-];
+    )
+);
 
-$value = [
+$value = array(
     'abcd' => 1,
     'a' => 1,
     '' => 1,
     'abcde' => 1,
-];
+);
 
 try {
     $result = validate($ctx, $value, $spec);

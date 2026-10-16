@@ -12,12 +12,12 @@ error_reporting=-1
 require_once __DIR__.'/bootstrap.php';
 
 echo "\n**** validate() INT ****\n";
-$spec = [
+$spec = array(
     VALIDATE_INT,
     VALIDATE_INT_AS_STRING,
-    ['min' => -100, 'max' => 100],
-];
-$values = [null, true, false, [], new StdClass, function() {return true;},  '', -101, 101, '-100.5', '101.5'];
+    array('min' => -100, 'max' => 100),
+);
+$values = array(null, true, false, array(), new StdClass, function() {return true;},  '', -101, 101, '-100.5', '101.5');
 foreach ($values as $val) {
     try {
         var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
@@ -27,12 +27,12 @@ foreach ($values as $val) {
 }
 
 echo "\n**** validate() FLOAT ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
-    ['min' => -100, 'max' => 100],
-];
-$values = [null, true, false, [], new StdClass, function() {return true;}, '', -101, 101, '-100.5', '100.5'];
+    array('min' => -100, 'max' => 100),
+);
+$values = array(null, true, false, array(), new StdClass, function() {return true;}, '', -101, 101, '-100.5', '100.5');
 foreach ($values as $val) {
     try {
         var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
@@ -42,12 +42,12 @@ foreach ($values as $val) {
 }
 
 echo "\n**** validate() STRING ****\n";
-$spec = [
+$spec = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 2, 'max' => 3],
-];
-$values = [null, true, false, [], new StdClass, function() {return true;}, 0, '', 'abcd'];
+    array('min' => 2, 'max' => 3),
+);
+$values = array(null, true, false, array(), new StdClass, function() {return true;}, 0, '', 'abcd');
 foreach ($values as $val) {
     try {
         var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
@@ -57,18 +57,18 @@ foreach ($values as $val) {
 }
 
 echo "\n**** validate() ARRAY ****\n";
-$spec = [
+$spec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 2, 'max' => 3],
-    [
-        0 => [VALIDATE_INT, 0, ['min'=>-100, 'max'=>100]],
-        1 => [VALIDATE_INT, 0, ['min'=>-100, 'max'=>100]],
-        2 => [VALIDATE_INT, 0, ['min'=>-100, 'max'=>100]],
-        3 => [VALIDATE_INT, 0, ['min'=>-100, 'max'=>100]],
-    ]
-];
-$values = [null, true, false, [], new StdClass, function() {return true;}, 0, '', 'abcd', [1], [1,2,3,4]];
+    array('min' => 2, 'max' => 3),
+    array(
+        0 => array(VALIDATE_INT, 0, array('min'=>-100, 'max'=>100)),
+        1 => array(VALIDATE_INT, 0, array('min'=>-100, 'max'=>100)),
+        2 => array(VALIDATE_INT, 0, array('min'=>-100, 'max'=>100)),
+        3 => array(VALIDATE_INT, 0, array('min'=>-100, 'max'=>100)),
+    )
+);
+$values = array(null, true, false, array(), new StdClass, function() {return true;}, 0, '', 'abcd', array(1), array(1,2,3,4));
 foreach ($values as $val) {
     try {
         var_dump(validate($ctx, $val, $spec), $ctx->getStatus());

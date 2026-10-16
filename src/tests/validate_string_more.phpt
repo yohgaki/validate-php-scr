@@ -14,8 +14,8 @@ require_once __DIR__.'/bootstrap.php';
 $func_opts = VALIDATE_OPT_NONE;
 
 echo "**** values option ****\n";
-$spec = [VALIDATE_STRING, VALIDATE_FLAG_NONE, ['values'=>['red'=>true, 'blue'=>true]]];
-foreach (['red', 'green', ['red']] as $var) {
+$spec = array(VALIDATE_STRING, VALIDATE_FLAG_NONE, array('values'=>array('red'=>true, 'blue'=>true)));
+foreach (array('red', 'green', array('red')) as $var) {
     try {
         $copy = $var;
         var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
@@ -25,7 +25,7 @@ foreach (['red', 'green', ['red']] as $var) {
 }
 
 echo "\n**** bool input is rejected ****\n";
-$spec = [VALIDATE_STRING, VALIDATE_STRING_ALPHA, ['min'=>0, 'max'=>10]];
+$spec = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA, array('min'=>0, 'max'=>10));
 try {
     $copy = true;
     var_dump(validate($ctx, $copy, $spec, $func_opts));
@@ -34,14 +34,14 @@ try {
 }
 
 echo "\n**** VALIDATE_FLAG_EMPTY_TO_DEFAULT ****\n";
-$spec = [VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_FLAG_EMPTY_TO_DEFAULT,
-         ['min'=>0, 'max'=>10, 'default'=>'fallback']];
+$spec = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_FLAG_EMPTY_TO_DEFAULT,
+         array('min'=>0, 'max'=>10, 'default'=>'fallback'));
 $copy = '';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 
 // Broken spec: missing "default". Spec check is off (VALIDATE_OPT_NONE).
-$spec = [VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_FLAG_EMPTY_TO_DEFAULT,
-         ['min'=>0, 'max'=>10]];
+$spec = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_FLAG_EMPTY_TO_DEFAULT,
+         array('min'=>0, 'max'=>10));
 try {
     $copy = '';
     var_dump(validate($ctx, $copy, $spec, $func_opts));
@@ -50,7 +50,7 @@ try {
 }
 
 echo "\n**** invalid UTF-8 encoding with VALIDATE_STRING_MB ****\n";
-$spec = [VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB, ['min'=>0, 'max'=>10]];
+$spec = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB, array('min'=>0, 'max'=>10));
 try {
     $copy = "a\xFF\xFEb"; // broken UTF-8
     var_dump(validate($ctx, $copy, $spec, $func_opts));
@@ -59,8 +59,8 @@ try {
 }
 
 echo "\n**** strict CRLF (CR and LF flags without CRLF_MIXED) ****\n";
-$spec = [VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_CRLF, ['min'=>0, 'max'=>10]];
-foreach (["a\r\nb", "a\nb", "a\rb"] as $var) {
+$spec = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_CRLF, array('min'=>0, 'max'=>10));
+foreach (array("a\r\nb", "a\nb", "a\rb") as $var) {
     try {
         $copy = $var;
         var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
@@ -70,7 +70,7 @@ foreach (["a\r\nb", "a\nb", "a\rb"] as $var) {
 }
 
 echo "\n**** VALIDATE_FLAG_RAW returns original input ****\n";
-$spec = [VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_FLAG_RAW, ['min'=>0, 'max'=>10]];
+$spec = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_FLAG_RAW, array('min'=>0, 'max'=>10));
 $copy = 'abc';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 

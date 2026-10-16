@@ -17,7 +17,7 @@ try {
 	$spec = array(
 		VALIDATE_STRING,
 		VALIDATE_STRING_ALNUM,
-		['min'=>1, 'max'=>10]
+		array('min'=>1, 'max'=>10)
 	);
 	var_dump(validate($ctx, $data, $spec), $ctx->getStatus());
 	die('Shoud not reach here');
@@ -62,7 +62,7 @@ $flags = array(
 $spec = array(
 	VALIDATE_STRING,
 	NULL, // replaced by above flags
-	['min'=>0, 'max'=>20]
+	array('min'=>0, 'max'=>20)
 );
 $func_opts = 0; //VALIDATE_OPT_CHECK_SPEC;
 
@@ -85,7 +85,7 @@ foreach($strings as $type => $val) {
 $spec = array(
 	VALIDATE_STRING,
 	NULL, // replaced by above flags
-	['min'=>1, 'max'=>10]
+	array('min'=>1, 'max'=>10)
 );
 
 foreach($strings as $type => $val) {

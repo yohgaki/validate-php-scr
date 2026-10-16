@@ -45,7 +45,7 @@ Validate PHP is designed to handle both string inputs and natively typed inputs.
 Initializes Validate object.
 
 ```php
-Validate validate_init([string $root_name='ROOT'])
+Validate validate_init(array(string $root_name='ROOT'))
 ```
 
 Parameters:
@@ -278,13 +278,13 @@ validate() checks $spec by default (VALIDATE_OPT_CHECK_SPEC) with a separate con
 Validation SPEC format:
 
 ```php
-$spec = [
+$spec = array(
     VALIDATE_ID => <int validator id>,
     VALIDATE_FLAGS => <int bit flags for this validator>,
     VALIDATE_OPTIONS => <array of this validator options>,
-    // VALIDATE_ARRAY: VALIDATE_PARAMS => [key => spec, ...]
-    // VALIDATE_MULTI: VALIDATE_SPECS  => [spec, ...]
-];
+    // VALIDATE_ARRAY: VALIDATE_PARAMS => array(key => spec, ...)
+    // VALIDATE_MULTI: VALIDATE_SPECS  => array(spec, ...)
+);
 ```
 
 SPEC array is processed recursively. Therefore any number of values can be validated
@@ -304,14 +304,14 @@ VALIDATE_ARRAY options are 'min', 'max', 'default' (with VALIDATE_FLAG_UNDEFINED
 
 ```php
 // Known headers strictly, every other header with a catch-all spec.
-$spec = [
+$spec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_ARRAY_KEY_ALNUM, // Names of undeclared keys: alnum, '-' and '_'.
-    ['min' => 1, 'max' => 50, 'undeclared' => $basicTypes['header512']],
-    [
+    array('min' => 1, 'max' => 50, 'undeclared' => $basicTypes['header512']),
+    array(
         'Host' => $basicTypes['http_host'],
-    ]
-];
+    )
+);
 ```
 
 
@@ -320,11 +320,11 @@ Single value validation spec example:
 ```php
 // Spec for string value which has exactly 32 alphabet chars(bytes)
 $spec =
-[
+array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALPHA,
-    ['min' => 32, 'max' => 32],
-];
+    array('min' => 32, 'max' => 32),
+);
 ```
 
 Multiple values validation spec example:
@@ -332,32 +332,32 @@ Multiple values validation spec example:
 ```php
 // Spec for array of values.
 $specs =
-[
-    'POST' => [
+array(
+    'POST' => array(
         VALIDATE_ARRAY, // int Validator ID
         VALIDATE_FLAG_NONE, // int Validator Flags (Bit Mask)
-        ['min' => 0, 'max' => 20], // array Validator options. (string keys only)
-        [
-            'scalar_param' => [
+        array('min' => 0, 'max' => 20), // array Validator options. (string keys only)
+        array(
+            'scalar_param' => array(
                 VALIDATE_STRING, // Use Validator type int constant for ID
                 $flags, // Validator flags. e.g. VALIDATE_STRING_ALNUM | VALIDATE_STRING_LF
-                $options, // Validator options array. e.g. ['min' => 0, 'max' => 125]
-            ],
-            'array_param' => [ // Array parameter is allowed as nested spec.
+                $options, // Validator options array. e.g. array('min' => 0, 'max' => 125)
+            ),
+            'array_param' => array( // Array parameter is allowed as nested spec.
                 VALIDATE_ARRAY,
                 $flags,
                 $options,
-                $params => [
-                    'scalar_param' => [
+                $params => array(
+                    'scalar_param' => array(
                         VALIDATE_BOOL, // Define scalar param spec here
                         $flags,
                         $options,
-                    ],
-                ],
-            ],
-        ],
-    ],
-];
+                    ),
+                ),
+            ),
+        ),
+    ),
+);
 ```
 
 ## Validator IDs
@@ -593,14 +593,14 @@ $vtrim = function ($ctx, $input, &$error) {
     return trim((string)$input, " \t"); // OWS is SP / HTAB only; CR, LF, NUL stay and are rejected.
 };
 
-$basicTypes['header'] = [
+$basicTypes['header'] = array(
     VALIDATE_STRING,
     VALIDATE_STRING_SPACE | VALIDATE_STRING_TAB | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_ALNUM,
-    [
+    array(
         'min' => 0, 'max' => 0,
         'filter' => $vtrim,
-    ]
-];
+    )
+);
 ```
 
 
@@ -660,10 +660,10 @@ Assign the validated (possibly normalized) value to $result; it is pre-set to th
 Usage example:
 
 ```php
-$user_agent = [
+$user_agent = array(
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_SPACE | VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_MB,
-    ['min' => 10, 'max' => 128,
+    array('min' => 10, 'max' => 128,
     'callback' =>
     function ($ctx, &$result, $input) {
         if (!is_string($input)) {
@@ -677,8 +677,8 @@ $user_agent = [
         }
         $result = $input;
         return true;
-    }]
-];
+    })
+);
 ```
 
 ## Tips
@@ -699,8 +699,8 @@ $error_message = validate_get_user_errors($ctx); // Error messages defined by yo
 // OO
 $ctx = new Validate;
 $result = $ctx->validate($input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-// This could be one liner if you don't need $ctx object.
-$result = (new Validate)->validate($input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
+// PHP 5.4+ can make this a one-liner if you don't need the $ctx object:
+// $result = (new Validate)->validate($input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 ?>
 ```
 

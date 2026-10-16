@@ -14,18 +14,18 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array
 // BOTH an INPUT validation spec AND a BUSINESS LOGIC (form) validation spec.
 
 // Username spec — relies on the client form to do basic length/character checks.
-$username = [
+$username = array(
     VALIDATE_STRING,        // "username" is a string.
     VALIDATE_STRING_ALNUM,  // Only alphanumeric characters are allowed.
-    ['min'=> 6, 'max'=> 40, // Length must be between 6 and 40 chars.
-    'error_message'=>'Username is 6 to 40 chars. Alphanumeric char only.']
-];
+    array('min'=> 6, 'max'=> 40, // Length must be between 6 and 40 chars.
+    'error_message'=>'Username is 6 to 40 chars. Alphanumeric char only.')
+);
 
 // "Validate" can be extended with callbacks for rules that don't fit flags.
-$email = [
+$email = array(
     VALIDATE_CALLBACK, // Email is complex, so we write a PHP callback.
     VALIDATE_CALLBACK_ALNUM, // Allow alphanumeric characters.
-    ['min'=> 6, 'max'=> 256, 'ascii'=>'@._-', // 6 to 256 chars plus the symbols '@._-'.
+    array('min'=> 6, 'max'=> 256, 'ascii'=>'@._-', // 6 to 256 chars plus the symbols '@._-'.
     'error_message'=>'Please enter a valid email address. We only accept addresses with a DNS MX record.',
     'callback'=> function($ctx, &$result, $input) {     // Custom rule in plain PHP.
         $parts = explode('@', $input);
@@ -40,25 +40,25 @@ $email = [
             return false;
         }
         return true;
-    }]
-];
+    })
+);
 
-$spec = [ // Combine predefined parameter spec into one spec.
+$spec = array( // Combine predefined parameter spec into one spec.
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min'=>2, 'max'=>10], // Inputs must have 2 to 10 elements.
-    [
+    array('min'=>2, 'max'=>10), // Inputs must have 2 to 10 elements.
+    array(
         // Simply reuse predefined spec for parameters.
         "username" => $username,
         "email"    => $email,
         // You can validate $_GET/$_POST/$_COOKIE/$_SERVER/$_FILES at once by nesting.
-    ]
-];
+    )
+);
 
-$inputs = [
+$inputs = array(
     'username' => 'yohgaki',
     'email' => 'yohgaki@ohgaki.net'
-];
+);
 
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // Disable exception, to check errors, etc.
 $results = validate($ctx, $inputs, $spec, $func_opts); // Now, let's validate and done.

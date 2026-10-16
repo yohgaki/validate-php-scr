@@ -13,11 +13,11 @@ require_once __DIR__.'/bootstrap.php';
 
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION;
 
-$int_spec = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>100]];
-$str_spec = [VALIDATE_STRING, VALIDATE_STRING_ALPHA, ['min'=>1, 'max'=>10]];
+$int_spec = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>100));
+$str_spec = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA, array('min'=>1, 'max'=>10));
 
 echo "**** OR: second spec matches ****\n";
-$spec = [VALIDATE_MULTI, VALIDATE_MULTI_OR, [], [$int_spec, $str_spec]];
+$spec = array(VALIDATE_MULTI, VALIDATE_MULTI_OR, array(), array($int_spec, $str_spec));
 $ctx = validate_init();
 $copy = 'abc';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
@@ -28,8 +28,8 @@ $copy = '###';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 
 echo "\n**** AND: all pass ****\n";
-$digit_spec = [VALIDATE_STRING, VALIDATE_STRING_DIGIT, ['min'=>1, 'max'=>10]];
-$spec = [VALIDATE_MULTI, VALIDATE_MULTI_AND, [], [$int_spec, $digit_spec]];
+$digit_spec = array(VALIDATE_STRING, VALIDATE_STRING_DIGIT, array('min'=>1, 'max'=>10));
+$spec = array(VALIDATE_MULTI, VALIDATE_MULTI_AND, array(), array($int_spec, $digit_spec));
 $ctx = validate_init();
 $copy = '42';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
@@ -45,21 +45,22 @@ $copy = null;
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 
 echo "\n**** filter applied before sub-specs ****\n";
-$spec = [VALIDATE_MULTI, VALIDATE_MULTI_AND,
-         ['filter'=>function ($ctx, $input, &$error) { return trim($input); }],
-         [$int_spec]];
+$spec = array(VALIDATE_MULTI, VALIDATE_MULTI_AND,
+         array('filter'=>function ($ctx, $input, &$error) { return trim($input); }),
+         array($int_spec));
 $ctx = validate_init();
 $copy = '  42  ';
 var_dump(validate($ctx, $copy, $spec, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());
 
 echo "\n**** filter error ****\n";
-$spec = [VALIDATE_MULTI, VALIDATE_MULTI_AND,
-         ['filter'=>function ($ctx, $input, &$error) { $error = 'multi filter rejected'; return null; }],
-         [$int_spec]];
+$spec = array(VALIDATE_MULTI, VALIDATE_MULTI_AND,
+         array('filter'=>function ($ctx, $input, &$error) { $error = 'multi filter rejected'; return null; }),
+         array($int_spec));
 $ctx = validate_init();
 $copy = '42';
 var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
-var_dump($ctx->getSystemErrors()['error']['ROOT'][0]['message']);
+$_tmp = $ctx->getSystemErrors(); // PHP 5.3 cannot index a call result
+var_dump($_tmp['error']['ROOT'][0]['message']);
 
 ?>
 --EXPECT--

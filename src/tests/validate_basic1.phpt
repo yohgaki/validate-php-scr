@@ -622,7 +622,7 @@ foreach($test_cases as $test_name => $topts) {
 				var_dump($result, $ctx->getStatus());
 				//die();
 			} catch (Exception $e) {
-				var_dump(['ErrorMsg' => $e->getMessage()]);
+				var_dump(array('ErrorMsg' => $e->getMessage()));
 			}
 			if ($ctx->getStatus() !== true) {
 				echo "BUG!!!\n";

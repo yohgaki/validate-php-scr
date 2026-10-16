@@ -17,8 +17,9 @@ function t($label, $input, $spec, $opts = VALIDATE_OPT_DISABLE_EXCEPTION)
     $ctx = null;
     try {
         $r = validate($ctx, $input, $spec, $opts);
-        $msgs = [];
-        $errs = validate_get_system_errors($ctx)['error'];
+        $msgs = array();
+        $_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+        $errs = $_tmp['error'];
         array_walk_recursive($errs, function ($v, $k) use (&$msgs) {
             if ($k === 'message') {
                 $msgs[] = $v;
@@ -26,109 +27,112 @@ function t($label, $input, $spec, $opts = VALIDATE_OPT_DISABLE_EXCEPTION)
         });
         echo $label, ': ', json_encode($r), ' status=', var_export($ctx->getStatus(), true),
              $msgs ? ' errors='.json_encode($msgs) : '', "\n";
-    } catch (Throwable $e) {
+    } catch (Exception $e) { // PHP 5 has no Throwable
         echo $label, ': ', get_class($e), ': ', $e->getMessage(), "\n";
     }
     return $input;
 }
-$S = function ($flags, $opts = []) {
-    return [VALIDATE_STRING, $flags, $opts + ['min'=>0, 'max'=>100]];
+$S = function ($flags, $opts = array()) {
+    return array(VALIDATE_STRING, $flags, $opts + array('min'=>0, 'max'=>100));
 };
 $A = function ($params, $flags = VALIDATE_FLAG_NONE) {
-    return [VALIDATE_ARRAY, $flags, ['min'=>0, 'max'=>10], $params];
+    return array(VALIDATE_ARRAY, $flags, array('min'=>0, 'max'=>10), $params);
 };
-$INT = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>10]];
+$INT = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>10));
 
 echo "**** STRING ****\n";
 t('DEL is an ASCII control char, also with _MB', "a\x7Fb", $S(VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB));
 t('trailing CR in strict CRLF', "ab\r", $S(VALIDATE_STRING_ALPHA | VALIDATE_STRING_CRLF));
 t('CRLF pair in strict CRLF', "a\r\nb", $S(VALIDATE_STRING_ALPHA | VALIDATE_STRING_CRLF));
 t('"0" with _MB', "0", $S(VALIDATE_STRING_DIGIT | VALIDATE_STRING_MB));
-t('U+00A0 is rejected', "a\u{00A0}b", $S(VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB));
-t('"unicode"=>false also applies with RFC3454_C', "a\u{3042}b",
-  $S(VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB | VALIDATE_STRING_RFC3454_C, ['unicode'=>[0x3042=>false]]));
+t('U+00A0 is rejected', "a\xC2\xA0b", $S(VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB));
+t('"unicode"=>false also applies with RFC3454_C', "a\xE3\x81\x82b",
+  $S(VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB | VALIDATE_STRING_RFC3454_C, array('unicode'=>array(0x3042=>false))));
 t('BINARY returns a string', 12.5, $S(VALIDATE_STRING_BINARY));
-var_dump(validate_spec($S(VALIDATE_STRING_MB, ['unicode'=>[0x00A0=>true]])));
+var_dump(validate_spec($S(VALIDATE_STRING_MB, array('unicode'=>array(0x00A0=>true)))));
 
 echo "\n**** VALIDATE_MULTI OR ****\n";
-$or = [VALIDATE_MULTI, VALIDATE_MULTI_OR, [], [$INT, $S(VALIDATE_STRING_ALPHA)]];
+$or = array(VALIDATE_MULTI, VALIDATE_MULTI_OR, array(), array($INT, $S(VALIDATE_STRING_ALPHA)));
 t('2nd alternative passes, exceptions on', 'abc', $or, VALIDATE_OPT_CHECK_SPEC);
 t('no alternative passes', '###', $or);
-t('OR cannot launder a rejected unicode char', "a\u{00A0}b",
-  [VALIDATE_MULTI, VALIDATE_MULTI_OR, [], [$S(VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB)]]);
-$cb_error = [VALIDATE_CALLBACK, VALIDATE_STRING_ALPHA, ['min'=>0, 'max'=>10, 'callback'=>
+t('OR cannot launder a rejected unicode char', "a\xC2\xA0b",
+  array(VALIDATE_MULTI, VALIDATE_MULTI_OR, array(), array($S(VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB))));
+$cb_error = array(VALIDATE_CALLBACK, VALIDATE_STRING_ALPHA, array('min'=>0, 'max'=>10, 'callback'=>
     function ($ctx, &$result, $input) {
         validate_error($ctx, 'rejected by callback');
         return true;
-    }]];
-t('validate_error() fails an alternative', 'abc', [VALIDATE_MULTI, VALIDATE_MULTI_OR, [], [$cb_error]]);
+    }));
+t('validate_error() fails an alternative', 'abc', array(VALIDATE_MULTI, VALIDATE_MULTI_OR, array(), array($cb_error)));
 // 'a' records an error but its callback returns true; the passing inner OR
 // on 'b' must not hide that failure of the outer alternative.
-$inner_or = [VALIDATE_MULTI, VALIDATE_MULTI_OR, [], [$INT, $S(VALIDATE_STRING_ALPHA)]];
-$outer = [VALIDATE_MULTI, VALIDATE_MULTI_OR, [], [$A(['a'=>$cb_error, 'b'=>$inner_or])]];
-t('nested OR: inner pass must not hide outer failure', ['a'=>'x', 'b'=>'abc'], $outer);
+$inner_or = array(VALIDATE_MULTI, VALIDATE_MULTI_OR, array(), array($INT, $S(VALIDATE_STRING_ALPHA)));
+$outer = array(VALIDATE_MULTI, VALIDATE_MULTI_OR, array(), array($A(array('a'=>$cb_error, 'b'=>$inner_or))));
+t('nested OR: inner pass must not hide outer failure', array('a'=>'x', 'b'=>'abc'), $outer);
 
 echo "\n**** INT ****\n";
-$values = [VALIDATE_INT, VALIDATE_FLAG_NONE, ['values'=>[1=>true, 5=>true]]];
+$values = array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('values'=>array(1=>true, 5=>true)));
 t('"values" accepts an integer string', '5', $values);
 t('"values" rejects "05"', '05', $values);
-$as_string = [VALIDATE_INT, VALIDATE_INT_AS_STRING | VALIDATE_INT_POSITIVE_SIGN | VALIDATE_INT_NEGATIVE_SIGN,
-              ['min'=>'-100', 'max'=>'100']];
-foreach (['-', '+', '-0', '007', '+7', '-7'] as $in) {
+$as_string = array(VALIDATE_INT, VALIDATE_INT_AS_STRING | VALIDATE_INT_POSITIVE_SIGN | VALIDATE_INT_NEGATIVE_SIGN,
+              array('min'=>'-100', 'max'=>'100'));
+foreach (array('-', '+', '-0', '007', '+7', '-7') as $in) {
     t('AS_STRING '.json_encode($in), $in, $as_string);
 }
-t('"-0" without AS_STRING', '-0', [VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>-10, 'max'=>10]]);
-validate_spec([VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>'1-2', 'max'=>'5']], $u, $sctx);
-echo 'spec min "1-2": ', $sctx->getSystemErrors()['error'][0]['message'], "\n";
+t('"-0" without AS_STRING', '-0', array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>-10, 'max'=>10)));
+validate_spec(array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>'1-2', 'max'=>'5')), $u, $sctx);
+$_tmp = $sctx->getSystemErrors(); // PHP 5.3 cannot index a call result
+echo 'spec min "1-2": ', $_tmp['error'][0]['message'], "\n";
 
 echo "\n**** BOOL ****\n";
 t('EMPTY_TO_DEFAULT at top level', '',
-  [VALIDATE_BOOL, VALIDATE_BOOL_YES_NO | VALIDATE_FLAG_EMPTY_TO_DEFAULT, ['default'=>'yes']]);
+  array(VALIDATE_BOOL, VALIDATE_BOOL_YES_NO | VALIDATE_FLAG_EMPTY_TO_DEFAULT, array('default'=>'yes')));
 
 echo "\n**** NULL / presence ****\n";
-t('null element with FLAG_NULL', ['a'=>null], $A(['a'=>[VALIDATE_INT, VALIDATE_FLAG_NULL, ['min'=>0, 'max'=>10]]]));
-t('null element without FLAG_NULL', ['a'=>null], $A(['a'=>$INT]));
-t('null top level with FLAG_NULL', null, [VALIDATE_INT, VALIDATE_FLAG_NULL, ['min'=>0, 'max'=>10]]);
-t('null with FLAG_EMPTY', null, [VALIDATE_INT, VALIDATE_FLAG_EMPTY, ['min'=>0, 'max'=>10]]);
-t('REJECT parameter absent', ['b'=>'1'], $A(['a'=>[VALIDATE_INT, VALIDATE_FLAG_REJECT, ['min'=>0, 'max'=>10]], 'b'=>$INT]));
-t('REJECT parameter present', ['a'=>'1', 'b'=>'1'], $A(['a'=>[VALIDATE_INT, VALIDATE_FLAG_REJECT, ['min'=>0, 'max'=>10]], 'b'=>$INT]));
+t('null element with FLAG_NULL', array('a'=>null), $A(array('a'=>array(VALIDATE_INT, VALIDATE_FLAG_NULL, array('min'=>0, 'max'=>10)))));
+t('null element without FLAG_NULL', array('a'=>null), $A(array('a'=>$INT)));
+t('null top level with FLAG_NULL', null, array(VALIDATE_INT, VALIDATE_FLAG_NULL, array('min'=>0, 'max'=>10)));
+t('null with FLAG_EMPTY', null, array(VALIDATE_INT, VALIDATE_FLAG_EMPTY, array('min'=>0, 'max'=>10)));
+t('REJECT parameter absent', array('b'=>'1'), $A(array('a'=>array(VALIDATE_INT, VALIDATE_FLAG_REJECT, array('min'=>0, 'max'=>10)), 'b'=>$INT)));
+t('REJECT parameter present', array('a'=>'1', 'b'=>'1'), $A(array('a'=>array(VALIDATE_INT, VALIDATE_FLAG_REJECT, array('min'=>0, 'max'=>10)), 'b'=>$INT)));
 
 echo "\n**** undeclared input keys ****\n";
-t('undeclared key', ['a'=>'1', 'evil'=>'x'], $A(['a'=>$INT]));
-t('undeclared nested key', ['p'=>['a'=>'1', 'evil'=>'x']], $A(['p'=>$A(['a'=>$INT])]), VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_ERROR_SQUASH);
-$left = t('VALIDATE_OPT_UNVALIDATED', ['a'=>'1', 'evil'=>'x'], $A(['a'=>$INT]), VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_UNVALIDATED);
+t('undeclared key', array('a'=>'1', 'evil'=>'x'), $A(array('a'=>$INT)));
+t('undeclared nested key', array('p'=>array('a'=>'1', 'evil'=>'x')), $A(array('p'=>$A(array('a'=>$INT)))), VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_ERROR_SQUASH);
+$left = t('VALIDATE_OPT_UNVALIDATED', array('a'=>'1', 'evil'=>'x'), $A(array('a'=>$INT)), VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_UNVALIDATED);
 var_dump($left);
 
 echo "\n**** VALIDATE_OPT_KEEP_INPUTS keeps the caller's array untouched ****\n";
-$in = ['a'=>'', 'f'=>' 3 '];
-$spec = $A([
-    'a'=>[VALIDATE_INT, VALIDATE_FLAG_EMPTY_TO_DEFAULT, ['min'=>0, 'max'=>10, 'default'=>7]],
-    'b'=>[VALIDATE_INT, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, ['min'=>0, 'max'=>10, 'default'=>8]],
-    'f'=>[VALIDATE_INT, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>10, 'filter'=>function ($ctx, $v, &$e) { return trim($v); }]],
-]);
+$in = array('a'=>'', 'f'=>' 3 ');
+$spec = $A(array(
+    'a'=>array(VALIDATE_INT, VALIDATE_FLAG_EMPTY_TO_DEFAULT, array('min'=>0, 'max'=>10, 'default'=>7)),
+    'b'=>array(VALIDATE_INT, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, array('min'=>0, 'max'=>10, 'default'=>8)),
+    'f'=>array(VALIDATE_INT, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>10, 'filter'=>function ($ctx, $v, &$e) { return trim($v); })),
+));
 var_dump(t('defaults + filter', $in, $spec, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_KEEP_INPUTS) === $in);
 
 echo "\n**** VALIDATE_FLAG_ARRAY ****\n";
-$arr = [VALIDATE_INT, VALIDATE_FLAG_ARRAY, ['min'=>0, 'max'=>10, 'amin'=>0, 'amax'=>5]];
+$arr = array(VALIDATE_INT, VALIDATE_FLAG_ARRAY, array('min'=>0, 'max'=>10, 'amin'=>0, 'amax'=>5));
 $arr_null = $arr;
 $arr_null[VALIDATE_FLAGS] |= VALIDATE_FLAG_NULL;
 t('null input with FLAG_NULL', null, $arr_null);
 t('object input', new stdClass, $arr);
-t('null element with FLAG_NULL', [1, null], $arr_null);
+t('null element with FLAG_NULL', array(1, null), $arr_null);
 $arr_default = $arr;
 $arr_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_EMPTY_TO_DEFAULT;
-$arr_default[VALIDATE_OPTIONS]['default'] = ['1', '2'];
+$arr_default[VALIDATE_OPTIONS]['default'] = array('1', '2');
 t('EMPTY_TO_DEFAULT validates the default array', '', $arr_default);
-t('nested array without RECURSIVE', [['1']], $arr);
+t('nested array without RECURSIVE', array(array('1')), $arr);
 $arr_limit = $arr;
 $arr_limit[VALIDATE_FLAGS] |= VALIDATE_FLAG_ARRAY_RECURSIVE;
 $arr_limit[VALIDATE_OPTIONS]['amax'] = 3;
 $arr_limit[VALIDATE_OPTIONS]['alimit'] = 6;
-t('"alimit" counts every element (6)', [[1, 2], [3, 4]], $arr_limit);
-t('"alimit" counts every element (7)', [[1, 2], [3, 4, 5]], $arr_limit);
+t('"alimit" counts every element (6)', array(array(1, 2), array(3, 4)), $arr_limit);
+t('"alimit" counts every element (7)', array(array(1, 2), array(3, 4, 5)), $arr_limit);
 $kc = $arr;
 $kc[VALIDATE_OPTIONS]['key_callback'] = function ($ctx, $key) { return true; };
-var_dump(validate_spec($kc, $u, $kctx), $kctx->getSystemErrors()['warning']);
+$_ok = validate_spec($kc, $u, $kctx);
+$_tmp = $kctx->getSystemErrors(); // PHP 5.3 cannot index a call result
+var_dump($_ok, $_tmp['warning']);
 
 echo "\n**** OBJECT \"class\" option ****\n";
 class RegressionObj
@@ -139,30 +143,31 @@ class RegressionObj
     }
 }
 $obj = new RegressionObj;
-t('instanceof match', $obj, [VALIDATE_OBJECT, VALIDATE_FLAG_NONE, ['callback'=>'check', 'class'=>'RegressionObj']]);
-t('instanceof mismatch', $obj, [VALIDATE_OBJECT, VALIDATE_FLAG_NONE, ['callback'=>'check', 'class'=>'DateTimeInterface']]);
+t('instanceof match', $obj, array(VALIDATE_OBJECT, VALIDATE_FLAG_NONE, array('callback'=>'check', 'class'=>'RegressionObj')));
+t('instanceof mismatch', $obj, array(VALIDATE_OBJECT, VALIDATE_FLAG_NONE, array('callback'=>'check', 'class'=>'DateTimeInterface')));
 
 echo "\n**** messages ****\n";
-$cb_warn = [VALIDATE_CALLBACK, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>10, 'callback'=>
+$cb_warn = array(VALIDATE_CALLBACK, VALIDATE_FLAG_NONE, array('min'=>0, 'max'=>10, 'callback'=>
     function ($ctx, &$result, $input) {
         validate_warning($ctx, 'just a warning');
         $result = $input;
         return true;
-    }]];
+    }));
 t('validate_warning() does not fail validation', 5, $cb_warn);
 t('unserializable value in an error message', function () {}, $S(VALIDATE_STRING_ALPHA));
-t('PASSTHRU drops the failure', ['a'=>'x', 'b'=>'1'],
-  $A(['a'=>[VALIDATE_INT, VALIDATE_FLAG_PASSTHRU, ['min'=>0, 'max'=>10]], 'b'=>$INT]),
+t('PASSTHRU drops the failure', array('a'=>'x', 'b'=>'1'),
+  $A(array('a'=>array(VALIDATE_INT, VALIDATE_FLAG_PASSTHRU, array('min'=>0, 'max'=>10)), 'b'=>$INT)),
   VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_UNVALIDATED);
 try {
     $in = 'x';
     validate($ctx, $in, $INT);
 } catch (ValidateInvalidValueException $e) {
-    var_dump($e instanceof InvalidArgumentException, $e->getError()['message']);
+    $_tmp = $e->getError(); // PHP 5.3 cannot index a call result
+    var_dump($e instanceof InvalidArgumentException, $_tmp['message']);
 }
 
 echo "\n**** spec / argument checks ****\n";
-var_dump(validate_spec([VALIDATE_UNVALIDATED, VALIDATE_FLAG_NONE, []]));
+var_dump(validate_spec(array(VALIDATE_UNVALIDATED, VALIDATE_FLAG_NONE, array())));
 try {
     validate_set_error_level(validate_init(), E_ALL);
 } catch (InvalidArgumentException $e) {
@@ -176,8 +181,8 @@ try {
 }
 
 echo "\n**** REGEXP with non-scalar input ****\n";
-$RE = [VALIDATE_REGEXP, VALIDATE_REGEXP_ALNUM, ['min'=>0, 'max'=>100, 'regexp'=>'/\A[a-z]+\z/']];
-t('array', ['a'], $RE);
+$RE = array(VALIDATE_REGEXP, VALIDATE_REGEXP_ALNUM, array('min'=>0, 'max'=>100, 'regexp'=>'/\A[a-z]+\z/'));
+t('array', array('a'), $RE);
 t('object', new stdClass, $RE);
 ?>
 --EXPECT--

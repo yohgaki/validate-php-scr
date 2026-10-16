@@ -15,26 +15,26 @@ require_once __DIR__.'/../validate_func.php';
 require_once __DIR__.'/../lib/basic_types.php'; // Predefined spec presets.
 
 /******************* Sample input data ***********************/
-$POST = [
+$POST = array(
     'id'    => '2134',
     'name'  => 'test user',
     'utf8'  => '私はガラスを食べられます。',
     'float' => '1234.5678',
-    'array' => [
+    'array' => array(
         'id'     => '3452',
         'string' => "abcdefg\nxyz",
-    ]
-];
+    )
+);
 
-$GET = [
+$GET = array(
     'foo' => '123',
     'bar' => '456',
-];
+);
 
-$HEADER = [
+$HEADER = array(
     'ACCEPT'     => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
     'USER_AGENT' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36',
-];
+);
 
 
 
@@ -47,65 +47,65 @@ $HEADER = [
 // 'min'/'max' are mandatory for every spec — the framework refuses to make
 // guesses on the caller's behalf. This is the whitelist principle in action:
 // the caller must state the exact range they expect.
-$id = [
+$id = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => 1, 'max' => PHP_INT_MAX]
-];
+    array('min' => 1, 'max' => PHP_INT_MAX)
+);
 
 // Strings reject every character by default. Opt characters in explicitly
 // via VALIDATE_STRING_* flags (whole classes) or the 'ascii' option
 // (individual extra characters).
-$name = [
+$name = array(
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_SPACE,
-    ['min' => 4, 'max' => 64]
-];
+    array('min' => 4, 'max' => 64)
+);
 
 // For floats you may use -INF/INF as min/max as a shorthand for "unbounded".
 // min/max are still required — there is no implicit default.
-$float = [
+$float = array(
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
-    ['min' => 4, 'max' => INF]
+    array('min' => 4, 'max' => INF)
     // Even with max => INF, an actual INF input is still rejected unless
     // explicitly allowed via 'INF' => true (and likewise '-INF' => true for
     // negative infinity). NAN is always rejected.
-];
+);
 
 // VALIDATE_STRING_MB opens up UTF-8 multibyte characters. The 'encoding'
 // option is informational — only UTF-8 is supported, so it can be omitted.
-$utf8 = [
+$utf8 = array(
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_SPACE | VALIDATE_STRING_MB,
-    ['min' => 4, 'max' => 64, 'encoding' => 'UTF-8']
-];
+    array('min' => 4, 'max' => 64, 'encoding' => 'UTF-8')
+);
 
 // Same whitelist principle as $name above: VALIDATE_STRING_LF must be set
 // explicitly to permit '\n' inside the value.
-$string = [
+$string = array(
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_LF,
-    ['min' => 4, 'max' => 128]
-];
+    array('min' => 4, 'max' => 128)
+);
 
 // The Accept HTTP header contains commas, slashes, semicolons and other
 // punctuation. The flag-based whitelist would be too coarse, so we list the
 // extra individual characters via the 'ascii' option.
-$accept = [
+$accept = array(
     VALIDATE_STRING,
     VALIDATE_FLAG_UNDEFINED_TO_DEFAULT | VALIDATE_STRING_DIGIT | VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_SPACE,
-    ['min' => 0, 'max' => 1024, 'ascii' => '=/,.;+()*', 'default' => '']
-];
+    array('min' => 0, 'max' => 1024, 'ascii' => '=/,.;+()*', 'default' => '')
+);
 
 
 // Anything the built-in flags cannot express goes through VALIDATE_CALLBACK,
 // where the rules are plain PHP. The callback receives an already pre-filtered
 // input — only the characters allowed by the flags below ever reach it.
-$user_agent = [
+$user_agent = array(
     VALIDATE_CALLBACK, // Any PHP callable is accepted.
     VALIDATE_CALLBACK_SPACE | VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_MB,
-    ['min' => 10, 'max' => 128,
+    array('min' => 10, 'max' => 128,
     'callback' =>
     // Signature: function (Validate $ctx, mixed &$result, mixed $input): bool
     //
@@ -139,8 +139,8 @@ $user_agent = [
         // Publish the validated value on success.
         $result = $input;
         return true;
-    }]
-];
+    })
+);
 
 
 
@@ -149,54 +149,54 @@ $user_agent = [
 // Compose the per-field specs above into a single top-level spec. Each spec
 // array follows the [type, flags, options, sub-specs] layout — see
 // validate_spec() in validate_func.php for the formal grammar.
-$specs = [
+$specs = array(
     VALIDATE_ARRAY,           // [0] validator type
     VALIDATE_FLAG_NONE,       // [1] flag bitfield
-    ['min' => 3, 'max' => 3], // [2] options: exactly three top-level keys
-    [
-        'post' => [
+    array('min' => 3, 'max' => 3), // [2] options: exactly three top-level keys
+    array(
+        'post' => array(
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
-            ['min' => 4, 'max' => 5],
+            array('min' => 4, 'max' => 5),
             // min/max on arrays cap the *element count*, not byte length. This
             // rejects unexpectedly large or empty payloads up front, before any
             // per-element rule runs.
             // Mark an individual element optional with VALIDATE_FLAG_UNDEFINED
             // (or VALIDATE_FLAG_UNDEFINED_TO_DEFAULT if a default is needed).
-            [
+            array(
                 'id'    => $id,
                 'name'  => $name,
                 'utf8'  => $utf8,
                 'float' => $float,
-                'array' => [
+                'array' => array(
                     VALIDATE_ARRAY,
                     VALIDATE_FLAG_NONE,
-                    ['min' => 2, 'max' => 2],
-                    [
+                    array('min' => 2, 'max' => 2),
+                    array(
                         'id'     => $id,
                         'string' => $string,
-                    ],
-                ],
-            ],
-        ],
-        'get' => [
+                    ),
+                ),
+            ),
+        ),
+        'get' => array(
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
-            ['min' => 0, 'max' => 4],
-            [] // No declared keys; the default-spec pass below handles them.
-        ],
-        'header' => [
+            array('min' => 0, 'max' => 4),
+            array() // No declared keys; the default-spec pass below handles them.
+        ),
+        'header' => array(
             VALIDATE_ARRAY,
             VALIDATE_FLAG_NONE,
-            ['min' => 2, 'max' => 50],
-            [
+            array('min' => 2, 'max' => 50),
+            array(
                 'USER_AGENT' => $user_agent,
                 'ACCEPT'     => $accept,
                 'OTHER'     => $accept,
-            ],
-        ],
-    ],
-];
+            ),
+        ),
+    ),
+);
 
 // Real-world web apps often see extra (optional, unforeseen) parameters.
 // Build a second pass with a loose array spec to validate whatever remains.
@@ -208,7 +208,7 @@ $post_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
                                  | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
 $post_default[VALIDATE_OPTIONS]['amin'] = 0;     // At least 0 extra POST keys.
 $post_default[VALIDATE_OPTIONS]['amax'] = 2;     // At most 2 extra POST keys.
-$post_default[VALIDATE_OPTIONS]['default'] = []; // Substitute [] when entirely absent.
+$post_default[VALIDATE_OPTIONS]['default'] = array(); // Substitute [] when entirely absent.
 
 $get_default = $basicTypes['alnum128']; // Alnum text, up to 128 bytes.
 $get_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
@@ -216,7 +216,7 @@ $get_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
                                  | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
 $get_default[VALIDATE_OPTIONS]['amin'] = 0;     // At least 0 extra query params.
 $get_default[VALIDATE_OPTIONS]['amax'] = 5;     // At most 5 extra query params.
-$get_default[VALIDATE_OPTIONS]['default'] = [];
+$get_default[VALIDATE_OPTIONS]['default'] = array();
 
 $header_default = $basicTypes['header1024u']; // UTF-8 HTTP header value, up to 1024 bytes.
 $header_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
@@ -224,30 +224,30 @@ $header_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
                                  | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
 $header_default[VALIDATE_OPTIONS]['amin'] = 0;     // At least 0 extra headers.
 $header_default[VALIDATE_OPTIONS]['amax'] = 10;    // At most 10 extra headers.
-$header_default[VALIDATE_OPTIONS]['default'] = [];
+$header_default[VALIDATE_OPTIONS]['default'] = array();
 
 
-$default_specs = [
+$default_specs = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 0, 'max' => 3],
-    [
+    array('min' => 0, 'max' => 3),
+    array(
         'post'   => $post_default,
         'get'    => $get_default,
         'header' => $header_default,
-    ]
-];
+    )
+);
 
 
 // You should validate ALL request inputs — $_POST/$_GET/$_COOKIE/$_FILES,
 // the relevant $_SERVER entries, and apache_request_headers() — not just the
 // fields your business logic happens to read this minute.
-$my_inputs = ['post' => $POST, 'get' => $GET, 'header' => $HEADER];
+$my_inputs = array('post' => $POST, 'get' => $GET, 'header' => $HEADER);
 
 // Validate the full request in a single call. Input keys a spec does not
 // declare are errors unless VALIDATE_OPT_UNVALIDATED is set; this first pass
 // sets it because the second pass below validates the leftovers.
-// Equivalent OO one-liner (no need to keep a $ctx):
+// Equivalent OO one-liner on PHP 5.4+ (no need to keep a $ctx):
 //   $result = (new Validate)->validate($my_inputs, $specs, VALIDATE_OPT_UNVALIDATED);
 $inputs = validate($ctx, $my_inputs, $specs, VALIDATE_OPT_CHECK_SPEC | VALIDATE_OPT_UNVALIDATED);
 var_dump($inputs, $ctx->getStatus()); // true on success.

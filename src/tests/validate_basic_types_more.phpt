@@ -20,7 +20,8 @@ function try_type($name, $value)
     $ctx = validate_init();
     $copy = $value;
     $result = validate($ctx, $copy, $basicTypes[$name], $opts);
-    $user = validate_get_user_errors($ctx)['error'];
+    $_tmp = validate_get_user_errors($ctx); // PHP 5.3 cannot index a call result
+    $user = $_tmp['error'];
     printf("%s(%s): ", $name, is_scalar($value) ? var_export($value, true) : gettype($value));
     var_dump($result);
     foreach ($user as $errs) {
@@ -44,7 +45,7 @@ try_type('json', '{"a":1}');
 try_type('json', '{broken');
 // Fixed messages per json_last_error() code, so they do not depend on the PHP
 // version. Objects decode to arrays: '\u0000' starting a key is valid JSON.
-$jsonCases = [
+$jsonCases = array(
     'nesting 511'    => str_repeat('[', 511).str_repeat(']', 511),
     'nesting 512'    => str_repeat('[', 512).str_repeat(']', 512),
     'tab in string'  => "[\"a\tb\"]",
@@ -58,12 +59,13 @@ $jsonCases = [
     'leading zero'   => '07',
     'trailing dot'   => '[1.]',
     'leading dot'    => '-.1',
-];
+);
 foreach ($jsonCases as $label => $json) {
     $ctx = validate_init();
     $r = validate($ctx, $json, $basicTypes['json'], $opts);
     echo "json($label): ", $r === null ? 'NULL' : 'valid', "\n";
-    foreach (validate_get_user_errors($ctx)['error'] as $errs) {
+    $_tmp = validate_get_user_errors($ctx); // PHP 5.3 cannot index a call result
+    foreach ($_tmp['error'] as $errs) {
         foreach ((array)$errs as $msg) {
             echo "  user error: $msg\n";
         }
@@ -73,7 +75,7 @@ foreach ($jsonCases as $label => $json) {
 echo "\n**** header64 (vtrim filter) ****\n";
 try_type('header64', "  text/html  ");
 $ctx = validate_init();
-$copy = ['x'];
+$copy = array('x');
 var_dump(validate($ctx, $copy, $basicTypes['header64'], $opts));
 
 echo "\n**** url (format-only failure path) ****\n";

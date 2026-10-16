@@ -23,7 +23,7 @@ $vals = array(
 $spec = array(
 	VALIDATE_INT,
 	VALIDATE_INT_AS_STRING | VALIDATE_INT_NEGATIVE_SIGN,
-	['min'=>-150, 'max'=>150]
+	array('min'=>-150, 'max'=>150)
 );
 
 $func_opts = VALIDATE_OPT_CHECK_SPEC;

@@ -18,7 +18,7 @@ for ($i=1; $i < 10; $i++) {
         $spec = array(
             VALIDATE_STRING,
             VALIDATE_STRING_ALNUM,
-            ['min'=>1, 'max'=>$i]
+            array('min'=>1, 'max'=>$i)
         );
         var_dump(validate($ctx, $data, $spec), $ctx->getStatus());
     } catch (Exception $e) {
@@ -32,7 +32,7 @@ for ($i=1; $i < 10; $i++) {
         $spec = array(
             VALIDATE_STRING,
             VALIDATE_STRING_ALNUM,
-            ['min'=>$i, 'max'=>10]
+            array('min'=>$i, 'max'=>10)
         );
         var_dump(validate($ctx, $data, $spec), $ctx->getStatus());
     } catch (Exception $e) {
@@ -45,7 +45,7 @@ try {
     $spec = array(
         VALIDATE_STRING,
         VALIDATE_STRING_ALNUM,
-        ['min'=>10, 'max'=>1]
+        array('min'=>10, 'max'=>1)
     );
     var_dump(validate($ctx, $data, $spec), $ctx->getStatus());
 } catch (Exception $e) {

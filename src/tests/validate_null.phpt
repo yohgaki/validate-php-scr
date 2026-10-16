@@ -11,20 +11,20 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
-$spec = [
+$spec = array(
     VALIDATE_NULL,
     VALIDATE_FLAG_NONE,
-    ['min'=>-100, 'max'=>100]
-];
+    array('min'=>-100, 'max'=>100)
+);
 
-$vals = [null, '', '0', 0, 1, new StdClass];
+$vals = array(null, '', '0', 0, 1, new StdClass);
 
 $func_opts = VALIDATE_OPT_NONE;
 
-$flags = [
+$flags = array(
     'VALIDATE_FLAG_NONE' => VALIDATE_FLAG_NONE,
     'VALIDATE_NULL_AS_STRING' => VALIDATE_NULL_AS_STRING
-];
+);
 
 foreach ($flags as $k => $f) {
     echo "\n**** $k ****\n";
@@ -39,12 +39,12 @@ foreach ($flags as $k => $f) {
     }
 }
 
-$validators = [
+$validators = array(
     'VALIDATE_BOOL' => VALIDATE_BOOL,
     'VALIDATE_INT' => VALIDATE_INT,
     'VALIDATE_FLOAT' => VALIDATE_FLOAT,
     'VALIDATE_STRING' => VALIDATE_STRING
-];
+);
 
 foreach ($validators as $k => $v) {
     echo "\n**** $k ****\n";

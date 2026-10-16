@@ -12,50 +12,50 @@ error_reporting=-1
 require_once __DIR__.'/bootstrap.php';
 
 echo "\n**** validate() INT ****\n";
-$spec = [
+$spec = array(
     VALIDATE_INT,
     VALIDATE_INT_AS_STRING,
-    ['min' => -100, 'max' => 100],
-];
-$values = [-100, 100, 0, '-100', '100', '0'];
+    array('min' => -100, 'max' => 100),
+);
+$values = array(-100, 100, 0, '-100', '100', '0');
 foreach ($values as $val) {
     var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
 }
 
 echo "\n**** validate() FLOAT ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_AS_STRING,
-    ['min' => -100, 'max' => 100],
-];
-$values = [-100, 100, 0, '-100', '100', '0'];
+    array('min' => -100, 'max' => 100),
+);
+$values = array(-100, 100, 0, '-100', '100', '0');
 foreach ($values as $val) {
     var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
 }
 
 echo "\n**** validate() STRING ****\n";
-$spec = [
+$spec = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 0, 'max' => 2],
-];
-$values = [0, '', 'a', 'ab'];
+    array('min' => 0, 'max' => 2),
+);
+$values = array(0, '', 'a', 'ab');
 foreach ($values as $val) {
     var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
 }
 
 echo "\n**** validate() ARRAY ****\n";
-$spec = [
+$spec = array(
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 2, 'max' => 3],
-    [
-        0 => [VALIDATE_INT, 0, ['min'=>-100, 'max'=>100]],
-        1 => [VALIDATE_INT, 0, ['min'=>-100, 'max'=>100]],
-        2 => [VALIDATE_INT, VALIDATE_FLAG_UNDEFINED, ['min'=>-100, 'max'=>100]],
-     ]
-];
-$values = [[1,2], [1,2,3]];
+    array('min' => 2, 'max' => 3),
+    array(
+        0 => array(VALIDATE_INT, 0, array('min'=>-100, 'max'=>100)),
+        1 => array(VALIDATE_INT, 0, array('min'=>-100, 'max'=>100)),
+        2 => array(VALIDATE_INT, VALIDATE_FLAG_UNDEFINED, array('min'=>-100, 'max'=>100)),
+     )
+);
+$values = array(array(1,2), array(1,2,3));
 foreach ($values as $val) {
     try {
         var_dump(validate($ctx, $val, $spec), $ctx->getStatus());

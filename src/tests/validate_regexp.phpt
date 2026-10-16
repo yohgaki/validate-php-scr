@@ -36,9 +36,9 @@ foreach($opts as $opt) {
 		$result = validate(
 			$ctx,
 			$tmp,
-			[
+			array(
 				VALIDATE_REGEXP, VALIDATE_REGEXP_ALNUM, $opt
-			]
+			)
 		);
 		var_dump($ctx->getStatus(), $result);
 	} catch (Exception $e) {

@@ -31,10 +31,10 @@ foreach($booleans as $val=>$exp) {
     try {
         unset($ctx);
         $result = validate($ctx, $val,
-					 [VALIDATE_BOOL,
+					 array(VALIDATE_BOOL,
 					  VALIDATE_BOOL_01|VALIDATE_BOOL_TF|VALIDATE_BOOL_TRUE_FALSE|VALIDATE_BOOL_ON_OFF,
-					  []
-					 ],
+					  array()
+					 ),
                      VALIDATE_OPT_NONE);
         var_dump($result);
     } catch (Exception $e) {

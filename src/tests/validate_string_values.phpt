@@ -11,21 +11,21 @@ error_reporting=-1
 <?php
 require_once __DIR__.'/bootstrap.php';
 
-$vals = [1,2,10,11, 'abc', 'X', 'Z', ''];
+$vals = array(1,2,10,11, 'abc', 'X', 'Z', '');
 
 $spec = array(
 	VALIDATE_STRING,
 	VALIDATE_FLAG_NONE,
-    [
-        'values' => [
+    array(
+        'values' => array(
             1 => true,
             2 => true,
             10 => false,
             'abc' => true,
             'Z' => false,
             '' => true,
-        ]
-    ]
+        )
+    )
 );
 
 $func_opts = VALIDATE_OPT_CHECK_SPEC;
@@ -37,7 +37,7 @@ foreach ($vals as $var) {
     }
 }
 
-$var = ['scalar']; // Array. Error
+$var = array('scalar'); // Array. Error
 try {
     var_dump(validate($ctx, $var, $spec, $func_opts), $ctx->getStatus());
 } catch (Exception $e) {

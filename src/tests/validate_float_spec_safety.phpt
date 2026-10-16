@@ -15,73 +15,85 @@ zend.assertions=-1
 // safety net below must not depend on assert() or VALIDATE_OPT_CHECK_SPEC.
 require_once __DIR__.'/bootstrap.php';
 
+// var_export() as in PHP 7.0.2+: a float keeps ".0" (PHP 5 prints 1500.0 as 1500).
+function vexp($v)
+{
+    $s = var_export($v, true);
+    if (is_float($v) && strpbrk($s, '.eEN') === false) {
+        $s .= '.0';
+    }
+    return $s;
+}
+
 function tryone($label, $value, $spec) {
     $ctx = null;
     $r = validate($ctx, $value, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
     printf("[%s] in=%s => out=%s status=%s\n",
         $label,
-        var_export($value, true),
-        var_export($r, true),
+        vexp($value),
+        vexp($r),
         var_export($ctx instanceof Validate ? $ctx->getStatus() : null, true));
 }
 
 echo "**** 'INF'/'-INF' options accept infinities (min/max do not apply) ****\n";
-$spec = [VALIDATE_FLOAT, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 100, 'INF' => true]];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLAG_NONE, array('min' => 0, 'max' => 100, 'INF' => true));
 tryone('INF allowed',   INF,   $spec); // ok — not clipped by max=100
-$spec = [VALIDATE_FLOAT, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 100]];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLAG_NONE, array('min' => 0, 'max' => 100));
 tryone('INF rejected',  INF,   $spec); // fail — option not set
-$spec = [VALIDATE_FLOAT, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 100, '-INF' => true]];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLAG_NONE, array('min' => 0, 'max' => 100, '-INF' => true));
 tryone('-INF allowed',  -INF,  $spec); // ok
 tryone('range ok',      50.5,  $spec); // ok — finite values still range-checked
 tryone('range fail',    200.5, $spec); // fail
 
 echo "\n**** AS_STRING rejects native float input ****\n";
-$spec = [VALIDATE_FLOAT, VALIDATE_FLOAT_AS_STRING, ['min' => 0, 'max' => 10]];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLOAT_AS_STRING, array('min' => 0, 'max' => 10));
 tryone('double in',     1.5,   $spec); // fail — numeric string required
 tryone('string in',     '1.5', $spec); // ok
 tryone('int in',        2,     $spec); // ok — int is validated as string '2'
 
 echo "\n**** 'default' is validated like normal input ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLAG_EMPTY_TO_DEFAULT,
-    ['min' => 0, 'max' => 10, 'decimal' => ',', 'default' => 1.5],
-];
+    array('min' => 0, 'max' => 10, 'decimal' => ',', 'default' => 1.5),
+);
 tryone('float default + decimal', '', $spec); // ok — default takes the native-float path
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLOAT_FRACTION | VALIDATE_FLAG_EMPTY_TO_DEFAULT,
-    ['min' => 0, 'max' => 10, 'default' => 2.0],
-];
+    array('min' => 0, 'max' => 10, 'default' => 2.0),
+);
 tryone('float default + FRACTION', '', $spec); // ok — native float satisfies FRACTION
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLAG_EMPTY_TO_DEFAULT,
-    ['min' => 0, 'max' => 1.0e40, 'length' => 5, 'default' => '123456789012345678901234567890'],
-];
+    array('min' => 0, 'max' => 1.0e40, 'length' => 5, 'default' => '123456789012345678901234567890'),
+);
 tryone('long default rejected', '', $spec); // fail — default exceeds 'length'
 
 echo "\n**** Broken separator specs fail safely in production ****\n";
 // Assertions and spec check are both off here; these used to validate
 // successfully with corrupted values (15.0, 0.1 and 1.5 respectively).
-$spec = [VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, ['min' => 0, 'max' => 100, 'decimal' => ',']];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, array('min' => 0, 'max' => 100, 'decimal' => ','));
 tryone('decimal==thousand', '1,5', $spec); // fail — ',' collides with default thousand
-$spec = [VALIDATE_FLOAT, VALIDATE_FLAG_NONE, ['min' => -10, 'max' => 10, 'decimal' => '-']];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLAG_NONE, array('min' => -10, 'max' => 10, 'decimal' => '-'));
 tryone('sign as decimal', '-1-5', $spec); // fail — '-' collides with float grammar
-$spec = [VALIDATE_FLOAT, VALIDATE_FLOAT_SCIENTIFIC, ['min' => 0, 'max' => 1000000, 'decimal' => 'e']];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLOAT_SCIENTIFIC, array('min' => 0, 'max' => 1000000, 'decimal' => 'e'));
 tryone('exponent as decimal', '1e5e3', $spec); // fail — 'e' collides with float grammar
 
 echo "\n**** Grammar-overlapping separators are spec errors ****\n";
-$spec = [VALIDATE_FLOAT, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 10, 'decimal' => 'e']];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLAG_NONE, array('min' => 0, 'max' => 10, 'decimal' => 'e'));
 $ctx = validate_init();
 var_dump(validate_spec($spec, $unvalidated, $ctx));
-foreach (validate_get_system_errors($ctx)['error'] as $e) {
+$_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+foreach ($_tmp['error'] as $e) {
     echo 'spec error: ', $e['message'], "\n";
 }
-$spec = [VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, ['min' => 0, 'max' => 10000, 'thousand' => '5']];
+$spec = array(VALIDATE_FLOAT, VALIDATE_FLOAT_THOUSAND, array('min' => 0, 'max' => 10000, 'thousand' => '5'));
 $ctx = validate_init();
 var_dump(validate_spec($spec, $unvalidated, $ctx));
-foreach (validate_get_system_errors($ctx)['error'] as $e) {
+$_tmp = validate_get_system_errors($ctx); // PHP 5.3 cannot index a call result
+foreach ($_tmp['error'] as $e) {
     echo 'spec error: ', $e['message'], "\n";
 }
 

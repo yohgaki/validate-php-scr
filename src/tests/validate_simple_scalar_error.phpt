@@ -12,13 +12,13 @@ error_reporting=-1
 require_once __DIR__.'/bootstrap.php';
 
 echo "\n**** validate() NULL ****\n";
-$spec = [
+$spec = array(
     VALIDATE_NULL,
     VALIDATE_FLAG_NULL,
-    [],
-];
+    array(),
+);
 
-$values = [1, 0, true, false, 'a', 'null', new StdClass];
+$values = array(1, 0, true, false, 'a', 'null', new StdClass);
 foreach ($values as $val) {
     try {
         var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
@@ -28,12 +28,12 @@ foreach ($values as $val) {
 }
 
 echo "\n**** validate() BOOL ****\n";
-$spec = [
+$spec = array(
     VALIDATE_BOOL,
     VALIDATE_BOOL_TF | VALIDATE_BOOL_ON_OFF | VALIDATE_BOOL_TRUE_FALSE | VALIDATE_BOOL_YES_NO | VALIDATE_BOOL_01,
-    [],
-];
-$values = [null, new StdClass, '', 't ', ' T', ' on', 'oN ', ' true', 'tRue ', 2, '2', -1];
+    array(),
+);
+$values = array(null, new StdClass, '', 't ', ' T', ' on', 'oN ', ' true', 'tRue ', 2, '2', -1);
 foreach ($values as $val) {
     try {
         var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
@@ -43,12 +43,12 @@ foreach ($values as $val) {
 }
 
 echo "\n**** validate() INT ****\n";
-$spec = [
+$spec = array(
     VALIDATE_INT,
     VALIDATE_INT_AS_STRING,
-    ['min' => 0, 'max' => '99999999999999999999999999999999999999999999999'],
-];
-$values = [-1, '', null, true, false, new StdClass, '1234abc',  '99999999999999999999999999999999999999999999999e99999'];
+    array('min' => 0, 'max' => '99999999999999999999999999999999999999999999999'),
+);
+$values = array(-1, '', null, true, false, new StdClass, '1234abc',  '99999999999999999999999999999999999999999999999e99999');
 foreach ($values as $val) {
     try {
         var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
@@ -58,12 +58,12 @@ foreach ($values as $val) {
 }
 
 echo "\n**** validate() INT2 ****\n";
-$spec = [
+$spec = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => 0, 'max' => '99999999999999999999999999999999999999999999999'],
-];
-$values = [-1, '', null, true, false, new StdClass, '1234abc',  '99999999999999999999999999999999999999999999999e99999'];
+    array('min' => 0, 'max' => '99999999999999999999999999999999999999999999999'),
+);
+$values = array(-1, '', null, true, false, new StdClass, '1234abc',  '99999999999999999999999999999999999999999999999e99999');
 foreach ($values as $val) {
     try {
         var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
@@ -73,14 +73,14 @@ foreach ($values as $val) {
 }
 
 echo "\n**** validate() FLOAT ****\n";
-$spec = [
+$spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
     // 'length' raised so the long invalid-format inputs reach the syntax
     // check instead of being rejected up-front for length.
-    ['min' => -0.1, 'max' => '99999999999999999999999999999999999999999999999', 'length' => 100],
-];
-$values = [-1, '', null, true, false, new StdClass, '1234abc', 'abc1234',  'e9999999999999999999999999999999999999999999999999'];
+    array('min' => -0.1, 'max' => '99999999999999999999999999999999999999999999999', 'length' => 100),
+);
+$values = array(-1, '', null, true, false, new StdClass, '1234abc', 'abc1234',  'e9999999999999999999999999999999999999999999999999');
 foreach ($values as $val) {
     try {
         var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
@@ -90,12 +90,12 @@ foreach ($values as $val) {
 }
 
 echo "\n**** validate() STRING ****\n";
-$spec = [
+$spec = array(
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM,
-    ['min' => 2, 'max' => 5],
-];
-$values = [0, '', null, true, false, new StdClass, '', 12.3456789, 123456789, '123456',  '99999999999999999999999999999999999999999999999', "<\b\t\n\r>"];
+    array('min' => 2, 'max' => 5),
+);
+$values = array(0, '', null, true, false, new StdClass, '', 12.3456789, 123456789, '123456',  '99999999999999999999999999999999999999999999999', "<\b\t\n\r>");
 foreach ($values as $val) {
     try {
         var_dump(validate($ctx, $val, $spec), $ctx->getStatus());
