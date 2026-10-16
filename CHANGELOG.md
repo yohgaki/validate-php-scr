@@ -165,7 +165,11 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
   branch: changes go to `master` first and are ported to the other branches.
   The GitHub Actions matrix of `master` adds setup-php's `nightly` (next PHP
   release, 8.6) and `master` (php-src master, 8.7.0-dev) builds; see README
-  "Branches". `.gitlab-ci.yml` installs `libgmp-dev` from archive.debian.org
+  "Branches". Every branch's matrix also runs the tests without BCMath and
+  GMP on its newest PHP version, where `validate_compare_bigint.phpt` tests
+  the pure PHP big-integer comparison (it is skipped while GMP is loaded),
+  and the jobs fail unless the extensions are loaded or disabled as
+  requested. `.gitlab-ci.yml` installs `libgmp-dev` from archive.debian.org
   when the image's Debian release is no longer on the mirrors.
   `dev/basic_types_corpus.php` prints the results of every `$basicTypes` spec
   for tricky inputs, and `dev/fuzz_inputs.php` generates inputs for the

@@ -7,13 +7,20 @@ on:
 
 jobs:
   test:
-    name: PHP ${{ matrix.php }}
+    name: PHP ${{ matrix.php }}${{ matrix.label }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         # php-7.x branch.
         php: ['7.0', '7.1', '7.2', '7.3', '7.4']
+        extensions: ['bcmath, gmp, mbstring']
+        include:
+          # Without BCMath and GMP, big integers are compared in pure PHP
+          # (validate_compare_bigint.phpt, skipped while GMP is loaded).
+          - php: '7.4'
+            extensions: 'mbstring, :bcmath, :gmp'
+            label: ' without BCMath/GMP'
 
     steps:
       - uses: actions/checkout@v4
@@ -22,11 +29,23 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: bcmath, gmp, mbstring
+          extensions: ${{ matrix.extensions }}
           coverage: none
 
+      # Fail unless each extension is loaded, or not loaded if it has a ':'.
       - name: Check PHP and extensions
-        run: php -v && php -m | grep -E 'bcmath|gmp|mbstring'
+        env:
+          EXTENSIONS: ${{ matrix.extensions }}
+        run: |
+          php -v
+          mods=$(php -m)
+          for e in $(echo "$EXTENSIONS" | tr ',' ' '); do
+            if [ "${e#:}" = "$e" ]; then
+              echo "$mods" | grep -qix "$e" || { echo "$e is not loaded"; exit 1; }
+            elif echo "$mods" | grep -qix "${e#:}"; then
+              echo "${e#:} is loaded"; exit 1
+            fi
+          done
 
       # run-tests.php of PHP 7.4 has no --show-diff; print the diffs on failure.
       - name: Run tests
