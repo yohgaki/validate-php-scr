@@ -2,8 +2,8 @@
 
 ## Unreleased
 
-Design review (2026-10-16, commit d622eb4) and the `basic_types.php` follow-up
-(2026-10-16).
+Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
+`basic_types.php` format fixes and the `VALIDATE_ARRAY` `undeclared` option.
 
 ### Changed — behavior changes that can affect existing code
 
@@ -13,7 +13,9 @@ Design review (2026-10-16, commit d622eb4) and the `basic_types.php` follow-up
   promised. Before, the check only ran for a top-level `VALIDATE_ARRAY` that also
   carried `VALIDATE_FLAG_ARRAY`, so extra keys were silently accepted.
   Multi-stage validation must pass `VALIDATE_OPT_UNVALIDATED` to every stage
-  except the last (see examples 01, 94, 95, 99).
+  except the last (see example 01); to validate keys that cannot be listed in
+  advance, such as HTTP headers, use the new `undeclared` option instead
+  (examples 94, 95, 99-web).
 * **Exceptions.** Value failures throw `ValidateInvalidValueException`, spec
   errors found by `VALIDATE_OPT_CHECK_SPEC` throw `ValidateInvalidSpecException`
   — both extend `InvalidArgumentException`, so existing `catch` blocks still
@@ -101,6 +103,13 @@ Design review (2026-10-16, commit d622eb4) and the `basic_types.php` follow-up
 
 * `VALIDATE_OBJECT` `class` option (instanceof check), as `validate_defs.php`
   already described.
+* `VALIDATE_ARRAY` `undeclared` option: a spec applied to every input key that
+  `VALIDATE_PARAMS` does not declare, with the keys checked by
+  `VALIDATE_FLAG_ARRAY_KEY_ALNUM` / `key_callback` of the `VALIDATE_ARRAY`
+  spec. Known and unknown keys (e.g. HTTP headers) are validated in one
+  `validate()` call; examples 94, 95 and 99-web use it instead of two-stage
+  validation. `validate_spec()` checks the `undeclared` spec and warns about
+  unknown `VALIDATE_ARRAY` options.
 * `basic_types.php`: `timezone_all_with_bc` also accepts backward-compatible
   zone names (`DateTimeZone::ALL_WITH_BC`, Laravel `timezone:all_with_bc`),
   e.g. `US/Eastern` or `Asia/Calcutta`, which browsers still report.
@@ -109,8 +118,8 @@ Design review (2026-10-16, commit d622eb4) and the `basic_types.php` follow-up
   `ValidateInvalidValueException::getError()`.
 * `VALIDATE_TOOLS_DIR` environment variable for `src/tools` (see
   `src/tools/README.md`); the tools refuse directories other users can write to.
-* `src/tests/validate_regressions.phpt`, `src/tests/basic_types_formats.phpt`;
-  PHP 8.5 in both CI matrices.
+* `src/tests/validate_regressions.phpt`, `src/tests/basic_types_formats.phpt`,
+  `src/tests/validate_array_undeclared.phpt`; PHP 8.5 in both CI matrices.
 
 ### Removed / internal
 
@@ -118,6 +127,8 @@ Design review (2026-10-16, commit d622eb4) and the `basic_types.php` follow-up
   by bisection (verified identical for every code point U+0080..U+10FFFF). The
   commented-out RFC 3454 table D code was removed; `VALIDATE_STRING_RFC3454_D`
   is documented as reserved (no effect).
+* The per-key body of the `VALIDATE_ARRAY` loop is `validateParam()`, shared
+  by declared keys and keys validated by `undeclared`.
 * String validation skips whitelisted runs with `strspn()` instead of building
   a 128-entry map per value.
 * Removed dead internals (`reportWarning()`, `reportNotice()`,

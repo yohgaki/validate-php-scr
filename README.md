@@ -51,7 +51,7 @@ Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.m
 * validate() converts input values to native types when it is possible. e.g. '123' to int. 'yes'/'no' to bool.
 * validate() processes input values and validation specs recursively. i.e. Any input values (scalar/array/object) are accepted.
 * validate() checks validation spec format by default (spec errors throw ValidateInvalidSpecException). i.e. Disable spec format check for production.
-* validate() rejects input keys that a VALIDATE_ARRAY spec does not declare ("Unvalidated value remains."). Pass VALIDATE_OPT_UNVALIDATED for multi-stage validation.
+* validate() rejects input keys that a VALIDATE_ARRAY spec does not declare ("Unvalidated value remains."), unless the spec's "undeclared" option gives a spec for them (e.g. a catch-all for unknown HTTP headers). Pass VALIDATE_OPT_UNVALIDATED for multi-stage validation.
 * validate() stores validation statuses to context. e.g. $ctx in examples below. validate_get_status() reports the most recent validate() call.
 * validate() throws ValidateInvalidValueException by default. Both exception classes extend InvalidArgumentException.
 
@@ -191,7 +191,9 @@ var_dump(validate_get_system_errors($ctx)); // System-level errors (bad types, o
 
 "Validate" removes validated elements from $inputs. You can validate remaining elements
 by next validation: pass VALIDATE_OPT_UNVALIDATED to every stage except the last, because
-input keys a spec does not declare are errors by default.
+input keys a spec does not declare are errors by default. To validate keys you cannot
+list in advance (e.g. HTTP headers) in the same call, use the "undeclared" option
+instead (Example #4).
 
 A little more realistic working example is here:
  * https://sample.ohgaki.net/validate-php/validate-php-scr/src/examples/99-web.php
@@ -201,6 +203,9 @@ A little more realistic working example is here:
 
 src/examples/94-example.php
 
+Known headers get explicit specs; the "undeclared" option validates every other header
+with a catch-all spec, and VALIDATE_FLAG_ARRAY_KEY_ALNUM restricts their names.
+
 ```php
 <?php
 require_once __DIR__.'/../validate_func.php';
@@ -209,42 +214,33 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array
 // In a real app: $request_headers_orig = apache_request_headers();
 $request_headers_orig = ['a'=>'abc', 'b'=>'456'];
 
-// Stage 1: explicit specs for known headers. Cookie is optional; User-Agent
-// is optional with a default of '' so the rest of the code can assume it exists.
+// Known headers. Cookie is optional; User-Agent is optional with a default
+// of '' so the rest of the code can assume it exists.
 $cookie_spec = $basicTypes['cookie'];
 $cookie_spec[VALIDATE_FLAGS]                 |= VALIDATE_FLAG_UNDEFINED;
 $useragent_spec = $basicTypes['user-agent'];
 $useragent_spec[VALIDATE_FLAGS]             |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT;
 $useragent_spec[VALIDATE_OPTIONS]['default'] = '';
 $useragent_spec[VALIDATE_OPTIONS]['min']     = 0; // Allow zero-length / empty value.
-$spec1 = [
+
+// Catch-all spec for every other header.
+$other_spec = $basicTypes['header512'];
+$other_spec[VALIDATE_OPTIONS]['min'] = 0; // Allow empty header values.
+
+$spec = [
     VALIDATE_ARRAY,
-    VALIDATE_FLAG_NONE,
-    ['min'=>2, 'max'=>20], // Total request must have 2-20 headers.
+    VALIDATE_FLAG_ARRAY_KEY_ALNUM, // Undeclared header names: alnum, '_' and '-' only.
+    ['min'=>2, 'max'=>20, 'undeclared'=>$other_spec], // Total request must have 2-20 headers.
     [
         'Cookie' => $cookie_spec,
         'User-Agent' => $useragent_spec,
     ]
 ];
 
-// validate() removes the values it consumed from $request_headers_orig,
-// leaving only the unvalidated (unknown) headers behind.
-// VALIDATE_OPT_UNVALIDATED: unknown headers are not an error here because
-// stage 2 validates every one of them.
-$request_headers = validate($ctx, $request_headers_orig, $spec1, VALIDATE_OPT_CHECK_SPEC | VALIDATE_OPT_UNVALIDATED);
-
-// Stage 2: catch-all spec for the remaining headers.
-// VALIDATE_FLAG_ARRAY applies $basicTypes['header512'] to each element.
-// VALIDATE_FLAG_ARRAY_KEY_ALNUM also restricts keys to alnum + '_' + '-'.
-$spec2 = $basicTypes['header512'];
-$spec2[VALIDATE_FLAGS]   |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
-$spec2[VALIDATE_OPTIONS]['min'] = 0; // Allow empty header values.
-$spec2[VALIDATE_OPTIONS]['amin'] = 0; // Accept 0 extra headers.
-$spec2[VALIDATE_OPTIONS]['amax'] = 20; // Accept up to 20 extra headers.
-
-// Merge stage 2 results back in. $request_headers now holds only validated
-// values — no control characters, no multibyte characters.
-$request_headers += validate($ctx, $request_headers_orig, $spec2);
+// $request_headers holds only validated values — no control characters, no
+// multibyte characters. validate() removes the values it consumed from
+// $request_headers_orig, so it is empty after a successful call.
+$request_headers = validate($ctx, $request_headers_orig, $spec);
 var_dump($request_headers, $request_headers_orig);
 ```
 
@@ -391,7 +387,7 @@ var_dump($result);
 Key points:
 
 * **One call per request.** Nesting `VALIDATE_ARRAY` specs lets you validate every HTTP source in a single `validate()` call, so no input bypasses the trust boundary.
-* **Undeclared keys are errors.** Unknown `$_POST` fields or extra cookies are reported as "Unvalidated value remains." instead of being silently passed through; missing required keys are errors too. `min`/`max` additionally bound the element count.
+* **Undeclared keys are errors.** Unknown `$_POST` fields or extra cookies are reported as "Unvalidated value remains." instead of being silently passed through; missing required keys are errors too. `min`/`max` additionally bound the element count. For inputs whose keys you cannot list (HTTP headers), give the `VALIDATE_ARRAY` an `undeclared` spec as in Example #4.
 * **`$_FILES` is just a nested array.** Each upload's keys (`name`, `type`, `tmp_name`, `error`, `size`, and `full_path` on PHP 8.1+) are validated like any other parameter; whitelist `type` against allowed MIME types and bound `size` explicitly. **Do not trust `type` for security decisions** — always re-check the uploaded file's content with `finfo_file()` before storing or serving it.
 * **Use `validate_get_user_errors($ctx)` for the form**, and let the application reject "impossible" inputs (wrong types, oversized strings) fast with no user-facing message, per the "FAIL FAST" principle.
 

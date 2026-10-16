@@ -34,7 +34,7 @@ Validate PHP is designed to handle both string inputs and natively typed inputs.
       * [Validator options](#validator-options)
       * [Callbacks](#callbacks)
          * ['filter' callback](#filter-callback)
-         * ['key_callback' for array of scalars](#key_callback-for-array-of-scalars)
+         * ['key_callback' for array keys](#key_callback-for-array-keys)
          * ['callback' for VALIDATE_CALLBACK validator](#callback-for-validate_callback-validator)
       * [Tips](#tips)
 
@@ -78,13 +78,13 @@ Parameters:
 
 validate() validates scalar or array. Array of scalars and/or array such as $_GET/$_POST can be validated. Nested array is supported.
 
-validate() removes validated values from $inputs (pass by reference), so $inputs holds the leftovers afterwards. Input keys that a VALIDATE_ARRAY spec does not declare are validation errors ("Validate: Unvalidated value remains. Undeclared keys: ...") at every nesting level unless VALIDATE_OPT_UNVALIDATED is set. For multi-stage validation, set VALIDATE_OPT_UNVALIDATED on every stage except the last.
+validate() removes validated values from $inputs (pass by reference), so $inputs holds the leftovers afterwards. Input keys that a VALIDATE_ARRAY spec does not declare are validated by its 'undeclared' option spec when it has one (see [Validator options](#validator-options)); otherwise they are validation errors ("Validate: Unvalidated value remains. Undeclared keys: ...") at every nesting level unless VALIDATE_OPT_UNVALIDATED is set. For multi-stage validation, set VALIDATE_OPT_UNVALIDATED on every stage except the last.
 
 $func_opts bit flag options:
 
  * VALIDATE_OPT_NONE - No options (no spec check).
  * VALIDATE_OPT_CHECK_SPEC - Check $spec before validation (default). Spec errors throw ValidateInvalidSpecException. Use this for development and debugging; omit it in production for speed.
- * VALIDATE_OPT_UNVALIDATED - Allow input keys that a VALIDATE_ARRAY spec does not declare. They stay in $inputs.
+ * VALIDATE_OPT_UNVALIDATED - Allow input keys that a VALIDATE_ARRAY spec does not declare. They stay in $inputs. Has no effect on a VALIDATE_ARRAY with an 'undeclared' option, which validates those keys.
  * VALIDATE_OPT_KEEP_INPUTS - Keep $inputs as is (validate() works on a copy, so no unset, no "filter" result and no substituted "default" reaches the caller). validate() unsets validated values from $inputs by default.
  * VALIDATE_OPT_RAISE_ERROR - Also raise a PHP error (trigger_error()) per failure at the level set by validate_set_error_level() (default E_USER_WARNING). Use this for debugging.
  * VALIDATE_OPT_ERROR_PARAM - Key stored errors by the parameter name only (default).
@@ -298,7 +298,21 @@ Constants:
  * VALIDATE_PARAMS - 3 (sub-specs of VALIDATE_ARRAY)
  * VALIDATE_SPECS - 3 (sub-specs of VALIDATE_MULTI)
 
-For VALIDATE_ARRAY, 'min'/'max' bound the number of elements and every input key must be declared in VALIDATE_PARAMS (see validate()). 'amin'/'amax' are the element-count options of VALIDATE_FLAG_ARRAY (array of scalars).
+For VALIDATE_ARRAY, 'min'/'max' bound the number of elements (declared and undeclared keys together) and every input key must be declared in VALIDATE_PARAMS or validated by the 'undeclared' option (see validate()). 'amin'/'amax' are the element-count options of VALIDATE_FLAG_ARRAY (array of scalars).
+
+VALIDATE_ARRAY options are 'min', 'max', 'default' (with VALIDATE_FLAG_UNDEFINED_TO_DEFAULT), 'error_message', 'undeclared' and 'key_callback' (with 'undeclared'); validate_spec() warns about others except '_' prefixed user options.
+
+```php
+// Known headers strictly, every other header with a catch-all spec.
+$spec = [
+    VALIDATE_ARRAY,
+    VALIDATE_FLAG_ARRAY_KEY_ALNUM, // Names of undeclared keys: alnum, '-' and '_'.
+    ['min' => 1, 'max' => 50, 'undeclared' => $basicTypes['header512']],
+    [
+        'Host' => $basicTypes['domain'],
+    ]
+];
+```
 
 
 Single value validation spec example:
@@ -393,12 +407,12 @@ $single_value_spec[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED;
  * VALIDATE_FLAG_NULL - Accept NULL as valid input (also as an array element or parameter value); yields null. VALIDATE_CALLBACK passes it to the callback.
  * VALIDATE_FLAG_ARRAY - Require array of scalars. e.g. script.php?val[]=1&val[]=2
  * VALIDATE_FLAG_ARRAY_RECURSIVE - Allow nested array of scalars.
- * VALIDATE_FLAG_ARRAY_KEY_ALNUM - Allow alnum + '-' + '_' keys (max 64 chars). By default, keys must be ints or strings of digits, '-' and '_' (max 32 chars). Use "key_callback" option for custom key validation.
+ * VALIDATE_FLAG_ARRAY_KEY_ALNUM - Allow alnum + '-' + '_' keys (max 64 chars) for VALIDATE_FLAG_ARRAY elements, or for the keys a VALIDATE_ARRAY validates with its 'undeclared' option. By default, keys must be ints or strings of digits, '-' and '_' (max 32 chars). Use "key_callback" option for custom key validation.
  * VALIDATE_FLAG_WARNING - WARNING: Dangerous option! Record a validation failure as a system warning. i.e. Do not raise EXCEPTION / ERROR at all. The status is still FALSE.
  * VALIDATE_FLAG_NOTICE - WARNING: Dangerous option! Record a validation failure as a system notice. i.e. Do not raise EXCEPTION / ERROR at all. The status is still FALSE.
  * VALIDATE_FLAG_PASSTHRU - WARNING: Dangerous option! Drop a validation failure silently: nothing is recorded, raised, thrown or logged and the status is unchanged. The invalid value is left out of the result.
 
-For VALIDATE_ARRAY specs only VALIDATE_FLAG_REJECT, VALIDATE_FLAG_UNDEFINED, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, VALIDATE_FLAG_WARNING, VALIDATE_FLAG_NOTICE and VALIDATE_FLAG_PASSTHRU have an effect (validate_spec() warns about others).
+For VALIDATE_ARRAY specs only VALIDATE_FLAG_REJECT, VALIDATE_FLAG_UNDEFINED, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, VALIDATE_FLAG_WARNING, VALIDATE_FLAG_NOTICE, VALIDATE_FLAG_PASSTHRU and, with the 'undeclared' option, VALIDATE_FLAG_ARRAY_KEY_ALNUM have an effect (validate_spec() warns about others).
 
 
 ## VALIDATOR specific flags
@@ -524,7 +538,8 @@ Validator options are specified like
  * 'amin' - Minimum number of elements in an array of scalars (VALIDATE_FLAG_ARRAY), per nesting level.
  * 'amax' - Maximum number of elements in an array of scalars (VALIDATE_FLAG_ARRAY), per nesting level.
  * 'alimit' - Maximum total number of elements of an array of scalars, counted across all nesting levels (VALIDATE_FLAG_ARRAY_RECURSIVE). Default: 'amax'. Must be an int not smaller than 'amax'.
- * 'key_callback' - Array key validation callback function. By default keys must be ints or strings of digits, '-' and '_'. VALIDATE_FLAG_ARRAY_KEY_ALNUM may be used for less strict array key validation.
+ * 'key_callback' - Array key validation callback function for VALIDATE_FLAG_ARRAY elements, or for the keys a VALIDATE_ARRAY validates with 'undeclared'. By default keys must be ints or strings of digits, '-' and '_'. VALIDATE_FLAG_ARRAY_KEY_ALNUM may be used for less strict array key validation.
+ * 'undeclared' - VALIDATE_ARRAY only. Spec applied to every input key that VALIDATE_PARAMS does not declare, e.g. a catch-all for unknown HTTP headers. The keys themselves are checked like VALIDATE_FLAG_ARRAY keys (VALIDATE_FLAG_ARRAY_KEY_ALNUM of the VALIDATE_ARRAY spec or 'key_callback'; by default only ints and strings of digits, '-' and '_'). Validated values are added to the result after the declared ones and removed from $inputs; 'min'/'max' of the VALIDATE_ARRAY bound the total count.
  * 'INF' - Float validator option allows INF as valid value.
  * '-INF' - Float validator option allows -INF as valid value.
  * 'decimal' - Float decimal separator (single char). Default `.`. Must not be a digit, `+`, `-`, `e` or `E` (those would corrupt parsing); such specs are rejected.
@@ -590,7 +605,7 @@ $basicTypes['header'] = [
 
 
 
-### 'key_callback' for array of scalars
+### 'key_callback' for array keys
 
 ```php
 bool key_callback(Validate $ctx, mixed $key)
@@ -608,7 +623,7 @@ Return Value:
 
 Description:
 
-'key_callback' is for array key validations for array of scalars (VALIDATE_FLAG_ARRAY). It replaces the built-in key checks:
+'key_callback' is for array key validations for array of scalars (VALIDATE_FLAG_ARRAY) and for the keys a VALIDATE_ARRAY validates with its 'undeclared' option. It replaces the built-in key checks:
 
  * default - int keys, or strings of digits, '-' and '_' (max 32 chars).
  * VALIDATE_FLAG_ARRAY_KEY_ALNUM - strings of alnum, '-' and '_' (max 64 chars). This flag has no effect when 'key_callback' is set.
@@ -718,4 +733,6 @@ $result = validate($ctx, $input, $spec, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDAT
 var_dump($input);
 // You would validate them with more generic/loose validator.
 ```
+
+* To validate such keys in the same call instead, give the VALIDATE_ARRAY an 'undeclared' spec (see [Validator options](#validator-options)).
 

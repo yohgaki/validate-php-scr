@@ -22,9 +22,14 @@ function h($value)
 // Load parameter spec definitions
 require_once __DIR__.'/99-web-specs.php';
 
+// Catch-all spec for the headers the request-level spec does not declare
+// ("undeclared" option below). Accepts ASCII RFC-conformant header values
+// (no UTF-8 multibyte).
+$other_header = $basicTypes['header1024'];
+
 // Compose the per-field specs (loaded above) into a request-level spec.
 // Each spec array follows the [type, flags, options, sub-specs] layout.
-$spec1 = [
+$spec = [
     VALIDATE_ARRAY,           // [0] validator type
     VALIDATE_FLAG_NONE,       // [1] flag bitfield
     ['min' => 3, 'max' => 3], // [2] options — exactly three top-level groups
@@ -54,11 +59,13 @@ $spec1 = [
                                ['values' => ['submit' => true]]],
             ],
         ],
-        'header' => [ // HTTP headers — stage 1 only handles the known ones.
-                      // Stage 2 ($spec2 below) catches everything else.
+        'header' => [ // HTTP headers: known ones strictly, every other one
+                      // through $other_header.
             VALIDATE_ARRAY,
-            VALIDATE_FLAG_NONE,
-            ['min' => 2, 'max' => 50],
+            VALIDATE_FLAG_ARRAY_KEY_ALNUM, // Undeclared header names: alnum, '_' and '-' only.
+            // 2 declared + at least 10 others (realistic browser baseline);
+            // reject obviously bloated header sets.
+            ['min' => 12, 'max' => 50, 'undeclared' => $other_header],
             [
                 // PHP stores these two request headers without the HTTP_ prefix.
                 'CONTENT_LENGTH' => $content_length,
@@ -67,16 +74,6 @@ $spec1 = [
         ]
     ],
 ];
-
-// Stage 2: catch-all spec for headers that $spec1 did not consume.
-// VALIDATE_FLAG_ARRAY applies $basicTypes['header1024'] to every leftover
-// entry; VALIDATE_FLAG_ARRAY_KEY_ALNUM bounds the allowed key names.
-// Accepts ASCII RFC-conformant header values (no UTF-8 multibyte).
-$tmp = $basicTypes['header1024'];
-$tmp[VALIDATE_FLAGS] |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
-$tmp[VALIDATE_OPTIONS]['amin'] = 10; // Require at least 10 leftover headers (realistic browser baseline).
-$tmp[VALIDATE_OPTIONS]['amax'] = 50; // Reject obviously bloated header sets.
-$spec2 = $tmp;
 
 ?>
 <html>
@@ -132,23 +129,12 @@ if (!empty($_POST)):
     // the same way.
     $inputs = ['get' => $_GET, 'post' => $_POST, 'header' => $_SERVER];
 
-    // Two-stage validation pattern.
-    // Stage 1: enforce the strict $spec1. Validated values are removed from
-    // $inputs (the engine unsets them by reference).
-    // VALIDATE_OPT_UNVALIDATED: headers $spec1 does not declare are checked
-    // by stage 2, so they are not an error here.
-    $result1 = validate($ctx, $inputs, $spec1, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_UNVALIDATED);
-    $status1 = $ctx->getStatus();
-    $partial_result1 = $ctx->getValidated();
-    // Stage 2: catch headers $spec1 left behind using the loose $spec2.
-    // Without this, unexpected headers would slip past the trust boundary.
-    // Only 'header' is declared, so any other leftover (an unknown GET/POST
-    // key) is an error here.
-    $spec2[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED;
-    $leftover_spec = [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 1], ['header' => $spec2]];
-    $result2 = validate($ctx, $inputs, $leftover_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
-    $status2 = $ctx->getStatus();
-    $partial_result2 = $ctx->getValidated();
+    // One call validates everything. Validated values are removed from
+    // $inputs (the engine unsets them by reference). An unknown GET/POST key
+    // is an error; every header goes through its own spec or $other_header.
+    $result = validate($ctx, $inputs, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
+    $status = $ctx->getStatus();
+    $partial_result = $ctx->getValidated();
     // Equivalent OO one-liner (no separate $ctx):
     //   $result = (new Validate)->validate($inputs, $spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 ?>
@@ -165,9 +151,7 @@ if (!empty($_POST)):
 <br />
 <h1>VALIDATION STATUS</h1>
 <br />
-<?php echo $status1 ? 'Validation1 Success' :  'Validation1 failed'; ?>
-<br />
-<?php echo $status2 ? 'Validation2 Success' :  'Validation2 failed'; ?>
+<?php echo $status ? 'Validation Success' :  'Validation failed'; ?>
 <br />
 <hr />
 <br />
@@ -175,9 +159,9 @@ if (!empty($_POST)):
 <?php echo htmlspecialchars(print_r(['get' => $_GET, 'post' => $_POST, 'header' => $_SERVER], true)); ?>
 <br />
 <h1>UNVALIDATED INPUTS</h1>
-NOTE: You should always <b>validate every input as strictly as possible</b>.
-This example is intentionally a bit loose — it skips strict validation of
-the "submit" button and miscellaneous GET parameters.
+NOTE: validate() removes every value it validated, so whatever is left here
+failed validation. You should always <b>validate every input as strictly as
+possible</b>.
 <br />
 <?php echo htmlspecialchars(print_r($inputs, true)); ?>
 <br />
@@ -185,23 +169,18 @@ the "submit" button and miscellaneous GET parameters.
 TIP: HTTP headers are awkward inputs because you can't be certain which
 headers any given client will send.
 
-Since validate() removes validated inputs, the recommended pattern is:
-1) strictly validate the headers you expect ("always-present" ones) first,
-2) then catch any remaining headers with a loose validation spec.
+The recommended pattern is:
+1) declare the headers you expect ("always-present" ones) with strict specs,
+2) give the header VALIDATE_ARRAY an "undeclared" spec that loosely
+   validates every other header.
 
 This way, downstream code <b>only ever sees strictly validated values for
 the inputs it needs</b>, while every other input still gets validated.
 <br />
-<h3> Validation #1 </h3>
 <h4> Validation result: (Empty when validation error)</h4>
-<?php echo htmlspecialchars(print_r($result1, true)); ?>
+<?php echo htmlspecialchars(print_r($result, true)); ?>
 <h4> Validated Values: (May contain partial validation results when failure, exactly the same as above when success.)</h4>
-<?php echo htmlspecialchars(print_r($partial_result1, true)); ?>
-<h3> Validation #2 </h3>
-<h4> Validation result: (Empty when validation error)</h4>
-<?php echo htmlspecialchars(print_r($result2, true)); ?>
-<h4> Validated Values: (May contain partial validation results when failure, exactly the same as above when success.)</h4>
-<?php echo htmlspecialchars(print_r($partial_result2, true)); ?>
+<?php echo htmlspecialchars(print_r($partial_result, true)); ?>
 <?php
 endif;
 ?>

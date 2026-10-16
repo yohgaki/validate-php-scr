@@ -52,11 +52,12 @@
  *     Returns the (possibly modified) value. Available on every validator.
  *
  *
- *   "key_callback" option (only with VALIDATE_FLAG_ARRAY)
- *   -----------------------------------------------------
- *   Validate the keys of an array-of-scalars input. Untrusted input arrays
- *   can carry dangerous characters in their keys, so a key check is often
- *   as important as a value check.
+ *   "key_callback" option
+ *   ---------------------
+ *   Validate the keys of an array-of-scalars input (VALIDATE_FLAG_ARRAY), or
+ *   the keys a VALIDATE_ARRAY validates with its "undeclared" option.
+ *   Untrusted input arrays can carry dangerous characters in their keys, so
+ *   a key check is often as important as a value check.
  *
  *     function (Validate $ctx, mixed $key): bool
  *       $ctx - validation context.
@@ -353,8 +354,10 @@ class Validate
      * (the engine then works on a private copy, so neither unset(), "filter"
      * results nor substituted "default" values reach the caller's array).
      *
-     * Input keys that a VALIDATE_ARRAY spec does not declare are reported as
-     * "Unvalidated value remains." unless VALIDATE_OPT_UNVALIDATED is set.
+     * Input keys that a VALIDATE_ARRAY spec does not declare are validated by
+     * its "undeclared" option spec when it has one; otherwise they are
+     * reported as "Unvalidated value remains." unless VALIDATE_OPT_UNVALIDATED
+     * is set.
      *
      * On failure either a ValidateInvalidValueException is thrown (default)
      * or null is returned (VALIDATE_OPT_DISABLE_EXCEPTION). Partial validation
@@ -894,7 +897,8 @@ class Validate
      * Recursive core of validate(). Dispatches on the spec's validator type:
      *   - VALIDATE_MULTI  -> validateMulti() (one value vs. multiple specs)
      *   - VALIDATE_ARRAY  -> recurse into sub-specs, walk each declared key,
-     *                        then report undeclared input keys
+     *                        then validate undeclared input keys with the
+     *                        "undeclared" option spec or report them
      *   - everything else -> validateScalar() for per-type rules
      *
      * Drives the $currentElem path stack so error messages and context
@@ -991,82 +995,133 @@ class Validate
         }
         $ok = true;
         foreach ($params as $param => $spec) {
-            assert(is_int($spec[VALIDATE_ID])); // Validator ID
-            assert(is_int($spec[VALIDATE_FLAGS])); // Validator flags
-            assert(is_array($spec[VALIDATE_OPTIONS])); // Validator options
-            assert($spec[VALIDATE_ID] !== VALIDATE_ARRAY || is_array($spec[VALIDATE_PARAMS])); // In case of Array, must have "parameters".
-
-            $id = $spec[VALIDATE_ID];
-            $flags = $spec[VALIDATE_FLAGS];
-            $options = $spec[VALIDATE_OPTIONS];
-            $defined = is_array($inputs) ? array_key_exists($param, $inputs) : isset($inputs[$param]);
-
-            array_push($this->currentElem, $param);
-            $this->setContext(
-                $this,
-                $param,
-                $defined,
-                $defined ? $inputs[$param] : null,
-                $spec,
-                $func_opts
-            );
-
-            // Rejected / optional undefined parameter or not.
-            $presence = $this->checkParamPresence($defined, $defined ? $inputs[$param] : null, $id, $flags, $options, $func_opts);
-            if ($presence === self::PRESENCE_VALIDATE && ($inputs[$param] === '' || $inputs[$param] === null)
-                && ($flags & VALIDATE_FLAG_EMPTY_TO_DEFAULT)) {
-                // Validate the "default" value; leave the caller's '' / null alone.
-                $presence = self::PRESENCE_DEFAULT;
-            }
-
-            if ($presence === self::PRESENCE_VALIDATE) {
-                $status = $this->runValidation($validated[$param], $inputs[$param], $spec, $func_opts);
-                // Remove validated elements. A nested array is removed only
-                // when every one of its elements was consumed.
-                if ($status === true && !($func_opts & VALIDATE_OPT_KEEP_INPUTS)
-                    && ($id !== VALIDATE_ARRAY || (is_array($inputs[$param]) && !count($inputs[$param])))) {
-                    unset($inputs[$param]);
-                }
-            } elseif ($presence === self::PRESENCE_DEFAULT) {
-                $default = $options['default'] ?? null;
-                $status = $this->runValidation($validated[$param], $default, $spec, $func_opts);
-                if ($status === true && $defined && !($func_opts & VALIDATE_OPT_KEEP_INPUTS)) {
-                    unset($inputs[$param]); // The empty input was consumed by "default".
-                }
-            } else {
-                $status = ($presence === self::PRESENCE_SKIP);
-            }
-
-            // Do not set unvalidated except array.
-            if ($status === false && array_key_exists($param, $validated ?? []) && !is_array($validated[$param])) {
-                unset($validated[$param]);
-            }
-            if ($status === false) {
+            if (!$this->validateParam($validated, $inputs, $param, $spec, $func_opts)) {
                 $ok = false;
             }
-            array_pop($this->currentElem);
         }
 
         // Input keys the spec does not declare. Whitelist validation means
-        // they are errors unless the caller explicitly allows leftovers
-        // (e.g. for multi-stage validation).
-        if (!($func_opts & VALIDATE_OPT_UNVALIDATED) && is_array($inputs)) {
-            $undeclared = array_diff_key($inputs, $params);
-            if ($undeclared) {
-                $this->setContext($this, end($this->currentElem), true, $inputs, $specs, $func_opts);
-                $this->reportError(
-                    [
-                        'message' => 'Validate: Unvalidated value remains. Undeclared keys: \''
-                                     .join('\', \'', array_keys($undeclared)).'\'',
-                        'value' => array_keys($undeclared),
-                    ],
-                    $specs,
-                    $func_opts
-                );
-                $ok = false;
+        // they are errors unless the "undeclared" option spec validates them
+        // or the caller explicitly allows leftovers (multi-stage validation).
+        if (!is_array($inputs)) {
+            return $ok;
+        }
+        $undeclared = array_diff_key($inputs, $params);
+        if (!$undeclared) {
+            return $ok;
+        }
+        if (isset($options['undeclared'])) {
+            // Keys are input too: VALIDATE_FLAG_ARRAY_KEY_ALNUM / "key_callback"
+            // of this VALIDATE_ARRAY spec decide which undeclared keys may exist.
+            $keyValidator = $this->buildKeyValidator($flags, $options);
+            foreach (array_keys($undeclared) as $param) {
+                if (!$keyValidator($this->context, $param)) {
+                    $this->setContext($this, end($this->currentElem), true, $inputs, $specs, $func_opts);
+                    $this->reportError(
+                        [
+                            'message' => 'VALIDATE_ARRAY: Undeclared key has invalid format. '.
+                                         'Hint: you may want VALIDATE_FLAG_ARRAY_KEY_ALNUM flag or "key_callback" option.',
+                            'value' => 'key:'.$param,
+                        ],
+                        $specs,
+                        $func_opts
+                    );
+                    $ok = false;
+                    continue;
+                }
+                if (!$this->validateParam($validated, $inputs, $param, $options['undeclared'], $func_opts)) {
+                    $ok = false;
+                }
             }
+            return $ok;
+        }
+        if (!($func_opts & VALIDATE_OPT_UNVALIDATED)) {
+            $this->setContext($this, end($this->currentElem), true, $inputs, $specs, $func_opts);
+            $this->reportError(
+                [
+                    'message' => 'Validate: Unvalidated value remains. Undeclared keys: \''
+                                 .join('\', \'', array_keys($undeclared)).'\'',
+                    'value' => array_keys($undeclared),
+                ],
+                $specs,
+                $func_opts
+            );
+            $ok = false;
         }
         return $ok;
+    }
+
+
+    /**
+     * Validate one element of a VALIDATE_ARRAY input, $inputs[$param],
+     * against $spec: presence (absent / rejected / "default"), then the
+     * value. A valid element is removed from $inputs (a nested array only
+     * once all of its elements were consumed); a failed scalar result is
+     * dropped from $validated.
+     *
+     * @param array $validated By-ref VALIDATE_ARRAY result; receives $validated[$param].
+     * @param mixed $inputs    By-ref VALIDATE_ARRAY input.
+     * @param mixed $param     Key in $inputs (declared, or undeclared under "undeclared").
+     * @param array $spec      Spec for this element.
+     * @param int   $func_opts VALIDATE_OPT_* bitmask for this call.
+     *
+     * @return bool
+     */
+    private function validateParam(&$validated, &$inputs, $param, $spec, $func_opts)
+    {
+        assert(is_array($validated));
+        assert(is_int($spec[VALIDATE_ID])); // Validator ID
+        assert(is_int($spec[VALIDATE_FLAGS])); // Validator flags
+        assert(is_array($spec[VALIDATE_OPTIONS])); // Validator options
+        assert($spec[VALIDATE_ID] !== VALIDATE_ARRAY || is_array($spec[VALIDATE_PARAMS])); // In case of Array, must have "parameters".
+
+        $id = $spec[VALIDATE_ID];
+        $flags = $spec[VALIDATE_FLAGS];
+        $options = $spec[VALIDATE_OPTIONS];
+        $defined = is_array($inputs) ? array_key_exists($param, $inputs) : isset($inputs[$param]);
+
+        array_push($this->currentElem, $param);
+        $this->setContext(
+            $this,
+            $param,
+            $defined,
+            $defined ? $inputs[$param] : null,
+            $spec,
+            $func_opts
+        );
+
+        // Rejected / optional undefined parameter or not.
+        $presence = $this->checkParamPresence($defined, $defined ? $inputs[$param] : null, $id, $flags, $options, $func_opts);
+        if ($presence === self::PRESENCE_VALIDATE && ($inputs[$param] === '' || $inputs[$param] === null)
+            && ($flags & VALIDATE_FLAG_EMPTY_TO_DEFAULT)) {
+            // Validate the "default" value; leave the caller's '' / null alone.
+            $presence = self::PRESENCE_DEFAULT;
+        }
+
+        if ($presence === self::PRESENCE_VALIDATE) {
+            $status = $this->runValidation($validated[$param], $inputs[$param], $spec, $func_opts);
+            // Remove validated elements. A nested array is removed only
+            // when every one of its elements was consumed.
+            if ($status === true && !($func_opts & VALIDATE_OPT_KEEP_INPUTS)
+                && ($id !== VALIDATE_ARRAY || (is_array($inputs[$param]) && !count($inputs[$param])))) {
+                unset($inputs[$param]);
+            }
+        } elseif ($presence === self::PRESENCE_DEFAULT) {
+            $default = $options['default'] ?? null;
+            $status = $this->runValidation($validated[$param], $default, $spec, $func_opts);
+            if ($status === true && $defined && !($func_opts & VALIDATE_OPT_KEEP_INPUTS)) {
+                unset($inputs[$param]); // The empty input was consumed by "default".
+            }
+        } else {
+            $status = ($presence === self::PRESENCE_SKIP);
+        }
+
+        // Do not set unvalidated except array.
+        if ($status === false && array_key_exists($param, $validated) && !is_array($validated[$param])) {
+            unset($validated[$param]);
+        }
+        array_pop($this->currentElem);
+        return $status;
     }
 
 
@@ -1428,7 +1483,9 @@ class Validate
 
 
     /**
-     * Key array key validation callback.
+     * Build the key validator for VALIDATE_FLAG_ARRAY elements or for the
+     * keys a VALIDATE_ARRAY validates with its "undeclared" option:
+     * "key_callback", else VALIDATE_FLAG_ARRAY_KEY_ALNUM, else int / digit keys.
      *
      * @return callable Always return callable if user validates spec at development time.
      */
@@ -3285,19 +3342,73 @@ class Validate
                 ]
             );
         }
-        // Only presence / reporting flags mean something for VALIDATE_ARRAY.
+        // Only presence / reporting flags mean something for VALIDATE_ARRAY;
+        // VALIDATE_FLAG_ARRAY_KEY_ALNUM checks the keys "undeclared" validates.
         $array_flags = VALIDATE_FLAG_REJECT | VALIDATE_FLAG_UNDEFINED | VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
                        | VALIDATE_FLAG_WARNING | VALIDATE_FLAG_NOTICE | VALIDATE_FLAG_PASSTHRU;
+        if (isset($options['undeclared'])) {
+            $array_flags |= VALIDATE_FLAG_ARRAY_KEY_ALNUM;
+        }
         if ($spec[VALIDATE_FLAGS] & ~$array_flags) {
             $this->specWarning(
                 [
                     'message' => 'VALIDATE_ARRAY has flags that have no effect. Only VALIDATE_FLAG_REJECT, '
                                 .'VALIDATE_FLAG_UNDEFINED, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, VALIDATE_FLAG_WARNING, '
-                                .'VALIDATE_FLAG_NOTICE and VALIDATE_FLAG_PASSTHRU apply.',
+                                .'VALIDATE_FLAG_NOTICE, VALIDATE_FLAG_PASSTHRU and, with "undeclared" option, '
+                                .'VALIDATE_FLAG_ARRAY_KEY_ALNUM apply.',
                     'spec'    => $spec,
                     'flags'   => '',
                 ]
             );
+        }
+        $known_options = ['min', 'max', 'default', 'error_message', 'undeclared', 'key_callback'];
+        foreach ($options as $key => $unused) {
+            if (!in_array($key, $known_options, true) && !(is_string($key) && $key !== '' && $key[0] === '_')) {
+                $this->specWarning(
+                    [
+                        'message' => 'VALIDATE_ARRAY has unknown option "'.$key.'". Known options: "'
+                                     .join('", "', $known_options).'" and "_" prefixed user options.',
+                        'spec'    => $spec,
+                        'flags'   => '',
+                    ]
+                );
+            }
+        }
+        if (isset($options['key_callback'])) {
+            if (!is_callable($options['key_callback'])) {
+                $this->specError(
+                    [
+                        'message' => 'VALIDATE_ARRAY "key_callback" option is not callable.',
+                        'spec'    => $spec,
+                        'flags'   => '',
+                    ]
+                );
+            } elseif (!isset($options['undeclared'])) {
+                $this->specWarning(
+                    [
+                        'message' => 'VALIDATE_ARRAY has "key_callback" option that has no effect without "undeclared" option.',
+                        'spec'    => $spec,
+                        'flags'   => '',
+                    ]
+                );
+            }
+            if ($spec[VALIDATE_FLAGS] & VALIDATE_FLAG_ARRAY_KEY_ALNUM) {
+                $this->specWarning(
+                    [
+                        'message' => 'VALIDATE_ARRAY has VALIDATE_FLAG_ARRAY_KEY_ALNUM flag that has no effect: "key_callback" option is defined.',
+                        'spec'    => $spec,
+                        'flags'   => '',
+                    ]
+                );
+            }
+        }
+        if (isset($options['undeclared'])) {
+            // The spec for undeclared keys. Checked on a copy: unlike
+            // VALIDATE_PARAMS entries it is not stripped from $unvalidated.
+            $undeclaredSpec = $options['undeclared'];
+            array_push($this->currentElem, '(undeclared)');
+            $this->checkSpecEntry($undeclaredSpec);
+            array_pop($this->currentElem);
         }
         if (($spec[VALIDATE_FLAGS] & VALIDATE_FLAG_UNDEFINED_TO_DEFAULT) && !isset($options['default'])) {
             $this->specError(

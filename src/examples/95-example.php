@@ -13,8 +13,8 @@
  *
  * Per OWASP TOP 10 A10:2017, every input must be validated. Nesting per-source
  * specs under a single VALIDATE_ARRAY lets the four superglobals go through
- * one validate() call. HTTP headers use the two-stage pattern from Example #4:
- * known headers explicitly, the rest with a catch-all spec.
+ * one validate() call. HTTP headers follow Example #4: known headers
+ * explicitly, the rest with a catch-all spec through the "undeclared" option.
  *
  * The script can be run directly from CLI: it falls back to representative
  * sample inputs when the superglobals are empty.
@@ -119,9 +119,10 @@ $filesSpec = [
     ]
 ];
 
-// ---- HTTP headers: stage 1 (known) ------------------------------------------
+// ---- HTTP headers -------------------------------------------------------------
 // Same pattern as Example #4 (94-example.php). Cookie and User-Agent are
-// optional; Host is required.
+// optional; Host is required. "undeclared" validates every other header with
+// $headerCatchSpec, and VALIDATE_FLAG_ARRAY_KEY_ALNUM restricts their names.
 $cookieHdr = $basicTypes['cookie'];
 $cookieHdr[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED;
 $uaHdr = $basicTypes['user-agent'];
@@ -129,10 +130,13 @@ $uaHdr[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT;
 $uaHdr[VALIDATE_OPTIONS]['default'] = '';
 $uaHdr[VALIDATE_OPTIONS]['min']     = 0;
 
-$headerKnownSpec = [
+$headerCatchSpec = $basicTypes['header512'];
+$headerCatchSpec[VALIDATE_OPTIONS]['min'] = 0; // Allow empty header values.
+
+$headerSpec = [
     VALIDATE_ARRAY,
-    VALIDATE_FLAG_NONE,
-    ['min' => 1, 'max' => 100], // Host required + up to 99 others
+    VALIDATE_FLAG_ARRAY_KEY_ALNUM,
+    ['min' => 1, 'max' => 100, 'undeclared' => $headerCatchSpec], // Host required + up to 99 others
     [
         'Host'       => $basicTypes['domain'],
         'Cookie'     => $cookieHdr,
@@ -140,15 +144,8 @@ $headerKnownSpec = [
     ]
 ];
 
-// ---- HTTP headers: stage 2 (catch-all for everything else) ------------------
-$headerCatchSpec = $basicTypes['header512'];
-$headerCatchSpec[VALIDATE_FLAGS]   |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
-$headerCatchSpec[VALIDATE_OPTIONS]['min']  = 0;
-$headerCatchSpec[VALIDATE_OPTIONS]['amin'] = 0;
-$headerCatchSpec[VALIDATE_OPTIONS]['amax'] = 100;
-
 // =============================================================================
-// 2. Top-level spec: validate every superglobal + known headers in one call
+// 2. Top-level spec: validate every superglobal + all headers in one call
 // =============================================================================
 
 $spec = [
@@ -160,7 +157,7 @@ $spec = [
         'post'   => $postSpec,
         'cookie' => $cookieSpec,
         'files'  => $filesSpec,
-        'header' => $headerKnownSpec,
+        'header' => $headerSpec,
     ]
 ];
 
@@ -229,24 +226,11 @@ $inputs = [
 
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // interactive form: collect errors
 
-// Stage 1: validate everything at once. validate() removes validated entries
-// from $inputs, so $inputs['header'] will end up holding only the headers
-// that $headerKnownSpec did NOT consume. VALIDATE_OPT_UNVALIDATED lets those
-// leftovers through this stage; stage 2 checks them.
-$result = validate($ctx, $inputs, $spec, $func_opts | VALIDATE_OPT_UNVALIDATED);
-$ok = validate_get_status($ctx); // Status of the most recent validate() call.
-
-// Stage 2: validate the leftovers. Only 'header' is declared, so a leftover
-// in get/post/cookie/files (an undeclared or failed key) is an error, and
-// every remaining header goes through the catch-all spec — nothing bypasses
-// the trust boundary.
-$headerCatchSpec[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED; // No unknown headers is fine.
-$leftoverSpec = [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 1], ['header' => $headerCatchSpec]];
-$catchResult = validate($ctx, $inputs, $leftoverSpec, $func_opts);
-$ok = $ok && validate_get_status($ctx);
-if ($ok && isset($catchResult['header'])) {
-    $result['header'] += $catchResult['header'];
-}
+// One call validates everything. An undeclared key in get/post/cookie/files is
+// an error; every header goes through its own spec or $headerCatchSpec —
+// nothing bypasses the trust boundary.
+$result = validate($ctx, $inputs, $spec, $func_opts);
+$ok = validate_get_status($ctx);
 
 // =============================================================================
 // 5. Report

@@ -147,7 +147,9 @@ define('VALIDATE_REGEXP_RFC3454_C', VALIDATE_STRING_RFC3454_C); // Allow Unicode
 define('VALIDATE_REGEXP_RFC3454_D', VALIDATE_STRING_RFC3454_D); // Allow Unicode CNTRL char. ASCII code CNTRL is treated by above flags.
 define('VALIDATE_REGEXP_LAST_BIT', VALIDATE_STRING_LAST_BIT); /* Used internally — bit count for this type's flags. */
 
-/* VALIDATE_ARRAY — no per-type flags; configure with the global VALIDATE_FLAG_* flags and the 'amin'/'amax' options. */
+/* VALIDATE_ARRAY — no per-type flags. Options: 'min'/'max' (element count), 'default', 'error_message',
+   'undeclared' (spec for every input key VALIDATE_PARAMS does not declare) and 'key_callback'.
+   With 'undeclared', VALIDATE_FLAG_ARRAY_KEY_ALNUM / 'key_callback' check those undeclared keys. */
 
 /* VALIDATE_RESOURCE — no per-type flags; configure via the 'resource' option (required resource type name). */
 
@@ -178,7 +180,8 @@ define('VALIDATE_FLAG_EMPTY_TO_DEFAULT', 1 << 21);  /* When input is '' or null,
 define('VALIDATE_FLAG_NULL', 1 << 22);
 define('VALIDATE_FLAG_ARRAY', 1 << 23);  /* Require an array of scalars (e.g. script.php?val[]=1&val[]=2); each element is validated by the same spec. */
 define('VALIDATE_FLAG_ARRAY_RECURSIVE', 1 << 24);  /* When combined with VALIDATE_FLAG_ARRAY, also allow nested arrays. */
-/* Allow alnum + '_' + '-' string keys (max 64 chars). Without it, keys must be ints or
+/* Allow alnum + '_' + '-' string keys (max 64 chars) for VALIDATE_FLAG_ARRAY elements and for the
+   keys VALIDATE_ARRAY's 'undeclared' option validates. Without it, keys must be ints or
    digit/'_'/'-' strings (max 32 chars). Use the 'key_callback' option for custom rules. */
 define('VALIDATE_FLAG_ARRAY_KEY_ALNUM', 1 << 25);
 define('VALIDATE_FLAG_WARNING', 1 << 26);  /* WARNING: Dangerous — record a failure as a system *warning*: no exception, no PHP error. The status is still false. */
@@ -205,7 +208,8 @@ define('VALIDATE_OPT_NONE', 0);      // No options.
 define('VALIDATE_OPT_CHECK_SPEC', 1 << 0); // DEFAULT-ON. Validate the spec array itself first; spec errors throw ValidateInvalidSpecException. Disable in production for speed.
 define('VALIDATE_OPT_DISABLE_EXCEPTION', 1 << 1); // Suppress the ValidateInvalidValueException raised on validation failure; the call returns null instead.
 // Permit input keys that a VALIDATE_ARRAY spec does not declare (by default each level
-// reports "Unvalidated value remains."). Needed for multi-stage validation.
+// reports "Unvalidated value remains."). Needed for multi-stage validation. A VALIDATE_ARRAY
+// with an 'undeclared' option validates those keys instead, with or without this option.
 define('VALIDATE_OPT_UNVALIDATED', 1 << 2);
 define('VALIDATE_OPT_KEEP_INPUTS', 1 << 3); // Leave $inputs untouched (the engine works on a copy). By default validate() unsets validated keys so the caller can see leftovers.
 define('VALIDATE_OPT_RAISE_ERROR', 1 << 4); // Also trigger_error() each failure at the context's error level (validate_set_error_level(), default E_USER_WARNING).
