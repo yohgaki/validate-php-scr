@@ -1420,17 +1420,108 @@ $basicTypes['hex_color'] = [
 // http/https schemes (FILTER_VALIDATE_URL alone accepts "javascript:",
 // "file:", ... which are unsafe in links). Use 'active_url' when you also
 // need the host to resolve. Override 'callback' to allow other schemes.
-$httpUrlOk = function ($input) {
-    return is_string($input) && filter_var($input, FILTER_VALIDATE_URL) !== false
-           && in_array(strtolower((string)parse_url($input, PHP_URL_SCHEME)), ['http', 'https'], true);
+//
+// FILTER_VALIDATE_URL changed in PHP 7.0, 7.3 and 8.2: older versions reject
+// port 0 and [IPv6] hosts, or accept host names ending with '-' and userinfo
+// such as "http://example.com\@evil.com/" (PHP bug #77423). Before PHP 8.2
+// $httpUrlHost applies the PHP 8.2+ rules itself (php_filter_validate_url()
+// and php_url_parse_ex2() of php-src), so 'url' and 'active_url' accept the
+// same URLs on every PHP version. It returns the host of a valid http/https
+// URL, false otherwise.
+//
+// _php_filter_validate_domain() with FILTER_FLAG_HOSTNAME: labels of 1-63
+// alphanumerics and '-' that start and end alphanumeric, at most 253 chars;
+// one trailing dot is ignored.
+$hostnameOk = function ($host) {
+    $len = strlen($host);
+    $end = ($len > 0 && $host[$len - 1] === '.') ? $len - 1 : $len;
+    if ($len === 0 || $end > 253 || !ctype_alnum($host[0])) {
+        return false;
+    }
+    $label = 1;
+    for ($i = 0; $i < $end; $i++) {
+        $c = $host[$i];
+        $next = $i + 1 < $len ? $host[$i + 1] : ''; // php-src reads one past the label end
+        if ($c === '.') {
+            if ($next === '' || !ctype_alnum($host[$i - 1]) || !ctype_alnum($next)) {
+                return false;
+            }
+            $label = 1;
+        } else {
+            if ($label > 63 || (($c !== '-' || $next === '') && !ctype_alnum($c))) {
+                return false;
+            }
+            $label++;
+        }
+    }
+    return true;
+};
+$httpUrlHost = function ($url) use ($hostnameOk) {
+    if (!is_string($url)) {
+        return false;
+    }
+    if (PHP_VERSION_ID >= 80200) {
+        if (filter_var($url, FILTER_VALIDATE_URL) === false
+            || !in_array(strtolower((string)parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
+            return false;
+        }
+        return parse_url($url, PHP_URL_HOST);
+    }
+    if (!preg_match('~\A(?:https?)://~i', $url, $m)) {
+        return false;
+    }
+    // php_filter_url(): characters allowed in a URL.
+    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        .'$-_.+'."!*'(),".'{}|\\^~[]`'.'<>#%"'.';/?:@&=';
+    if (strspn($url, $chars) !== strlen($url)) {
+        return false;
+    }
+    // Authority: up to the first '/', '?' or '#'; userinfo up to its last '@'.
+    $start = strlen($m[0]);
+    $auth = (string)substr($url, $start, strcspn($url, '/?#', $start));
+    $userinfo = null;
+    $at = strrpos($auth, '@');
+    if ($at !== false) {
+        $userinfo = (string)substr($auth, 0, $at);
+        $auth = (string)substr($auth, $at + 1);
+    }
+    // Port: after the last ':' unless the authority is "[...]" (IPv6, no port).
+    $host = $auth;
+    if ($auth === '' || $auth[0] !== '[' || substr($auth, -1) !== ']') {
+        $colon = strrpos($auth, ':');
+        if ($colon !== false) {
+            $port = (string)substr($auth, $colon + 1);
+            if (strlen($port) > 5) {
+                return false;
+            }
+            // strtol(): optional sign, digits; anything after them is ignored.
+            if ($port !== '' && (!preg_match('/\A[+-]?[0-9]+/', $port, $pm) || (int)$pm[0] < 0 || (int)$pm[0] > 65535)) {
+                return false;
+            }
+            $host = (string)substr($auth, 0, $colon);
+        }
+    }
+    if ($host === '') {
+        return false;
+    }
+    $ipv6 = $host[0] === '[' && substr($host, -1) === ']'
+        && filter_var(substr($host, 1, -1), FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false;
+    if (!$ipv6 && !$hostnameOk($host)) {
+        return false;
+    }
+    // is_userinfo_valid(): unreserved, sub-delims, ':' and "%" DIGIT HEXDIG.
+    if ($userinfo !== null && !preg_match('/\A(?:[A-Za-z0-9\-._~!$&\'()*+,;=:]|%[0-9][0-9A-Fa-f])*\z/', $userinfo)) {
+        return false;
+    }
+    return $host;
 };
 $basicTypes['url'] = [
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
     [
         'min' => 7, 'max' => 2048,
-        'callback' => function ($ctx, &$result, $input) use ($httpUrlOk) {
-            if (!$httpUrlOk($input)) {
+        'callback' => function ($ctx, &$result, $input) use ($httpUrlHost) {
+            if ($httpUrlHost($input) === false) {
                 validate_error($ctx, 'Invalid URL format.');
                 return false;
             }
@@ -1446,12 +1537,12 @@ $basicTypes['active_url'] = [
     VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
     [
         'min' => 7, 'max' => 2048,
-        'callback' => function ($ctx, &$result, $input) use ($httpUrlOk, $dnsResolvable) {
-            if (!$httpUrlOk($input)) {
+        'callback' => function ($ctx, &$result, $input) use ($httpUrlHost, $dnsResolvable) {
+            $host = $httpUrlHost($input);
+            if ($host === false) {
                 validate_error($ctx, 'Invalid URL format.');
                 return false;
             }
-            $host = parse_url($input, PHP_URL_HOST);
             if (!$host || !$dnsResolvable($host)) {
                 validate_error($ctx, 'Cannot resolve URL host by DNS.');
                 return false;
@@ -1679,4 +1770,4 @@ $basicTypes['email_dns'] = [
 
 // Helper closures were captured by the specs above; keep them out of the
 // including scope.
-unset($dnsResolvable, $httpUrlOk, $jsonErrors);
+unset($dnsResolvable, $hostnameOk, $httpUrlHost, $jsonErrors);

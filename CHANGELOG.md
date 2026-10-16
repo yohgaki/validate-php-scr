@@ -55,6 +55,15 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
   query absolute names for explicit record types instead of `DNS_ANY`.
 * `basic_types.php`: `base64*`, `base64url*` and `urle*` are `VALIDATE_REGEXP`
   specs (were `VALIDATE_STRING`) so they can check where `=` and `%` appear.
+* `basic_types.php` `url` / `active_url` accept the same URLs on every PHP
+  version. `FILTER_VALIDATE_URL` changed in PHP 7.0, 7.3 and 8.2; on PHP 8.0 /
+  8.1 it accepted host names ending with `-` (`http://example-/`) and invalid
+  userinfo with an `[IPv6]` host (`http://a@b@[::1]/`). Before PHP 8.2 the
+  specs apply the PHP 8.2+ rules (`php_filter_validate_url()` and
+  `php_url_parse_ex2()` of php-src) themselves, and `active_url` resolves the
+  host found by them. 80,000 URLs from `dev/fuzz_inputs.php gen url` (seeds
+  11 and 12, 40,000 each) give the same results on PHP 8.0 / 8.1 as with
+  `filter_var()` on PHP 8.5.11.
 * `basic_types.php` `json`: the error message is fixed per `json_last_error()`
   code (e.g. "Invalid JSON: Syntax error") instead of `json_last_error_msg()`,
   whose text depends on the PHP version (8.6 appends "near location 1:2").
@@ -128,7 +137,9 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
   "Branches". `.gitlab-ci.yml` installs `libgmp-dev` from archive.debian.org
   when the image's Debian release is no longer on the mirrors.
   `dev/basic_types_corpus.php` prints the results of every `$basicTypes` spec
-  for tricky inputs, to compare a branch with `master`.
+  for tricky inputs, and `dev/fuzz_inputs.php` generates inputs for the
+  `json` and `url` specs and validates them, to compare a branch with
+  `master`.
 * `VALIDATE_OBJECT` `class` option (instanceof check), as `validate_defs.php`
   already described.
 * `VALIDATE_ARRAY` `undeclared` option: a spec applied to every input key that
@@ -170,8 +181,9 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
   `src/tools/README.md`); the tools refuse directories other users can write to.
 * `src/tests/validate_regressions.phpt`, `src/tests/basic_types_formats.phpt`,
   `src/tests/validate_array_undeclared.phpt`, `src/tests/validate_spec_cache.phpt`;
-  JSON error messages (`validate_basic_types_more.phpt`) and PCRE runtime
-  errors (`validate_regexp.phpt`); PHP 8.5 in both CI matrices.
+  JSON error messages (`validate_basic_types_more.phpt`), PCRE runtime
+  errors (`validate_regexp.phpt`) and the PHP 8.2+ URL rules
+  (`basic_types_formats.phpt`); PHP 8.5 in both CI matrices.
 
 ### Removed / internal
 

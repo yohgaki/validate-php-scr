@@ -107,6 +107,19 @@ $cases = [
     ['uint64', -1, 'fail'],
     ['uint128', 7, 'pass'],
     ['int64', 5, 'pass'], // native int spec on 64-bit builds
+    // url: the PHP 8.2+ FILTER_VALIDATE_URL rules on every PHP version
+    ['url', 'http://example.com:0/', 'pass'],
+    ['url', 'http://[2001:db8::1]:8080/', 'pass'],
+    ['url', 'http://user@[::1]/', 'pass'],
+    ['url', 'http://a@b@[::1]/', 'fail'],
+    ['url', 'http://a@b@example.com/', 'fail'],
+    ['url', 'http://example.com\\@evil.com/', 'fail'],
+    ['url', 'http://%41b:c@example.com/', 'pass'],
+    ['url', 'http://example-/', 'fail'],
+    ['url', 'http://example..com/', 'fail'],
+    ['url', 'http://example.com./', 'pass'],
+    ['url', 'http://example.com:65536/', 'fail'],
+    ['url', 'http://[1.2.3.4]/', 'fail'],
 ];
 
 foreach ($cases as [$type, $input, $expected]) {
@@ -205,6 +218,18 @@ echo "Done.\n";
 [OK] uint64(-1) => fail (expected fail)
 [OK] uint128(7) => pass (expected pass) string
 [OK] int64(5) => pass (expected pass) %s
+[OK] url('http://example.com:0/') => pass (expected pass) string
+[OK] url('http://[2001:db8::1]:8080/') => pass (expected pass) string
+[OK] url('http://user@[::1]/') => pass (expected pass) string
+[OK] url('http://a@b@[::1]/') => fail (expected fail)
+[OK] url('http://a@b@example.com/') => fail (expected fail)
+[OK] url('http://example.com\\@evil.com/') => fail (expected fail)
+[OK] url('http://%41b:c@example.com/') => pass (expected pass) string
+[OK] url('http://example-/') => fail (expected fail)
+[OK] url('http://example..com/') => fail (expected fail)
+[OK] url('http://example.com./') => pass (expected pass) string
+[OK] url('http://example.com:65536/') => fail (expected fail)
+[OK] url('http://[1.2.3.4]/') => fail (expected fail)
 
 **** VALIDATE_INT_AS_STRING with 'values' ****
 string(1) "3"
