@@ -1,6 +1,6 @@
 # "Validate" for PHP - An INPUT data validation framework
 
-[![CI](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml/badge.svg)](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml)
+[![CI](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml/badge.svg?branch=php-7.x)](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml?query=branch%3Aphp-7.x)
 
 "Validate" is "input data validation **framework**" that is developed to be useful for "CERT Secure Coding" and "Design by Contract"(DbC). "Validate" is designed to develop [**OWASP TOP 10 A10:2017 vulnerability**](https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring) compliant application. "Validate" is planned to be implemented as C module for PHP.
 
@@ -37,7 +37,7 @@ Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.m
 
 ## Requirements
 
-* PHP 8.0 and up, including PHP versions in development (this is the `master` branch; see [Branches](#branches)).
+* PHP 7.0 - 7.4 (this is the `php-7.x` branch; see [Branches](#branches)).
 * No extension is required.
 
 ### Recommended
@@ -60,6 +60,13 @@ Every branch provides the same features with code written for its PHP versions. 
 * [`dev/basic_types_corpus.php`](dev/basic_types_corpus.php) checks a port: it validates tricky inputs with every `$basicTypes` spec. Run it on each branch and PHP version (`php dev/basic_types_corpus.php src > out.txt`) and compare the output with `master`'s. [`dev/fuzz_inputs.php`](dev/fuzz_inputs.php) does the same with generated inputs for the `json` and `url` specs.
 * `nightly` and `master` in the CI column are [setup-php](https://github.com/shivammathur/setup-php) builds of the next PHP release and of php-src master (8.6 and 8.7.0-dev as of October 2026).
 * `.gitlab-ci.yml` runs the same tests in the official `php` Docker images for the released PHP versions of each branch, except PHP 5.3 / 5.4, whose images current Docker cannot pull (manifest schema 1).
+
+### Differences of `php-7.x` from `master`
+
+* `src/run-tests.php` is the one of PHP 7.4.33. It has no `--show-diff`; a failed test leaves `src/tests/*.diff`.
+* The internal class constants of `Validate` are public (PHP 7.0 has no class constant visibility). Do not use them.
+* `preg_last_error_msg()` (PHP 8.0+) is replaced by an internal function returning the same messages.
+* Some tests set INI values or syntax for PHP 7: `assert.exception=1` (the PHP 8 default), `serialize_precision=14` (PHP 7.0 prints 17 digits), `list()` instead of `[...]` in `foreach`.
 
 ## Basic Behaviors
 

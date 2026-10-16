@@ -7,6 +7,7 @@ if (!class_exists("Validate")) die("skip");
 ?>
 --INI--
 precision=14
+serialize_precision=14
 error_reporting=-1
 --FILE--
 <?php

@@ -142,14 +142,17 @@ class ValidateInvalidValueException extends InvalidArgumentException
  */
 class Validate
 {
+    // Internal constants. They are private on master; PHP 7.0 has no class
+    // constant visibility, so do not use them from outside this class.
+
     /* checkParamPresence() results. */
-    private const PRESENCE_VALIDATE = 1; // Validate the input value.
-    private const PRESENCE_DEFAULT = 2;  // Validate the "default" option instead.
-    private const PRESENCE_SKIP = 3;     // Nothing to validate; not an error.
-    private const PRESENCE_FAIL = 4;     // Error already reported.
+    const PRESENCE_VALIDATE = 1; // Validate the input value.
+    const PRESENCE_DEFAULT = 2;  // Validate the "default" option instead.
+    const PRESENCE_SKIP = 3;     // Nothing to validate; not an error.
+    const PRESENCE_FAIL = 4;     // Error already reported.
 
     /* Max entries of $checkedSpecs (oldest dropped first). */
-    private const CHECKED_SPECS_MAX = 64;
+    const CHECKED_SPECS_MAX = 64;
 
     /**
      * Specs that passed the VALIDATE_OPT_CHECK_SPEC check in this process
@@ -2816,7 +2819,7 @@ class Validate
             $this->reportError(
                 [
                     'message' => 'VALIDATE_REGEXP: '.($matched === false
-                                 ? 'PCRE error: '.preg_last_error_msg().'.' : 'Failed to match.'),
+                                 ? 'PCRE error: '.self::pregLastErrorMsg().'.' : 'Failed to match.'),
                     'value' => $ret,
                 ],
                 [VALIDATE_REGEXP, $flags, $options],
@@ -3095,6 +3098,36 @@ class Validate
         if (!($func_opts & VALIDATE_OPT_DISABLE_EXCEPTION)) {
             throw new ValidateInvalidValueException($error_msg, $error);
         }
+    }
+
+
+    /**
+     * preg_last_error_msg() (PHP 8.0+) with the same messages on older PHP.
+     *
+     * @return string
+     */
+    private static function pregLastErrorMsg()
+    {
+        if (function_exists('preg_last_error_msg')) {
+            return preg_last_error_msg();
+        }
+        switch (preg_last_error()) {
+            case PREG_NO_ERROR:
+                return 'No error';
+            case PREG_INTERNAL_ERROR:
+                return 'Internal error';
+            case PREG_BACKTRACK_LIMIT_ERROR:
+                return 'Backtrack limit exhausted';
+            case PREG_RECURSION_LIMIT_ERROR:
+                return 'Recursion limit exhausted';
+            case PREG_BAD_UTF8_ERROR:
+                return 'Malformed UTF-8 characters, possibly incorrectly encoded';
+            case PREG_BAD_UTF8_OFFSET_ERROR:
+                return 'The offset did not correspond to the beginning of a valid UTF-8 code point';
+            case PREG_JIT_STACKLIMIT_ERROR:
+                return 'JIT stack limit exhausted';
+        }
+        return 'Unknown error';
     }
 
 

@@ -27,7 +27,7 @@ $cases = [
     ['email_dns', 'not-an-email', 'fail'],
 ];
 
-foreach ($cases as [$type, $input, $expected]) {
+foreach ($cases as list($type, $input, $expected)) {
     $ctx = null;
     $r = validate($ctx, $input, $basicTypes[$type], VALIDATE_OPT_DISABLE_EXCEPTION);
     $actual = ($ctx instanceof Validate && $ctx->getStatus()) ? 'pass' : 'fail';

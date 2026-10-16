@@ -171,6 +171,9 @@ try {
 	// $func_opts - function-level VALIDATE_OPT_* bitmask.
 	$result = validate($ctx, $the_input, $the_spec, $func_opts);
 } catch (Exception $e) {
+	// PHP 7 keeps by-reference arguments as references in the exception
+	// trace, so var_dump() would mark the input arrays with "&".
+	unset($e);
 	var_dump($ctx->getStatus(), $ctx->getValidated(), $the_input);
 	die('Go away, crackers! Your activity is logged and reported.');
 }

@@ -12,9 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # master branch: released PHP 8 versions plus setup-php's builds of the
-        # next PHP release ('nightly') and php-src master ('master').
-        php: ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5', 'nightly', 'master']
+        # php-7.x branch.
+        php: ['7.0', '7.1', '7.2', '7.3', '7.4']
 
     steps:
       - uses: actions/checkout@v4
@@ -29,8 +28,11 @@ jobs:
       - name: Check PHP and extensions
         run: php -v && php -m | grep -E 'bcmath|gmp|mbstring'
 
+      # run-tests.php of PHP 7.4 has no --show-diff; print the diffs on failure.
       - name: Run tests
-        run: cd src && php run-tests.php -p $(which php) --show-diff tests
+        run: |
+          cd src
+          php run-tests.php -p $(which php) -q tests || { for f in tests/*.diff; do echo "=== $f"; cat "$f"; done; exit 1; }
 
   lint:
     name: phpcs

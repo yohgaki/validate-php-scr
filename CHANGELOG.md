@@ -7,6 +7,32 @@ Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
 example/tool fixes, and remembering checked specs. Branches for older PHP
 versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
 
+### Branch `php-7.x`
+
+* Created from `master` (2026-10-17) for PHP 7.0 - 7.4. Differences from
+  `master`:
+  * The internal class constants of `Validate` have no visibility (PHP 7.0
+    has none); `preg_last_error_msg()` (PHP 8.0) is replaced by
+    `Validate::pregLastErrorMsg()`, which returns the same messages.
+  * `src/run-tests.php` is the one of PHP 7.4.33 (no `--show-diff`; CI prints
+    `tests/*.diff` on failure).
+  * Tests: `list()` instead of `[...]` in `foreach`; `assert.exception=1`
+    (PHP 8 default) in `validate_object.phpt`; `serialize_precision=14` in
+    the float tests (PHP 7.0 prints 17 digits); `validate_reject.phpt` drops
+    the caught exception before `var_dump()`, since PHP 7 keeps by-reference
+    arguments as references in its trace.
+  * GitHub Actions and `.gitlab-ci.yml` test PHP 7.0 - 7.4; `composer.json`
+    requires `php` `^7.0`.
+* Checked on PHP 7.0.33, 7.1.33, 7.2.34, 7.3.33 and 7.4.33 (official Docker
+  images plus BCMath and GMP): all tests pass; the output of
+  `dev/basic_types_corpus.php` equals `master`'s on PHP 8.5.11, and that of
+  the examples `master`'s on PHP 8.0.30 (PHP 8.4+ `var_dump()` shows more
+  closure fields); on 7.0 the `src/tools` flow (logger, analyzer, validator)
+  gives the same `spec.php` and results as `master` on 8.5.11; on 7.0, 7.2
+  and 7.4 `dev/fuzz_inputs.php` gives the same results as `master` on PHP
+  8.6.0RC3 for 120,000 JSON inputs and on PHP 8.5.11 for 80,000 URLs (seeds
+  as in the `json` / `url` entries below).
+
 ### Changed — behavior changes that can affect existing code
 
 * **Undeclared input keys are errors.** Every `VALIDATE_ARRAY` level now reports
