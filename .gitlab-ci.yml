@@ -6,23 +6,42 @@ default:
   interruptible: true
 
 # ── テストジョブ共通定義 ─────────────────────────────────────────────────────
+# BCMath と GMP は公式イメージにないので、ビルドして入れる
+.install_bcmath_gmp: &install_bcmath_gmp
+  # 古いイメージの Debian は archive.debian.org にしか残っていない
+  - |
+    if ! apt-get update -qq; then
+      codename=$(sed -n 's/^VERSION_CODENAME=//p' /etc/os-release)
+      [ -n "$codename" ] || codename=$(sed -n 's/^VERSION=.*(\(.*\)).*/\1/p' /etc/os-release)
+      echo "deb http://archive.debian.org/debian $codename main" > /etc/apt/sources.list
+      rm -f /etc/apt/sources.list.d/*
+      apt-get -o Acquire::Check-Valid-Until=false update -qq
+    fi
+  - apt-get install -y -qq libgmp-dev || apt-get install -y -qq --allow-unauthenticated libgmp-dev || apt-get install -y -qq --force-yes libgmp-dev
+  - if [ ! -e /usr/include/gmp.h ]; then ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h; fi
+  - docker-php-ext-install -j$(nproc) bcmath gmp > /dev/null
+
+# $EXTENSIONS の拡張がすべて読み込まれていることを確かめる。先頭に ':' がある拡張は、
+# 読み込まれていないことを確かめる (.github/workflows/ci.yml と同じ)
+.check_extensions: &check_extensions
+  - |
+    mods=$(php -m)
+    for e in $(echo "$EXTENSIONS" | tr ',' ' '); do
+      if [ "${e#:}" = "$e" ]; then
+        echo "$mods" | grep -qix "$e" || { echo "$e is not loaded"; exit 1; }
+      elif echo "$mods" | grep -qix "${e#:}"; then
+        echo "${e#:} is loaded"; exit 1
+      fi
+    done
+
 .test:
   stage: test
+  variables:
+    EXTENSIONS: "bcmath, gmp, mbstring"
   before_script:
     - php -v
-    # 古いイメージの Debian は archive.debian.org にしか残っていない
-    - |
-      if ! apt-get update -qq; then
-        codename=$(sed -n 's/^VERSION_CODENAME=//p' /etc/os-release)
-        [ -n "$codename" ] || codename=$(sed -n 's/^VERSION=.*(\(.*\)).*/\1/p' /etc/os-release)
-        echo "deb http://archive.debian.org/debian $codename main" > /etc/apt/sources.list
-        rm -f /etc/apt/sources.list.d/*
-        apt-get -o Acquire::Check-Valid-Until=false update -qq
-      fi
-    - apt-get install -y -qq libgmp-dev || apt-get install -y -qq --allow-unauthenticated libgmp-dev || apt-get install -y -qq --force-yes libgmp-dev
-    - if [ ! -e /usr/include/gmp.h ]; then ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h; fi
-    - docker-php-ext-install -j$(nproc) bcmath gmp > /dev/null
-    - php -m | grep -E 'bcmath|gmp|mbstring'
+    - *install_bcmath_gmp
+    - *check_extensions
   script:
     - cd src && php run-tests.php -p $(which php) --show-diff tests
   artifacts:
@@ -55,6 +74,17 @@ test:php8.4:
 test:php8.5:
   extends: .test
   image: php:8.5-cli
+
+# BCMath と GMP なしでもテストする。大きな整数を PHP だけで比較する経路を通す
+# (validate_compare_bigint.phpt は GMP があると skip される)
+test:php8.5-without-bcmath-gmp:
+  extends: .test
+  image: php:8.5-cli
+  variables:
+    EXTENSIONS: "mbstring, :bcmath, :gmp"
+  before_script:
+    - php -v
+    - *check_extensions
 
 # ── lint ─────────────────────────────────────────────────────────────────────
 lint:phpcs:
