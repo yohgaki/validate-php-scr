@@ -146,7 +146,6 @@ check('RESOURCE resource option not string', [VALIDATE_RESOURCE, 0, ['resource'=
 == too few elements ==
 bool(false)
 ERROR: Validator Flag(int) is missing.
-ERROR: VALIDATE_INT: Too few elements. Spec must have 3 elements.
 
 == too many elements ==
 bool(true)
@@ -195,7 +194,7 @@ bool(true)
 
 == default: OBJECT scalar default is rejected ==
 bool(false)
-ERROR: VALIDATE_OBJECT has invalid "default" option. "default" value must be object or callable returns object for VALIDATE_OBJECT. [VALIDATE_FLAG_UNDEFINED_TO_DEFAULT]
+ERROR: VALIDATE_OBJECT has invalid "default" option. "default" value must be object for VALIDATE_OBJECT. [VALIDATE_FLAG_UNDEFINED_TO_DEFAULT]
 
 == default: RESOURCE cannot have default ==
 bool(false)
@@ -203,7 +202,7 @@ ERROR: VALIDATE_RESOURCE has invalid "default" option. "default" is not allowed 
 
 == default without *_TO_DEFAULT flag ==
 bool(true)
-WARNING: VALIDATE_INT has "default" option, but VALIDATE_FLAGS_EMPTY_TO_DEFAULT and/or VALIDATE_UNDEFINED_TO_DEFAULT is not set.
+WARNING: VALIDATE_INT has "default" option, but VALIDATE_FLAG_EMPTY_TO_DEFAULT and/or VALIDATE_FLAG_UNDEFINED_TO_DEFAULT is not set.
 
 == UNDEFINED_TO_DEFAULT without default ==
 bool(false)
@@ -215,7 +214,7 @@ ERROR: VALIDATE_INT has VALIDATE_FLAG_EMPTY_TO_DEFAULT but "default" option is m
 
 == non-scalar option value ==
 bool(false)
-ERROR: VALIDATE_INT has invalid "min" option. Option value must be scalar or callable returns proper default value.
+ERROR: VALIDATE_INT has invalid "min" option. Option value must be scalar or callable.
 ERROR: VALIDATE_INT "min" and "max" options must be int or integer string.
 
 == unknown option ==
@@ -310,7 +309,6 @@ ERROR: VALIDATE_INT has VALIDATE_FLAG_ARRAY flag, but "amin" and/or "amax" optio
 == amin/amax not int ==
 bool(false)
 ERROR: VALIDATE_INT. "amin" and "amax" options must be int. [VALIDATE_FLAG_ARRAY]
-ERROR: VALIDATE_INT. "amin" option is larger than "amax" option. [VALIDATE_FLAG_ARRAY]
 
 == amin > amax ==
 bool(false)
@@ -319,7 +317,6 @@ ERROR: VALIDATE_INT. "amin" option is larger than "amax" option. [VALIDATE_FLAG_
 == key_callback without FLAG_ARRAY ==
 bool(true)
 WARNING: VALIDATE_INT has no VALIDATE_FLAG_ARRAY flag, but "key_callback" option is defined.
-WARNING: VALIDATE_INT has VALIDATE_FLAG_ARRAY_KEY_ALNUM flag, but "key_callback" option is defined.
 
 == KEY_ALNUM without FLAG_ARRAY ==
 bool(true)
@@ -331,7 +328,7 @@ WARNING: VALIDATE_INT has "alimit" option but VALIDATE_FLAG_ARRAY is not set.
 
 == RECURSIVE without FLAG_ARRAY ==
 bool(true)
-WARNING: VALIDATE_INT has VALIDATE_FLAG_ARRAY_RECURSIVE but VALIDATE_FLAG_ARRAY is not set.
+WARNING: VALIDATE_INT has VALIDATE_FLAG_ARRAY_RECURSIVE but VALIDATE_FLAG_ARRAY is not set. [VALIDATE_FLAG_ARRAY_RECURSIVE]
 
 == filter not callable ==
 bool(false)
@@ -340,6 +337,7 @@ ERROR: VALIDATE_INT "filter" option is not callable.
 == key_callback not callable ==
 bool(false)
 ERROR: VALIDATE_INT "key_callback" option is not callable. [VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM]
+WARNING: VALIDATE_INT has VALIDATE_FLAG_ARRAY_KEY_ALNUM flag that has no effect: "key_callback" option is defined. [VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM]
 
 == INT with BINARY / RAW flags ==
 bool(true)

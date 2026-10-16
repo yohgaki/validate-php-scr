@@ -81,7 +81,7 @@ resource(%d) of type (stream)
 bool(true)
 
 Bad resource
-string(129) "param: 'ROOT' error: 'VALIDATE_RESOURCE: Resource type does not match. Returned: 'stream' Expected: 'does not exist'' val: 'i:0;'"
+string(141) "param: 'ROOT' error: 'VALIDATE_RESOURCE: Resource type does not match. Returned: 'stream' Expected: 'does not exist'' val: 'resource(stream)'"
 
 Null
 string(86) "param: 'ROOT' error: 'VALIDATE_RESOURCE: NULL input is rejected by default.' val: 'N;'"

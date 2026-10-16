@@ -11,14 +11,19 @@ require_once __DIR__.'/../validate_func.php';
 require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array.
 
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION;
+// validate_get_status() reports the most recent validate() call only, so
+// check it after each call (or validate everything with one VALIDATE_ARRAY spec).
+$ok = true;
 // Validate a domain name without throwing on failure.
 $domain = 'es-i.jp';
 $domain = validate($ctx, $domain, $basicTypes['fqdn'], $func_opts);
+$ok = $ok && validate_get_status($ctx);
 // Validate a record ID as a 32-bit unsigned integer.
 $id = '1234';
 $id = validate($ctx, $id, $basicTypes['uint32'], $func_opts);
+$ok = $ok && validate_get_status($ctx);
 
-if (validate_get_status($ctx) == false) {
+if (!$ok) {
     // At least one validation failed — re-render the form, etc.
 }
 // User-facing errors collected for any 'error_message' options or validate_error() calls.

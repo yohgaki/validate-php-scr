@@ -11,11 +11,13 @@
  *   4. create_spec()      — translate $stat into spec.php for input_validator.php
  *
  * Usage: php input_analyzer.php [/path/to/log_dir]
- *        log_dir defaults to /var/tmp/validate
+ *        log_dir defaults to $VALIDATE_TOOLS_DIR, else /var/tmp/validate.
+ *        The directory must be owned by the current user and must not be
+ *        group/world writable: every *-log.php in it is include()d.
  */
 require_once __DIR__.'/../Validate.php';
 
-$spec_path = '/var/tmp/validate';
+$spec_path = rtrim(getenv('VALIDATE_TOOLS_DIR') ?: '/var/tmp/validate', '/');
 
 // Stat-array keys live in their own namespace so they cannot collide with
 // VALIDATE_ID / VALIDATE_FLAGS / VALIDATE_OPTIONS used by real specs.
@@ -25,30 +27,33 @@ define('VALIDATE_COUNT', 'count');
 define('VALIDATE_MAX_VALUES', 999); // Distinct sample values kept per node (caps memory growth).
 define('VALIDATE_ASCII_MAP', 'ascii_map');
 
-$log_dir = $argv[1] ?? $spec_path ;
+$log_dir = rtrim($argv[1] ?? $spec_path, '/');
 $stat_file = $log_dir . '/stat.php';
 $spec_file = $log_dir . '/spec.php';
 if (!is_dir($log_dir)) {
     usage($argv);
-    trigger_error('Please specify logger dir', E_USER_ERROR);
+    fail('Please specify logger dir', 1);
+}
+$st = stat($log_dir);
+if (is_link($log_dir) || ($st['mode'] & 0022)
+    || (function_exists('posix_geteuid') && $st['uid'] !== posix_geteuid())) {
+    fail('Unsafe log dir (must be owned by this user and not group/world writable): '.$log_dir, 1);
 }
 
 // Check output spec file path
 if (!touch($spec_file)) {
-    trigger_error('Failed to create spec file', E_USER_ERROR);
-    exit(-1);
+    fail('Failed to create spec file', 2);
 }
 
 // Get stat file
 if (!touch($stat_file)) {
-    trigger_error('Failed to read or create stat file', E_USER_ERROR);
-    exit(-2);
-}
-if (empty($stat)) {
-    $stat = array();
+    fail('Failed to read or create stat file', 3);
 }
 
-$stat = analyze_log($log_dir) ;
+$stat = analyze_log($log_dir);
+if ($stat === false) {
+    fail('Empty logs. Check log directory: '. $log_dir, 4);
+}
 create_stat($stat_file, $stat);
 optimize_stat($stat);
 create_spec($spec_file, $stat);
@@ -57,6 +62,16 @@ echo 'Done. Check generated spec file: '. $spec_file . "\n";
 /* end main */
 
 /* functions */
+
+/**
+ * Print an error and exit. (trigger_error(E_USER_ERROR) is deprecated in PHP 8.4.)
+ */
+function fail($message, $code)
+{
+    fwrite(STDERR, $message."\n");
+    exit($code);
+}
+
 
 /**
  * Usage
@@ -80,7 +95,6 @@ function analyze_log($log_dir)
 {
     $logs = glob($log_dir.'/*-log.php');
     if (empty($logs)) {
-        trigger_error('Empty logs. Check log directory: '. $log_dir);
         return false;
     }
 
@@ -312,6 +326,9 @@ function optimize_stat(&$stat)
 
 function optimize_stat_recursive(&$stat)
 {
+    if (!is_array($stat) || !isset($stat[VALIDATE_ID])) {
+        return; // Node dropped after a type mismatch between requests.
+    }
     if ($stat[VALIDATE_ID] !== VALIDATE_ARRAY) {
         optimize_scalar_stat($stat);
         return;
@@ -413,7 +430,7 @@ function optimize_stat_hint(&$stat, $key)
 
 function optimize_scalar_stat(&$stat)
 {
-    if (count($stat[VALIDATE_TYPES]) > 1) {
+    if (count($stat[VALIDATE_TYPES] ?? []) > 1) {
         print_r($stat);
         trigger_error('Mixed types are not supported: '.join(', ', $stat[VALIDATE_TYPES]));
         $stat[VALIDATE_ID] = VALIDATE_STRING;
@@ -430,7 +447,7 @@ function optimize_scalar_stat(&$stat)
             optimize_string_stat($stat);
             break;
         default:
-            trigger_error('Invalid ID: '. $stat[VALIDATE_ID]) . ' Stat: '.serialize($stat);
+            trigger_error('Invalid ID: '. $stat[VALIDATE_ID] . ' Stat: '.serialize($stat));
             $stat = null;
     }
     return;
@@ -476,19 +493,19 @@ function optimize_string_stat(&$stat)
     } else {
         $stat[VALIDATE_OPTIONS]['omax'] = 100;
     }
-    foreach ($stat[VALIDATE_ASCII_MAP] as $key => $val) {
-        $stat[VALIDATE_OPTIONS]['oflags'] = $stat[VALIDATE_OPTIONS]['oflags'] ?? 0;
+    $stat[VALIDATE_OPTIONS]['oflags'] = $stat[VALIDATE_OPTIONS]['oflags'] ?? 0;
+    foreach ($stat[VALIDATE_ASCII_MAP] ?? [] as $key => $val) {
+        if (!$val) {
+            continue; // Byte never seen in traffic.
+        }
         if ($key >= ord('0') && $key <= ord('9')) {
             $stat[VALIDATE_OPTIONS]['oflags'] |= VALIDATE_STRING_DIGIT;
-        }
-        if ($key >= ord('A') && $key <= ord('Z')) {
+        } elseif ($key >= ord('A') && $key <= ord('Z')) {
             $stat[VALIDATE_OPTIONS]['oflags'] |= VALIDATE_STRING_UPPER_ALPHA;
-        }
-        if ($key >= ord('a') && $key <= ord('z')) {
+        } elseif ($key >= ord('a') && $key <= ord('z')) {
             $stat[VALIDATE_OPTIONS]['oflags'] |= VALIDATE_STRING_LOWER_ALPHA;
-        }
-        if (!empty($stat[VALIDATE_ASCII_MAP][127])) {
-            $stat[VALIDATE_OPTIONS]['oflags'] |= VALIDATE_STRING_MB;
+        } elseif ($key === 127) {
+            $stat[VALIDATE_OPTIONS]['oflags'] |= VALIDATE_STRING_MB; // Non-ASCII bucket.
         }
     }
 }
@@ -546,6 +563,9 @@ $EXTRA_SPECS =
 
 function create_spec_recursive(&$spec, $stat)
 {
+    if (!is_array($stat) || !isset($stat[VALIDATE_ID])) {
+        return null; // Node dropped after a type mismatch between requests.
+    }
     if ($stat[VALIDATE_ID] !== VALIDATE_ARRAY) {
         return create_scalar_spec($spec, $stat);
     }
@@ -560,7 +580,11 @@ function create_spec_recursive(&$spec, $stat)
     $spec[VALIDATE_OPTIONS]['max'] = $stat[VALIDATE_OPTIONS]['lmax'] + 10;
     $params = [];
     foreach ($stat[VALIDATE_PARAMS] as $key => $val) {
-        $params[$key] = create_spec_recursive($stat[$key], $val);
+        $child = null;
+        $child = create_spec_recursive($child, $val);
+        if ($child !== null) {
+            $params[$key] = $child;
+        }
     }
     $spec[VALIDATE_PARAMS] = $params;
     return $spec;
@@ -620,10 +644,13 @@ function create_string_spec($spec, $stat)
     $spec[VALIDATE_OPTIONS]['min'] = $stat[VALIDATE_OPTIONS]['omin'];
     $spec[VALIDATE_OPTIONS]['max'] = $stat[VALIDATE_OPTIONS]['omax'];
     if (!empty($stat[VALIDATE_ASCII_MAP])) {
+        // Raw bytes: "ascii" is a strspn()-style character list, not an
+        // escaped string. Letters/digits are covered by the flags above and
+        // slot 127 is the non-ASCII bucket (VALIDATE_STRING_MB).
         $spec[VALIDATE_OPTIONS]['ascii'] = '';
         foreach ($stat[VALIDATE_ASCII_MAP] as $key => $val) {
-            if ($val > 0) {
-                $spec[VALIDATE_OPTIONS]['ascii'] .= addslashes(chr($key));
+            if ($val > 0 && $key < 127 && !preg_match('/[A-Za-z0-9]/', chr($key))) {
+                $spec[VALIDATE_OPTIONS]['ascii'] .= chr($key);
             }
         }
     }

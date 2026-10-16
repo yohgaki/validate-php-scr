@@ -3,7 +3,6 @@ validate() INT validation with "values" option.
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
-if (!extension_loaded('GMP')) die('skip no GMP');
 if (!class_exists("Validate")) die("skip");
 ?>
 --INI--
@@ -52,5 +51,5 @@ string(87) "param: 'ROOT' error: 'VALIDATE_INT: Failed to match defined option "
 bool(false)
 string(87) "param: 'ROOT' error: 'VALIDATE_INT: Failed to match defined option "values".' val: '11'"
 bool(false)
-string(112) "param: 'ROOT' error: 'VALIDATE_INT: Failed option "values" match. Value is not integer.' val: 'a:1:{i:0;i:123;}'"
+string(108) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.' val: 'a:1:{i:0;i:123;}'"
 bool(false)

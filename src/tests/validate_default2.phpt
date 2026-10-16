@@ -44,7 +44,8 @@ $spec = [
 ];
 
 try {
-	var_dump(validate($ctx, $values, $spec), $ctx->getStatus());
+	// 'foo' is not declared: VALIDATE_OPT_UNVALIDATED allows the leftover.
+	var_dump(validate($ctx, $values, $spec, VALIDATE_OPT_CHECK_SPEC | VALIDATE_OPT_UNVALIDATED), $ctx->getStatus());
 } catch (Exception $e) {
 	var_dump($e->getMessage());
 }
@@ -60,7 +61,8 @@ $values = array(
 
 echo "\n** Successful case**\n";
 try {
-	var_dump(validate($ctx, $values, $spec), $ctx->getStatus());
+	// 'foo' is not declared: VALIDATE_OPT_UNVALIDATED allows the leftover.
+	var_dump(validate($ctx, $values, $spec, VALIDATE_OPT_CHECK_SPEC | VALIDATE_OPT_UNVALIDATED), $ctx->getStatus());
 } catch (Exception $e) {
 	var_dump($e->getMessage());
 }

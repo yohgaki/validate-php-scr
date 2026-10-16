@@ -28,10 +28,10 @@ define('VALIDATE_RESOURCE', 9);
 define('VALIDATE_OBJECT', 10);
 define('VALIDATE_MULTI', 11); /* Validate one scalar against multiple specs (see VALIDATE_MULTI_AND/OR). */
 define('VALIDATE_LAST', VALIDATE_MULTI); // Internal: highest valid type ID, used to bound spec validation loops.
-/* Special validators (internal — users should not pass these as a spec ID) */
-define('VALIDATE_REJECT', 20); // Internal: produced by VALIDATE_FLAG_REJECT when a rejected input is present.
-define('VALIDATE_UNDEFINED', 21); // Internal: produced by VALIDATE_FLAG_UNDEFINED when input is absent.
-define('VALIDATE_UNVALIDATED', 22); // Internal: marker for inputs left unvalidated (only with VALIDATE_OPT_UNVALIDATED).
+/* Reserved IDs (kept for the C extension / BC). Not valid spec IDs: validate_spec() rejects them. */
+define('VALIDATE_REJECT', 20); // Reserved. Rejection is the VALIDATE_FLAG_REJECT flag.
+define('VALIDATE_UNDEFINED', 21); // Reserved. Absent input is handled by VALIDATE_FLAG_UNDEFINED*.
+define('VALIDATE_UNVALIDATED', 22); // Reserved. Undeclared input keys are reported as "Unvalidated value remains.".
 
 
 /****************************************************************/
@@ -54,8 +54,8 @@ define('VALIDATE_BOOL_TRUE_FALSE', 1 << 3); /* Accept "true" and "false". */
 define('VALIDATE_BOOL_ON_OFF', 1 << 4); /* Accept "on" and "off". */
 define('VALIDATE_BOOL_YES_NO', 1 << 5); /* Accept "yes" and "no". */
 define('VALIDATE_BOOL_LAST_BIT', 6); /* Used internally — bit count for this type's flags. */
-/* Note: For VALIDATE_BOOL, VALIDATE_FLAG_UNDEFINED / VALIDATE_FLAG_EMPTY make
-   the validator yield FALSE (rather than null) when the input is absent/empty. */
+/* Note: For VALIDATE_BOOL, VALIDATE_FLAG_EMPTY yields null for '' / null input
+   ('' with VALIDATE_BOOL_AS_STRING), like the other validators. */
 
 /* VALIDATE_INT flags */
 define('VALIDATE_INT_AS_STRING', 1 << 0); /* Accept the input only as a numeric string; return it without type conversion. */
@@ -95,8 +95,10 @@ define('VALIDATE_STRING_ALNUM', (VALIDATE_STRING_ALPHA | VALIDATE_STRING_DIGIT))
 define('VALIDATE_STRING_SYMBOL', 1 << 8); // WARNING: Dangerous — opens up all printable ASCII symbols. Prefer the 'ascii' option to whitelist a few.
 define('VALIDATE_STRING_MB', 1 << 9); // Allow multibyte (UTF-8) characters.
 define('VALIDATE_STRING_BINARY', 1 << 10); // WARNING: Dangerous — allows arbitrary binary bytes including NUL.
-define('VALIDATE_STRING_RFC3454_C', 1 << 11); // Allow Unicode control characters from RFC 3454 table C; ASCII control chars are still gated by the flags above.
-define('VALIDATE_STRING_RFC3454_D', 1 << 12); // Allow Unicode bidirectional characters from RFC 3454 table D; ASCII control chars are still gated by the flags above.
+// With _MB + UTF-8: allow the RFC 3454 table C code points (rejected by default).
+// ASCII control chars are still gated by the flags above; the "unicode" option still applies.
+define('VALIDATE_STRING_RFC3454_C', 1 << 11);
+define('VALIDATE_STRING_RFC3454_D', 1 << 12); // Reserved: currently has no effect (no RFC 3454 table D check is performed).
 define('VALIDATE_STRING_LAST_BIT', 13); /* Used internally — bit count for this type's flags. */
 
 /*
@@ -147,9 +149,9 @@ define('VALIDATE_REGEXP_LAST_BIT', VALIDATE_STRING_LAST_BIT); /* Used internally
 
 /* VALIDATE_ARRAY — no per-type flags; configure with the global VALIDATE_FLAG_* flags and the 'amin'/'amax' options. */
 
-/* VALIDATE_RESOURCE — no per-type flags; configure via the 'restype' option. */
+/* VALIDATE_RESOURCE — no per-type flags; configure via the 'resource' option (required resource type name). */
 
-/* VALIDATE_OBJECT — no per-type flags; configure via the 'class' option. */
+/* VALIDATE_OBJECT — no per-type flags; configure via the 'callback' option (method name, required) and the optional 'class' option (instanceof check). */
 
 /* VALIDATE_MULTI flags — combine multiple sub-specs against a single scalar. */
 define('VALIDATE_MULTI_AND', 1 << 0); /* All sub-specs must pass. */
@@ -167,17 +169,23 @@ define('VALIDATE_MULTI_LAST_BIT', 2); /* Used internally — bit count for this 
 define('VALIDATE_FLAG_NONE', 0); /* No flags set. */
 define('VALIDATE_FLAG_RAW', 1 << 16);  /* WARNING: Return the raw input without conversion. Debug-only — bypasses type normalization. */
 define('VALIDATE_FLAG_REJECT', 1 << 17);  /* Treat the parameter as forbidden — validation fails if it is present. */
-define('VALIDATE_FLAG_UNDEFINED', 1 << 18);  /* Allow absent input; yield null (or '' when the *_AS_STRING flag is also set). */
-define('VALIDATE_FLAG_UNDEFINED_TO_DEFAULT', 1 << 19);  /* When input is absent, substitute the 'default' option value. */
-define('VALIDATE_FLAG_EMPTY', 1 << 20);  /* Allow empty input ('' or null); yield null (or '' with *_AS_STRING). */
-define('VALIDATE_FLAG_EMPTY_TO_DEFAULT', 1 << 21);  /* When input is empty, substitute the 'default' option value. */
-define('VALIDATE_FLAG_NULL', 1 << 22);  /* Accept the actual NULL value as valid input. */
+define('VALIDATE_FLAG_UNDEFINED', 1 << 18);  /* Allow absent input (array parameter); the key is left out of the result. */
+define('VALIDATE_FLAG_UNDEFINED_TO_DEFAULT', 1 << 19);  /* When input is absent, validate the 'default' option value instead. */
+define('VALIDATE_FLAG_EMPTY', 1 << 20);  /* Allow empty input: null yields null; '' yields '' (STRING/REGEXP) or null ('' with *_AS_STRING). */
+define('VALIDATE_FLAG_EMPTY_TO_DEFAULT', 1 << 21);  /* When input is '' or null, validate the 'default' option value instead. */
+/* Accept the actual NULL value (also as an array element / parameter value); yields null.
+   VALIDATE_CALLBACK passes it to the callback. */
+define('VALIDATE_FLAG_NULL', 1 << 22);
 define('VALIDATE_FLAG_ARRAY', 1 << 23);  /* Require an array of scalars (e.g. script.php?val[]=1&val[]=2); each element is validated by the same spec. */
 define('VALIDATE_FLAG_ARRAY_RECURSIVE', 1 << 24);  /* When combined with VALIDATE_FLAG_ARRAY, also allow nested arrays. */
-define('VALIDATE_FLAG_ARRAY_KEY_ALNUM', 1 << 25);  /* Allow alnum + '_' string keys. Without this, only int keys are accepted. Use the 'key_callback' option for custom rules. */
-define('VALIDATE_FLAG_WARNING', 1 << 26);  /* WARNING: Dangerous — downgrade a validation failure to an E_WARNING instead of raising an exception. */
-define('VALIDATE_FLAG_NOTICE', 1 << 27);  /* WARNING: Dangerous — downgrade a validation failure to an E_NOTICE instead of raising an exception. */
-define('VALIDATE_FLAG_PASSTHRU', 1 << 28);  /* WARNING: Dangerous — silently accept invalid input (no exception, no error, no logging). */
+/* Allow alnum + '_' + '-' string keys (max 64 chars). Without it, keys must be ints or
+   digit/'_'/'-' strings (max 32 chars). Use the 'key_callback' option for custom rules. */
+define('VALIDATE_FLAG_ARRAY_KEY_ALNUM', 1 << 25);
+define('VALIDATE_FLAG_WARNING', 1 << 26);  /* WARNING: Dangerous — record a failure as a system *warning*: no exception, no PHP error. The status is still false. */
+define('VALIDATE_FLAG_NOTICE', 1 << 27);  /* WARNING: Dangerous — record a failure as a system *notice*: no exception, no PHP error. The status is still false. */
+/* WARNING: Dangerous — drop a failure silently (nothing recorded, raised, thrown or logged;
+   status unchanged). The invalid value is left out of the result. */
+define('VALIDATE_FLAG_PASSTHRU', 1 << 28);
 define('VALIDATE_FLAG_LAST_BIT', 29); /* Used internally — highest bit position in use. */
 
 // Bit masks used internally to split per-type flags (lower 16 bits) from general flags (upper 16 bits).
@@ -192,23 +200,23 @@ define('VALIDATE_FLAGS_UPPER', 0xffff0000); /* Internal — mask for general VAL
  *
  * These are passed as the 4th argument of validate() and control runtime
  * behavior of the call itself rather than the per-field validation rules.
- *
- * NOTE: The script version currently only supports the exception code path;
- * the C module will extend support for the warning/notice/passthru modes.
  */
 define('VALIDATE_OPT_NONE', 0);      // No options.
-define('VALIDATE_OPT_CHECK_SPEC', 1 << 0); // DEFAULT-ON. Validate the spec array itself via validate_spec(). Disable in production for speed.
-define('VALIDATE_OPT_DISABLE_EXCEPTION', 1 << 1); // Suppress the InvalidArgumentException raised on validation failure; the call returns null instead.
-define('VALIDATE_OPT_UNVALIDATED', 1 << 2); // Permit leftover unvalidated keys in $inputs after validation (by default they cause an error).
-define('VALIDATE_OPT_KEEP_INPUTS', 1 << 3); // Preserve $inputs as-is. By default validate() unsets validated keys so the caller can detect leftovers.
-define('VALIDATE_OPT_RAISE_ERROR', 1 << 4); // Raise PHP errors for failures in addition to recording them — useful for surfacing all errors in a single pass.
+define('VALIDATE_OPT_CHECK_SPEC', 1 << 0); // DEFAULT-ON. Validate the spec array itself first; spec errors throw ValidateInvalidSpecException. Disable in production for speed.
+define('VALIDATE_OPT_DISABLE_EXCEPTION', 1 << 1); // Suppress the ValidateInvalidValueException raised on validation failure; the call returns null instead.
+// Permit input keys that a VALIDATE_ARRAY spec does not declare (by default each level
+// reports "Unvalidated value remains."). Needed for multi-stage validation.
+define('VALIDATE_OPT_UNVALIDATED', 1 << 2);
+define('VALIDATE_OPT_KEEP_INPUTS', 1 << 3); // Leave $inputs untouched (the engine works on a copy). By default validate() unsets validated keys so the caller can see leftovers.
+define('VALIDATE_OPT_RAISE_ERROR', 1 << 4); // Also trigger_error() each failure at the context's error level (validate_set_error_level(), default E_USER_WARNING).
 define('VALIDATE_OPT_LOG_ERROR', 1 << 5); // Call the user-supplied logger (see validate_set_logger_function()) for each error.
 /*
  * Error storage layout — these three are mutually exclusive. They control how
  * errors recorded in the context are keyed:
  *   FULL:   nested array mirroring the spec tree (good for showing per-field errors in deep forms)
  *   PARAM:  flat array keyed by the leaf parameter name (default behavior; matches most form UIs)
- *   SQUASH: flat array keyed by the joined dotted path "a=>b=>c" (good for logging)
+ *   SQUASH: flat array keyed by the joined path "a=>b=>c" (good for logging)
+ * Passing more than one throws InvalidArgumentException.
  */
 define('VALIDATE_OPT_ERROR_FULL', 1 << 6);
 define('VALIDATE_OPT_ERROR_PARAM', 1 << 7);

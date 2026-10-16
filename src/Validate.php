@@ -21,15 +21,18 @@
  *
  *   VALIDATE_CALLBACK "callback" option
  *   ----------------------------------
- *   Run user PHP code to validate a value. Only VALIDATE_CALLBACK accepts
- *   this option. The engine has already enforced flag-based character
- *   whitelisting and min/max before the callback runs.
+ *   Run user PHP code to validate a value. For string input the engine has
+ *   already enforced flag-based character whitelisting and min/max before
+ *   the callback runs; any other input type (int, array, null with
+ *   VALIDATE_FLAG_NULL, ...) reaches the callback unchecked.
  *
  *     function (Validate $ctx, mixed &$result, mixed $input): bool
  *       $ctx    - validation context (created by validate_init() / validate()).
  *       $result - assign here to publish the validated (possibly normalized) value.
- *       $input  - the input value already passed by the pre-filter and whitelist.
- *     Returns true on success, false on failure.
+ *       $input  - the input value (after the "filter" option).
+ *     Returns true on success, false on failure. Calling validate_error()
+ *     also fails the value; validate_warning() / validate_notice() do not.
+ *     Inside VALIDATE_MULTI_OR alternatives messages are not recorded.
  *
  *     A callback MAY call validate() recursively — pass the same $ctx.
  *
@@ -37,9 +40,10 @@
  *   "filter" option
  *   ---------------
  *   Pre-process the input before the validator examines it (e.g. trim() a
- *   string). VALIDATE_FLAG_UNDEFINED*, VALIDATE_FLAG_EMPTY*, and
- *   VALIDATE_FLAG_REJECT are already enforced when the filter runs; 'min'
- *   and 'max' are NOT yet enforced (the filter may change the length).
+ *   string). VALIDATE_FLAG_REJECT, VALIDATE_FLAG_UNDEFINED*,
+ *   VALIDATE_FLAG_EMPTY_TO_DEFAULT and the NULL check are already applied
+ *   when the filter runs; VALIDATE_FLAG_EMPTY, 'min' and 'max' apply to the
+ *   filtered value.
  *
  *     function (Validate $ctx, mixed $input, string &$error): mixed
  *       $ctx   - validation context.
@@ -73,20 +77,58 @@ require_once __DIR__.'/validate_defs.php';
 
 
 /**
- * Exception thrown when validate_spec() finds a structural problem in a spec
- * (wrong type ID, missing min/max, malformed sub-spec, ...). Subclass of
- * InvalidArgumentException so existing handlers continue to work.
+ * Exception thrown by validate() when VALIDATE_OPT_CHECK_SPEC finds a
+ * structural problem in the spec (wrong type ID, missing min/max, malformed
+ * sub-spec, ...). Subclass of InvalidArgumentException so existing handlers
+ * continue to work.
+ *
+ * getContext() returns the Validate context that checked the spec; read the
+ * full list with validate_get_system_errors($e->getContext()).
  */
 class ValidateInvalidSpecException extends InvalidArgumentException
 {
+    private $specContext;
+
+    public function __construct($message, $specContext = null)
+    {
+        parent::__construct($message);
+        $this->specContext = $specContext;
+    }
+
+    /**
+     * @return Validate|null Context holding every spec error/warning/notice.
+     */
+    public function getContext()
+    {
+        return $this->specContext;
+    }
 }
 
 /**
  * Exception thrown when validate() rejects an input value at runtime. Raised
- * unless VALIDATE_OPT_DISABLE_EXCEPTION is set on the call.
+ * unless VALIDATE_OPT_DISABLE_EXCEPTION is set on the call. Subclass of
+ * InvalidArgumentException so existing handlers continue to work.
+ *
+ * getError() returns the structured error record (the same shape as the
+ * entries of validate_get_system_errors()).
  */
 class ValidateInvalidValueException extends InvalidArgumentException
 {
+    private $error;
+
+    public function __construct($message, $error = null)
+    {
+        parent::__construct($message);
+        $this->error = $error;
+    }
+
+    /**
+     * @return array|null Structured error record.
+     */
+    public function getError()
+    {
+        return $this->error;
+    }
 }
 
 /**
@@ -99,13 +141,11 @@ class ValidateInvalidValueException extends InvalidArgumentException
  */
 class Validate
 {
-    /**
-     * Flags toggled by the procedural wrapper functions in validate_func.php
-     * after they have validated their own arguments. This lets the engine
-     * skip a second round of argument checking when entered through the API.
-     */
-    public $validate_params_checked;
-    public $spec_params_checked;
+    /* checkParamPresence() results. */
+    private const PRESENCE_VALIDATE = 1; // Validate the input value.
+    private const PRESENCE_DEFAULT = 2;  // Validate the "default" option instead.
+    private const PRESENCE_SKIP = 3;     // Nothing to validate; not an error.
+    private const PRESENCE_FAIL = 4;     // Error already reported.
 
     /**
      * Stack of element names representing the path from the root to the value
@@ -126,8 +166,8 @@ class Validate
 
     /**
      * PHP error level used when VALIDATE_OPT_RAISE_ERROR is set.
-     * Defaults to a less severe level than E_USER_ERROR to keep debugging
-     * sessions interactive — adjust via setErrorLevel().
+     * Defaults to E_USER_WARNING — adjust via setErrorLevel(). (PHP 8.4
+     * deprecated passing E_USER_ERROR to trigger_error().)
      */
     private $error_level;
 
@@ -174,13 +214,15 @@ class Validate
     private $status;
 
     /**
-     * Mode flag: true while validate() walks input values, false while
-     * validateSpec() walks the spec structure. A few helpers share code
-     * between the two modes and use this to behave differently.
+     * Speculative-evaluation depth. While > 0 (VALIDATE_MULTI_OR alternatives
+     * are being tried) dispatchError() only records that a failure happened:
+     * nothing is stored, logged, raised or thrown, and $status is untouched.
+     * $silentFailed is the per-alternative failure marker.
      *
-     * @var bool
+     * @var int
      */
-    private $value_validation;
+    private $silent = 0;
+    private $silentFailed = false;
 
     /**
      * Optional user logger callback, registered via setLoggerFunction().
@@ -204,11 +246,9 @@ class Validate
     {
         assert(is_string($root_name));
 
-        $this->validate_params_checked = false;
-        $this->spec_params_checked = false;
         $this->status = null;
         $this->validated = null;
-        $this->error_level = E_USER_ERROR;
+        $this->error_level = E_USER_WARNING;
         $this->errors = array();
         $this->warnings = array();
         $this->notices = array();
@@ -282,10 +322,10 @@ class Validate
         $validate->context_vars = [
             'param'     => $param,
             'orig_value'=> $orig_value, // The original value to validator
-            // 'value'    => null, // Cannot set value raised errors here
+            'value'     => $orig_value, // Value that caused an error; see setContextErrorValue()
             'defined'   => $isset,
-            'spec'      => $spec,
-            'func_opts' => $func_opts,
+            'spec'      => $spec ?? [VALIDATE_INVALID, VALIDATE_FLAG_NONE, []],
+            'func_opts' => $func_opts ?? VALIDATE_OPT_NONE,
         ];
     }
 
@@ -309,10 +349,15 @@ class Validate
      *
      * $inputs is passed by reference: each key that passes validation is
      * unset by the engine, so on return $inputs contains only the leftover
-     * (unvalidated) input. Pass VALIDATE_OPT_KEEP_INPUTS to keep it intact.
+     * (unvalidated) input. Pass VALIDATE_OPT_KEEP_INPUTS to keep it intact
+     * (the engine then works on a private copy, so neither unset(), "filter"
+     * results nor substituted "default" values reach the caller's array).
      *
-     * On failure either an InvalidArgumentException is thrown (default) or
-     * null is returned (VALIDATE_OPT_DISABLE_EXCEPTION). Partial validation
+     * Input keys that a VALIDATE_ARRAY spec does not declare are reported as
+     * "Unvalidated value remains." unless VALIDATE_OPT_UNVALIDATED is set.
+     *
+     * On failure either a ValidateInvalidValueException is thrown (default)
+     * or null is returned (VALIDATE_OPT_DISABLE_EXCEPTION). Partial validation
      * results remain reachable via getValidated().
      *
      * @param mixed $inputs    Scalar or array of inputs.
@@ -321,71 +366,71 @@ class Validate
      *
      * @return mixed Validated value(s) on success, null on failure when
      *               exceptions are disabled.
+     *
+     * @throws InvalidArgumentException     Bad $specs / $func_opts argument.
+     * @throws ValidateInvalidSpecException VALIDATE_OPT_CHECK_SPEC found spec errors.
+     * @throws ValidateInvalidValueException Validation failed (unless disabled).
      */
     public function validate(&$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
     {
-        if (!$this->validate_params_checked) {
-            if (($func_opts & VALIDATE_OPT_CHECK_SPEC)
-                && !$this->validateSpec($specs, $unvalidated_spec, $this)) {
-                $err = $this->getSystemErrors();
-                if (!empty($err['warning'])) {
-                    $cnt = count($err['warning']);
-                    trigger_error('Validation spec problem detected. Check spec errors. Hint: validate_get_errors($ctx); '.
-                                  'Warnings: '.$cnt, E_USER_WARNING);
-                }
-                if (!empty($err['error'])) {
-                    $cnt = count($err['error']);
-                    trigger_error('Invalid validation spec detected. Fix spec errors first. Hint: validate_get_errors($ctx);'.
-                                  'Errors: '.$cnt, E_USER_ERROR);
-                }
-                return false;
-            } elseif (!is_array($specs)) {
-                trigger_error('Spec must be array.', E_USER_ERROR);
-                return false;
-            }
-            if (!is_int($func_opts)) {
-                trigger_error('Function option must be int.', E_USER_ERROR);
-                return false;
+        if (!is_array($specs)) {
+            throw new InvalidArgumentException('Spec must be array.');
+        }
+        if (!is_int($func_opts) || ($func_opts & VALIDATE_OPT_UPPER) || $func_opts < 0) {
+            throw new InvalidArgumentException('Function option must be int made of VALIDATE_OPT_* bits.');
+        }
+        $error_modes = $func_opts & (VALIDATE_OPT_ERROR_FULL | VALIDATE_OPT_ERROR_PARAM | VALIDATE_OPT_ERROR_SQUASH);
+        if ($error_modes & ($error_modes - 1)) {
+            throw new InvalidArgumentException(
+                'VALIDATE_OPT_ERROR_FULL, VALIDATE_OPT_ERROR_PARAM and VALIDATE_OPT_ERROR_SQUASH are mutually exclusive.'
+            );
+        }
+        if ($func_opts & VALIDATE_OPT_CHECK_SPEC) {
+            // Check with a separate context so spec problems never mix with
+            // value errors recorded in $this.
+            $specCtx = new Validate();
+            if (!$specCtx->validateSpec($specs, $unvalidated_spec, $specCtx)) {
+                throw new ValidateInvalidSpecException(self::buildSpecErrorMessage($specCtx), $specCtx);
             }
         }
-        $this->validate_params_checked = false;
 
-        // assert($this->validateSpec($specs));
-        assert(is_int($func_opts));
-        assert(!($func_opts & VALIDATE_OPT_UPPER));
-
-        // NOTE: As written, the leftover ("Unvalidated value remains") check
-        // below only ever fires for a top-level spec that is VALIDATE_ARRAY
-        // *and* carries VALIDATE_FLAG_ARRAY. Plain VALIDATE_ARRAY specs skip
-        // it, so leftover input keys stay in $inputs silently — several tests
-        // (validate_basic, validate_default*) encode that behavior.
-        $scalar_validation = ($specs[VALIDATE_ID] !== VALIDATE_ARRAY || !($specs[VALIDATE_FLAGS] & VALIDATE_FLAG_ARRAY));
         // Successful status for each validate() call.
         // Previous errors are stored $this->errors array when object is used multiple times.
         $this->status = true;
         $this->validated = null;
-        $this->value_validation = true;
-        $ret = $this->runValidation($this->validated, $inputs, $specs, $func_opts);
-        assert(is_bool($ret));
-
-        if (!($func_opts & VALIDATE_OPT_UNVALIDATED) && !$scalar_validation && is_array($inputs)) {
-            if (count($inputs)) {
-                $this->reportError(
-                    [
-                        'message' => 'Validate: Unvalidated value remains.',
-                        'value' => $inputs,
-                    ],
-                    // reportError() is supposed to be used by validator. Set invalid here.
-                    [VALIDATE_UNVALIDATED, VALIDATE_FLAG_NONE, []],
-                    $func_opts
-                );
-            }
+        $this->silent = 0;
+        if ($func_opts & VALIDATE_OPT_KEEP_INPUTS) {
+            $work = $inputs; // Never touch the caller's array.
+            $ret = $this->runValidation($this->validated, $work, $specs, $func_opts);
+        } else {
+            $ret = $this->runValidation($this->validated, $inputs, $specs, $func_opts);
         }
+        assert(is_bool($ret));
 
         if ($this->status) {
             return $this->validated;
         }
         return null;
+    }
+
+
+    /**
+     * Build the exception message for a spec that failed validateSpec().
+     *
+     * @param Validate $specCtx Context used for the spec check.
+     *
+     * @return string
+     */
+    private static function buildSpecErrorMessage($specCtx)
+    {
+        $err = $specCtx->getSystemErrors();
+        $msg = 'Invalid validation spec detected. Fix spec errors first. Errors: '.count($err['error'])
+              .' Warnings: '.count($err['warning']).'.';
+        if (!empty($err['error'])) {
+            $first = reset($err['error']);
+            $msg .= ' First error: param: \''.$first['param'].'\' message: \''.$first['message'].'\'.';
+        }
+        return $msg.' Hint: validate_spec($spec, $unvalidated, $ctx); validate_get_system_errors($ctx);';
     }
 
 
@@ -397,35 +442,27 @@ class Validate
      *
      * @param array    $spec        Spec array to verify.
      * @param mixed    $unvalidated Output. Receives sub-specs that could not be checked.
-     * @param Validate $ctx         Optional context (fresh one created when null).
+     * @param Validate $ctx         Optional context that receives the spec
+     *                              errors (fresh one created when null).
      *
      * @return bool true if the spec is well-formed, false otherwise.
+     *
+     * @throws InvalidArgumentException Bad $spec / $ctx argument.
      */
     public function validateSpec($spec, &$unvalidated = null, $ctx = null)
     {
-        if (!$this->spec_params_checked) {
-            if (!is_array($spec)) {
-                $this->spec_params_checked = false;
-                trigger_error('1st parameter must be validation spec array.', E_USER_ERROR);
-                return false;
-            }
-            if (is_null($ctx)) {
-                $ctx = new Validate;
-            } elseif (!($ctx instanceof Validate)) {
-                $this->spec_params_checked = false;
-                trigger_error('3rd parameter must be instance of Validate object.', E_USER_ERROR);
-                return false;
-            }
+        if (!is_array($spec)) {
+            throw new InvalidArgumentException('1st parameter must be validation spec array.');
         }
-        $this->spec_params_checked = false;
+        if (is_null($ctx)) {
+            $ctx = new Validate;
+        } elseif (!($ctx instanceof Validate)) {
+            throw new InvalidArgumentException('3rd parameter must be instance of Validate object.');
+        }
 
         $unvalidated = $spec;
         $ctx->status = true;
-        $this->value_validation = false;
         $ctx->checkSpecEntry($unvalidated);
-        // if (!$this->status) {
-        //     trigger_error('SPEC Validation is failed! Check spec and result.', E_USER_WARNING);
-        // }
         return $ctx->status;
     }
 
@@ -468,14 +505,18 @@ class Validate
 
     /**
      * Choose which PHP error level VALIDATE_OPT_RAISE_ERROR uses.
-     * E_USER_ERROR aborts execution, which is usually too aggressive during
-     * development — drop to E_USER_WARNING or E_USER_NOTICE there.
+     * Default is E_USER_WARNING. E_USER_ERROR is still accepted, but PHP 8.4+
+     * deprecates passing it to trigger_error(); prefer exceptions to abort.
      *
      * @param int $level E_USER_ERROR / E_USER_WARNING / E_USER_NOTICE.
+     *
+     * @throws InvalidArgumentException For any other level.
      */
     public function setErrorLevel($level)
     {
-        assert($level === E_USER_ERROR || $level === E_USER_WARNING || $level === E_USER_NOTICE);
+        if ($level !== E_USER_ERROR && $level !== E_USER_WARNING && $level !== E_USER_NOTICE) {
+            throw new InvalidArgumentException('Error level must be E_USER_ERROR, E_USER_WARNING or E_USER_NOTICE.');
+        }
         $this->error_level = $level;
     }
 
@@ -653,7 +694,7 @@ class Validate
         if (is_scalar($val) || is_null($val)) {
             return true;
         }
-        if (($specs[VALIDATE_ID] & VALIDATE_INT) && extension_loaded('GMP') && $val instanceof GMP) {
+        if ($id === VALIDATE_INT && $val instanceof GMP) {
             return true;
         }
 
@@ -684,7 +725,7 @@ class Validate
     {
         assert(is_int($id));
 
-        $validators = [
+        static $validators = [
             /* Normal Validators */
             VALIDATE_NULL      => 'validateNull',
             VALIDATE_INT       => 'validateInt',
@@ -696,11 +737,7 @@ class Validate
             VALIDATE_CALLBACK  => 'validateCallback',
             VALIDATE_RESOURCE  => 'validateResource',
             VALIDATE_OBJECT    => 'validateObject',
-            // VALIDATE_MULTI     => 'validateMulti', // This is not a function
-            /* Special Validators */
-            VALIDATE_INVALID   => 'validateInvalid',
-            VALIDATE_REJECT    => 'validateReject',
-            VALIDATE_UNDEFINED => 'validateUndefined',
+            // VALIDATE_MULTI is dispatched by runValidation() (validateMulti()).
         ];
         return $validators[$id];
     }
@@ -719,8 +756,9 @@ class Validate
     {
         assert(is_int($id));
 
-        $map = [
+        static $map = [
             VALIDATE_NULL => 'VALIDATE_NULL',
+            VALIDATE_ARRAY => 'VALIDATE_ARRAY',
             VALIDATE_BOOL => 'VALIDATE_BOOL',
             VALIDATE_FLOAT => 'VALIDATE_FLOAT',
             VALIDATE_INT => 'VALIDATE_INT',
@@ -778,48 +816,85 @@ class Validate
 
 
     /**
-     * Decide what to do when a parameter is present/absent in $inputs.
+     * Decide what to do with a declared parameter before per-type validation.
      *
-     * Handles the cross-cutting flags before per-type validation runs:
-     *   - VALIDATE_FLAG_REJECT : presence = error.
-     *   - VALIDATE_FLAG_UNDEFINED / *_TO_DEFAULT : absence = OK (default applied).
-     *   - otherwise            : absence = required-parameter error.
+     * Presence is array_key_exists(), so a key holding null is *present* and
+     * VALIDATE_FLAG_NULL / VALIDATE_FLAG_EMPTY* apply to it.
+     *   - VALIDATE_FLAG_REJECT : present = error, absent = OK (nothing to validate).
+     *   - absent + VALIDATE_FLAG_UNDEFINED_TO_DEFAULT : validate the "default" option.
+     *   - absent + VALIDATE_FLAG_UNDEFINED : OK; the key is left out of the result.
+     *   - absent otherwise : required-parameter error.
      *
-     * @return bool true if the value should proceed to type validation,
-     *              false if presence/absence has already been resolved.
+     * @param bool  $defined Whether $param exists in the input array.
+     * @param mixed $value   Input value (null when absent).
+     *
+     * @return int PRESENCE_VALIDATE (validate $value), PRESENCE_DEFAULT
+     *             (validate the "default" option), PRESENCE_SKIP (nothing to
+     *             do, not an error) or PRESENCE_FAIL (error already reported).
      */
-    private function checkParamPresence(&$validated, &$inputs, $param, $id, $flags, $options, $func_opts)
+    private function checkParamPresence($defined, $value, $id, $flags, $options, $func_opts)
     {
-        assert(is_array($inputs));
-        assert(is_scalar($param));
+        assert(is_bool($defined));
         assert(is_int($id));
         assert(is_int($flags));
         assert(is_array($options));
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
 
-        if (isset($inputs[$param]) && $flags & VALIDATE_FLAG_REJECT) {
-            // Do something for rejected values can be harmful.
-            // Rejected parameters should not be defined.
+        if ($flags & VALIDATE_FLAG_REJECT) {
+            if (!$defined) {
+                return self::PRESENCE_SKIP;
+            }
+            // Doing anything with a rejected value can be harmful.
+            // Rejected parameters must simply not be defined.
             $validatorName = $this->getValidatorName($id);
             $this->reportError(
                 [
                     'message' => $validatorName.': Rejected by flag.',
-                    'value' => $inputs[$param],
+                    'value' => $value,
                 ],
                 [$id, $flags, $options],
                 $func_opts
             );
-            return false; // 3: Error - rejected
+            return self::PRESENCE_FAIL;
         }
 
-        return $this->validateUndefined($inputs, isset($inputs[$param]), $param, $id, $flags, $options, $func_opts);
+        if ($defined) {
+            return self::PRESENCE_VALIDATE;
+        }
+        if ($flags & VALIDATE_FLAG_UNDEFINED_TO_DEFAULT) {
+            if (!isset($options['default'])) {
+                $this->reportError(
+                    [
+                        'message' => 'Invalid validation spec: VALIDATE_FLAG_UNDEFINED_TO_DEFAULT without "default" option.',
+                        'value' => null,
+                    ],
+                    [$id, $flags, $options],
+                    $func_opts
+                );
+                return self::PRESENCE_FAIL;
+            }
+            return self::PRESENCE_DEFAULT;
+        }
+        if ($flags & VALIDATE_FLAG_UNDEFINED) {
+            return self::PRESENCE_SKIP;
+        }
+        $this->reportError(
+            [
+                'message' => 'Undefined parameter: Required parameter is not defined.',
+                'value' => null
+            ],
+            [$id, $flags, $options],
+            $func_opts
+        );
+        return self::PRESENCE_FAIL;
     }
 
 
     /**
      * Recursive core of validate(). Dispatches on the spec's validator type:
      *   - VALIDATE_MULTI  -> validateMulti() (one value vs. multiple specs)
-     *   - VALIDATE_ARRAY  -> recurse into sub-specs, walk each declared key
+     *   - VALIDATE_ARRAY  -> recurse into sub-specs, walk each declared key,
+     *                        then report undeclared input keys
      *   - everything else -> validateScalar() for per-type rules
      *
      * Drives the $currentElem path stack so error messages and context
@@ -828,15 +903,15 @@ class Validate
      *
      * @param mixed $validated By-ref output: validated values are written here.
      *                         Native types may be normalized (string ints -> int, etc.).
-     * @param mixed $inputs    By-ref input: validated keys are unset (unless KEEP_INPUTS).
+     * @param mixed $inputs    By-ref input: validated keys are unset (validate()
+     *                         passes a private copy under VALIDATE_OPT_KEEP_INPUTS).
      * @param array $specs     Validation spec node ([type, flags, options, sub-specs]).
      * @param int   $func_opts VALIDATE_OPT_* bitmask for this call.
      *
-     * @return bool true on success, false otherwise.
+     * @return bool true when this node (and everything below it) is valid.
      */
     private function runValidation(&$validated, &$inputs, $specs, $func_opts)
     {
-        //assert(is_array($inputs));
         assert(is_array($specs));
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
 
@@ -850,20 +925,6 @@ class Validate
         $flags = $specs[VALIDATE_FLAGS];
         $options = $specs[VALIDATE_OPTIONS];
         $params = $specs[VALIDATE_PARAMS] ?? null;
-
-        switch ($id) {
-            case VALIDATE_BOOL:
-            case VALIDATE_NULL:
-            case VALIDATE_MULTI:
-            case VALIDATE_REJECT:
-            case VALIDATE_UNDEFINED:
-            case VALIDATE_RESOURCE:
-            case VALIDATE_OBJECT:
-                break;
-            default:
-                $min = $options['min'] ?? 0;
-                $max = $options['max'] ?? 0;
-        }
 
         // Need to set context here since this could be called out side from main loop
         $this->setContext(
@@ -898,7 +959,7 @@ class Validate
             );
             return false;
         }
-        if (!(is_array($inputs) || $inputs instanceof Countable)) {
+        if (!(is_array($inputs) || ($inputs instanceof ArrayAccess && $inputs instanceof Countable))) {
             $this->reportError(
                 [
                    'message' => 'VALIDATE_ARRAY: Input value is not array. ',
@@ -909,6 +970,8 @@ class Validate
             );
             return false;
         }
+        $min = $options['min'] ?? 0;
+        $max = $options['max'] ?? 0;
         $cnt = count($inputs);
         if ($min > $cnt || $max < $cnt) {
             $this->reportError(
@@ -923,6 +986,10 @@ class Validate
             return false;
         }
 
+        if (!is_array($validated)) {
+            $validated = []; // A validated VALIDATE_ARRAY yields an array, even when empty.
+        }
+        $ok = true;
         foreach ($params as $param => $spec) {
             assert(is_int($spec[VALIDATE_ID])); // Validator ID
             assert(is_int($spec[VALIDATE_FLAGS])); // Validator flags
@@ -932,45 +999,74 @@ class Validate
             $id = $spec[VALIDATE_ID];
             $flags = $spec[VALIDATE_FLAGS];
             $options = $spec[VALIDATE_OPTIONS];
+            $defined = is_array($inputs) ? array_key_exists($param, $inputs) : isset($inputs[$param]);
 
             array_push($this->currentElem, $param);
             $this->setContext(
                 $this,
                 $param,
-                isset($inputs[$param]),
-                $inputs[$param] ?? null,
+                $defined,
+                $defined ? $inputs[$param] : null,
                 $spec,
                 $func_opts
             );
 
-            // Reject / Optional undefined parameter or not.
-            if (!$this->checkParamPresence($validated, $inputs, $param, $id, $flags, $options, $func_opts)) {
-                array_pop($this->currentElem);
-                continue;
+            // Rejected / optional undefined parameter or not.
+            $presence = $this->checkParamPresence($defined, $defined ? $inputs[$param] : null, $id, $flags, $options, $func_opts);
+            if ($presence === self::PRESENCE_VALIDATE && ($inputs[$param] === '' || $inputs[$param] === null)
+                && ($flags & VALIDATE_FLAG_EMPTY_TO_DEFAULT)) {
+                // Validate the "default" value; leave the caller's '' / null alone.
+                $presence = self::PRESENCE_DEFAULT;
             }
 
-            if (isset($inputs[$param]) && !$this->applyDefaultIfEmpty($inputs[$param], $id, $flags, $options)) {
-                array_pop($this->currentElem);
-                continue;
-            }
-
-            $status = $this->runValidation($validated[$param], $inputs[$param], $spec, $func_opts);
-
-            // Remove validated elements
-            if ($status === true && !($func_opts & VALIDATE_OPT_KEEP_INPUTS)) {
-                if ($spec[VALIDATE_ID] === VALIDATE_ARRAY && is_array($inputs[$param]) && !count($inputs[$param])) {
-                    unset($inputs[$param]);
-                } elseif ($spec[VALIDATE_ID] !== VALIDATE_ARRAY) {
+            if ($presence === self::PRESENCE_VALIDATE) {
+                $status = $this->runValidation($validated[$param], $inputs[$param], $spec, $func_opts);
+                // Remove validated elements. A nested array is removed only
+                // when every one of its elements was consumed.
+                if ($status === true && !($func_opts & VALIDATE_OPT_KEEP_INPUTS)
+                    && ($id !== VALIDATE_ARRAY || (is_array($inputs[$param]) && !count($inputs[$param])))) {
                     unset($inputs[$param]);
                 }
+            } elseif ($presence === self::PRESENCE_DEFAULT) {
+                $default = $options['default'] ?? null;
+                $status = $this->runValidation($validated[$param], $default, $spec, $func_opts);
+                if ($status === true && $defined && !($func_opts & VALIDATE_OPT_KEEP_INPUTS)) {
+                    unset($inputs[$param]); // The empty input was consumed by "default".
+                }
+            } else {
+                $status = ($presence === self::PRESENCE_SKIP);
             }
+
             // Do not set unvalidated except array.
-            if ($status === false && !is_array($validated[$param])) {
+            if ($status === false && array_key_exists($param, $validated ?? []) && !is_array($validated[$param])) {
                 unset($validated[$param]);
+            }
+            if ($status === false) {
+                $ok = false;
             }
             array_pop($this->currentElem);
         }
-        return $this->status;
+
+        // Input keys the spec does not declare. Whitelist validation means
+        // they are errors unless the caller explicitly allows leftovers
+        // (e.g. for multi-stage validation).
+        if (!($func_opts & VALIDATE_OPT_UNVALIDATED) && is_array($inputs)) {
+            $undeclared = array_diff_key($inputs, $params);
+            if ($undeclared) {
+                $this->setContext($this, end($this->currentElem), true, $inputs, $specs, $func_opts);
+                $this->reportError(
+                    [
+                        'message' => 'Validate: Unvalidated value remains. Undeclared keys: \''
+                                     .join('\', \'', array_keys($undeclared)).'\'',
+                        'value' => array_keys($undeclared),
+                    ],
+                    $specs,
+                    $func_opts
+                );
+                $ok = false;
+            }
+        }
+        return $ok;
     }
 
 
@@ -992,48 +1088,32 @@ class Validate
         assert(is_array($options));
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
 
-        if (isset($options['filter'])) {
-            assert(is_callable($options['filter']));
-            // TODO Use reflection
-            // Validate object is not passed.
-            // When error, user should simply set $error message.
-            if ($flags & VALIDATE_FLAG_ARRAY) {
-                if (!is_array($input)) {
-                    $vname = $this->getValidatorName($id);
-                    $this->reportError(
-                        [
-                            'message' => $vname.' filter (VALIDATE_FLAG_ARRAY) error: Input data is not an array',
-                            'value' => $input
-                        ],
-                        [$id, $flags, $options],
-                        $func_opts
-                    );
-                    return false;
-                }
-                foreach ($input as &$val) {
-                    $val = $options['filter']($this->context, $val, $error);
-                    if ($error) {
-                        assert(is_string($error));
-                        $vname = $this->getValidatorName($id);
-                        $this->reportError(
-                            [
-                                'message' => $vname.' filter (VALIDATE_FLAG_ARRAY) error: '. addslashes($error),
-                                'value' => $input
-                            ],
-                            [$id, $flags, $options],
-                            $func_opts
-                        );
-                        return false;
-                    }
-                }
-            } else {
-                $input = $options['filter']($this->context, $input, $error);
+        if (!isset($options['filter'])) {
+            return true;
+        }
+        assert(is_callable($options['filter']));
+        // When error, user should simply set $error message.
+        $vname = $this->getValidatorName($id);
+        if ($flags & VALIDATE_FLAG_ARRAY) {
+            if (!is_array($input)) {
+                $this->reportError(
+                    [
+                        'message' => $vname.' filter (VALIDATE_FLAG_ARRAY) error: Input data is not an array',
+                        'value' => $input
+                    ],
+                    [$id, $flags, $options],
+                    $func_opts
+                );
+                return false;
+            }
+            foreach ($input as $key => $val) {
+                $error = null;
+                $input[$key] = $options['filter']($this->context, $val, $error);
                 if ($error) {
                     assert(is_string($error));
-                    $vname = $this->getValidatorName($id);
                     $this->reportError(
                         [
-                            'message' => $vname.' filter error: '. addslashes($error),
+                            'message' => $vname.' filter (VALIDATE_FLAG_ARRAY) error: '. addslashes($error),
                             'value' => $input
                         ],
                         [$id, $flags, $options],
@@ -1042,13 +1122,38 @@ class Validate
                     return false;
                 }
             }
+            return true;
+        }
+
+        $error = null;
+        $input = $options['filter']($this->context, $input, $error);
+        if ($error) {
+            assert(is_string($error));
+            $this->reportError(
+                [
+                    'message' => $vname.' filter error: '. addslashes($error),
+                    'value' => $input
+                ],
+                [$id, $flags, $options],
+                $func_opts
+            );
+            return false;
         }
         return true;
     }
 
 
     /**
-     * Validate a value by multiple specs
+     * Validate one value against multiple specs.
+     *
+     * VALIDATE_MULTI_AND: every sub-spec must pass; the result of the last
+     * sub-spec is returned. VALIDATE_MULTI_OR: sub-specs are tried in order
+     * and the first passing one wins. OR alternatives are evaluated
+     * speculatively ($this->silent): a failing alternative records, logs,
+     * raises and throws nothing, and does not touch the overall status — only
+     * "All of specs are failed." is reported when no alternative passes.
+     *
+     * @return bool
      */
     private function validateMulti(&$validated, &$inputs, $specs, $func_opts)
     {
@@ -1056,33 +1161,11 @@ class Validate
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
         assert(($specs[VALIDATE_FLAGS] & VALIDATE_MULTI_OR) || ($specs[VALIDATE_FLAGS] & VALIDATE_MULTI_AND));
         assert(is_array($specs[VALIDATE_SPECS])); // Array of specs
-        assert(validate_spec($specs));
 
         $id = VALIDATE_MULTI;
         $flags = $specs[VALIDATE_FLAGS];
         $options = $specs[VALIDATE_OPTIONS];
-        $subSpecs = $specs[VALIDATE_SPECS];
-
-        // Rejected parameter check
-        if ($this->validateReject($validated, $inputs, $id, $flags, $options, $func_opts)) {
-            return false;
-        }
-
-        // Accept null or not
-        if (!$this->validateAcceptNull($validated, $inputs, $id, $flags, $options, $func_opts)) {
-            return false;
-        }
-
-        // Apply filter if any.
-        if (!$this->applyInputFilter($inputs, $id, $flags, $options, $func_opts)) {
-            return false;
-        }
-
-        // Use AND for broken spec. Spec should be validated already, though.
-        $useAnd = true;
-        if ($flags & VALIDATE_MULTI_OR) {
-            $useAnd = false;
-        }
+        $subSpecs = $specs[VALIDATE_SPECS] ?? null;
 
         // Check specs count just in case user didn't validate specs
         if (!is_array($subSpecs) || !count($subSpecs)) {
@@ -1097,64 +1180,77 @@ class Validate
             return false;
         }
 
-        $this->setContextErrorValue($inputs);
-        $result = false;
-        if ($useAnd) {
-            foreach ($subSpecs as $spec) {
-                $inputCopy = $inputs; // Inputs may be changed by filter, etc.
-                $result = $this->runValidation($iterResult, $inputCopy, $spec, $func_opts);
-                if ($result === false) {
-                    break;
-                }
-            }
-        } else {
-            $orig_status = $this->status;
-            foreach ($subSpecs as $spec) {
-                $spec[VALIDATE_FLAGS] = $spec[VALIDATE_FLAGS] | VALIDATE_FLAG_PASSTHRU; // Disable logging and errors with OR.
-                $inputCopy = $inputs; // Inputs may be changed by filter, etc.
-                $result = $this->runValidation($iterResult, $inputCopy, $spec, $func_opts);
-                if ($result === true) {
-                    break;
-                }
-            }
-            // Restore original status.
-            if ($orig_status === true && $result === true) {
-                $this->status = true;
-            }
-        }
-
-        if ($result === true) {
-            $validated = $iterResult;
-        } else {
-            $validated = null;
-        }
-        if ($result === false && !$useAnd) {
-            $this->reportError(
-                [
-                    'message' => 'VALIDATE_MULTI: All of specs are failed. '.
-                                 'Note: OR will not log failed validations.',
-                    'value' => $inputs
-                ],
-                $specs,
-                $func_opts
-            );
+        // Rejected parameter check
+        if ($this->validateReject($validated, $inputs, $id, $flags, $options, $func_opts)) {
             return false;
         }
 
-        return $result;
+        // Accept null or not
+        if (!$this->validateAcceptNull($validated, $inputs, $id, $flags, $options, $func_opts)) {
+            return false;
+        }
+
+        // Apply filter if any. Sub-specs see the filtered value.
+        $value = $inputs;
+        if (!$this->applyInputFilter($value, $id, $flags, $options, $func_opts)) {
+            return false;
+        }
+
+        $this->setContextErrorValue($value);
+        $validated = null;
+        if (!($flags & VALIDATE_MULTI_OR)) {
+            // AND (also the fallback for a broken spec without AND/OR).
+            $result = null;
+            foreach ($subSpecs as $spec) {
+                $copy = $value; // Sub-specs must not consume or alter the shared input.
+                if (!$this->runValidation($result, $copy, $spec, $func_opts)) {
+                    return false;
+                }
+            }
+            $validated = $result;
+            return true;
+        }
+
+        // OR
+        $outerFailed = $this->silentFailed; // Support OR nested inside an OR alternative.
+        foreach ($subSpecs as $spec) {
+            $copy = $value;
+            $result = null;
+            $this->silent++;
+            $this->silentFailed = false;
+            $passed = $this->runValidation($result, $copy, $spec, $func_opts) && !$this->silentFailed;
+            $this->silent--;
+            if ($passed) {
+                $this->silentFailed = $outerFailed;
+                $validated = $result;
+                return true;
+            }
+        }
+        $this->silentFailed = $outerFailed;
+        $this->reportError(
+            [
+                'message' => 'VALIDATE_MULTI: All of specs are failed. '.
+                             'Note: OR will not log failed validations.',
+                'value' => $value
+            ],
+            $specs,
+            $func_opts
+        );
+        return false;
     }
 
     /**
-     * Validate array of scalars
+     * Validate an array of scalars (VALIDATE_FLAG_ARRAY): every element is
+     * validated by the same spec. $processedCount counts every element across
+     * all nesting levels so "alimit" bounds the total work.
      *
      * @return bool
      */
-    private function validateScalarArray(&$validated, $id, $processedCount, $elementLimit, $keyValidator, &$inputs, $flags, $options, $func_opts)
+    private function validateScalarArray(&$validated, $id, &$processedCount, $elementLimit, $keyValidator, &$inputs, $flags, $options, $func_opts)
     {
         assert(is_int($id)); // validator id
         assert(is_int($processedCount)); // Apply count
         assert(is_callable($keyValidator));
-        //assert(is_array($inputs) || empty($inputs)); input could be anything
         assert(is_int($flags));
         assert(is_array($options));
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
@@ -1162,27 +1258,17 @@ class Validate
         assert(is_int($options['amin']) && $options['amin'] >= 0); // Array elements min
         assert(is_int($options['amax'])); // Array elements max
         assert($options['amin'] <= $options['amax']);
-        assert(!isset($options['alimit']) || $options['alimit'] > $options['amax']);
 
-        // VALIDATE_FLAG_EMPTY flag and "default" option. Empty array will not set "default".
-        if ($inputs === '' || $inputs === null) {
-            if ($flags & VALIDATE_FLAG_EMPTY) {
-                // Empty value is explicitly allowed.
-                $validated = $inputs;
-                return true;
-            }
-            if ($flags & VALIDATE_FLAG_EMPTY_TO_DEFAULT) {
-                assert(isset($options["default"]));
-                $validated = $options["default"];
-            }
-        }
-
-        // TODO Not an optimal way to get validator name here
         $validatorName = $this->getValidatorName($id);
-        if (is_scalar($inputs)) {
+        if ($inputs === '' && ($flags & VALIDATE_FLAG_EMPTY)) {
+            $validated = ''; // Empty value is explicitly allowed.
+            return true;
+        }
+        if (!is_array($inputs)) {
             $this->reportError(
                 [
-                    'message' => $validatorName.': Array of scalars validation. Scalar value is not allowed.',
+                    'message' => $validatorName.': Array of scalars validation. '
+                                 .(is_scalar($inputs) ? 'Scalar' : 'Non-array').' value is not allowed.',
                     'value' => $inputs
                 ],
                 [$id, $flags, $options],
@@ -1191,7 +1277,6 @@ class Validate
             return false;
         }
 
-        // TODO Not an optimal way to get validator, amin and amax here
         $validator = $this->getValidator($id);
         $amin = $options['amin'];
         $amax = $options['amax'];
@@ -1201,7 +1286,7 @@ class Validate
             $this->reportError(
                 [
                     'message' => $validatorName.' array: Number of elements is out of range. '.
-                                 'amin: "'. $amin. '" amax: '. $amax .'"',
+                                 'amin: "'. $amin. '" amax: "'. $amax .'"',
                     'value' => $inputs
                 ],
                 [$id, $flags, $options],
@@ -1210,9 +1295,11 @@ class Validate
             return false;
         }
 
+        // "default" replaces the whole array, never an element.
+        $elementFlags = $flags & ~VALIDATE_FLAG_EMPTY_TO_DEFAULT;
         $status = true;
         foreach ($inputs as $key => $val) {
-            if ($processedCount++ > $elementLimit) {
+            if (++$processedCount > $elementLimit) {
                 $this->reportError(
                     [
                         'message' => $validatorName. ': Array validation. Number of elements exceed limit: "'.$elementLimit.'". '.
@@ -1235,10 +1322,11 @@ class Validate
                     [$id, $flags, $options],
                     $func_opts
                 );
-                continue; // TODO Decide continue or return for error
+                continue;
             }
             if (is_array($val)) {
                 if (!($flags & VALIDATE_FLAG_ARRAY_RECURSIVE)) {
+                    $status = false;
                     $this->reportError(
                         [
                             'message' => $validatorName. ': Array validation. Nested array is not allowed by VALIDATE_FLAG_ARRAY_RECURSIVE.',
@@ -1247,14 +1335,26 @@ class Validate
                         [$id, $flags, $options],
                         $func_opts
                     );
+                    continue;
                 }
                 $result = $this->validateScalarArray($validated[$key], $id, $processedCount, $elementLimit, $keyValidator, $inputs[$key], $flags, $options, $func_opts);
                 if ($result === false) {
-                    break;
+                    return false;
                 }
                 continue;
             }
-            if (true === $this->$validator($validated[$key], $val, $flags, $options, $func_opts)) {
+            if ($val === null && $id !== VALIDATE_NULL && $id !== VALIDATE_CALLBACK) {
+                if (!$this->validateAcceptNull(null, $val, $id, $flags, $options, $func_opts)) {
+                    $status = false;
+                    continue;
+                }
+                $validated[$key] = null; // Accepted NULL is the result.
+                if (!($func_opts & VALIDATE_OPT_KEEP_INPUTS)) {
+                    unset($inputs[$key]);
+                }
+                continue;
+            }
+            if (true === $this->$validator($validated[$key], $val, $elementFlags, $options, $func_opts)) {
                 if (!($func_opts & VALIDATE_OPT_KEEP_INPUTS)) {
                     unset($inputs[$key]);
                 }
@@ -1268,7 +1368,9 @@ class Validate
 
 
     /**
-     * Validate scalar
+     * Validate a single (non-ARRAY, non-MULTI) spec node: reject flag,
+     * empty -> "default", null handling, "filter", then the per-type
+     * validator (once, or per element under VALIDATE_FLAG_ARRAY).
      *
      * @return bool
      */
@@ -1284,9 +1386,24 @@ class Validate
             return false;
         }
 
-        // Accept null or not
+        // Empty input: validate the "default" value instead (the caller's
+        // input is left alone).
+        if (($flags & VALIDATE_FLAG_EMPTY_TO_DEFAULT) && ($inputs === '' || $inputs === null)) {
+            $default = $inputs;
+            if (!$this->applyDefaultIfEmpty($default, $id, $flags, $options, $func_opts)) {
+                return false;
+            }
+            return $this->validateScalar($validated, $default, $id, $flags & ~VALIDATE_FLAG_EMPTY_TO_DEFAULT, $options, $func_opts);
+        }
+
+        // NULL is rejected unless VALIDATE_FLAG_NULL / VALIDATE_FLAG_EMPTY allow it.
         if (!$this->validateAcceptNull($validated, $inputs, $id, $flags, $options, $func_opts)) {
             return false;
+        }
+        if ($inputs === null && $id !== VALIDATE_NULL && $id !== VALIDATE_CALLBACK) {
+            // Accepted NULL is the result. (VALIDATE_CALLBACK receives it.)
+            $validated = null;
+            return true;
         }
 
         // Apply filter if any.
@@ -1302,13 +1419,11 @@ class Validate
             $processedCount = 0;
             $elementLimit = $options['alimit'] ?? $options['amax'];
             $keyValidator = $this->buildKeyValidator($flags, $options);
-            $result = $this->validateScalarArray($validated, $id, $processedCount, $elementLimit, $keyValidator, $inputs, $flags, $options, $func_opts);
-        } else {
-            // Inputs is scalar or object
-            $validator = $this->getValidator($id);
-            $result = $this->$validator($validated, $inputs, $flags, $options, $func_opts);
+            return $this->validateScalarArray($validated, $id, $processedCount, $elementLimit, $keyValidator, $inputs, $flags, $options, $func_opts);
         }
-        return $result;
+        // Inputs is scalar or object
+        $validator = $this->getValidator($id);
+        return $this->$validator($validated, $inputs, $flags, $options, $func_opts);
     }
 
 
@@ -1325,70 +1440,40 @@ class Validate
         if (isset($options['key_callback'])) {
             // User defined key validator
             assert(is_callable($options['key_callback']));
-            // TODO Use Reflection
-            $keyValidator = $options['key_callback'];
-        } else {
-            // Predefined array key validator
-            if ($flags & VALIDATE_FLAG_ARRAY_KEY_ALNUM) {
-                $keyValidator = function ($ctx, $key) {
-                    if (strlen($key) > 64) {
-                        // By default, keys longer than 64 chars are not allowed.
-                        // If users have trouble with this restriction, use user defined key validator.
-                        return false;
-                    }
-                    $chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
-                    if (strlen($key) === strspn($key, $chars)) {
-                        return true;
-                    }
-                    return false;
-                };
-            } else {
-                $keyValidator = function ($ctx, $key) {
-                    if (strlen($key) > 32) {
-                        // By default, keys longer than 32 digits are not allowed.
-                        // If users have trouble with this restriction, use user defined key validator.
-                        return false;
-                    }
-                    if (is_int($key) || (strlen($key) === strspn($key, '1234567890_-'))) {
-                        return true;
-                    }
-                    return false;
-                };
-            }
+            return $options['key_callback'];
         }
-        return $keyValidator;
+        // Predefined array key validator
+        if ($flags & VALIDATE_FLAG_ARRAY_KEY_ALNUM) {
+            return function ($ctx, $key) {
+                $key = (string)$key;
+                if (strlen($key) > 64) {
+                    // By default, keys longer than 64 chars are not allowed.
+                    // If users have trouble with this restriction, use user defined key validator.
+                    return false;
+                }
+                $chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
+                return strlen($key) === strspn($key, $chars);
+            };
+        }
+        return function ($ctx, $key) {
+            if (is_int($key)) {
+                return true;
+            }
+            if (strlen($key) > 32) {
+                // By default, keys longer than 32 digits are not allowed.
+                // If users have trouble with this restriction, use user defined key validator.
+                return false;
+            }
+            return strlen($key) === strspn($key, '1234567890_-');
+        };
     }
-
-    /**
-     * Special validator - Invalid validator
-     *
-     * @return bool
-     */
-    private function validateInvalid(&$validated, $value, $id, $flags, $options, $func_opts)
-    {
-        // Special validator. Should not be called.
-        assert(is_int($flags));
-        assert(is_array($options));
-        assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
-
-        $this->reportError(
-            [
-                'message' => 'VALIDATE_INVALID: This validator should not be called. ',
-                'value' => $value,
-            ],
-            [$id, $flags, $options],
-            $func_opts
-        );
-        return false;
-    }
-
 
     /**
      * Special validator - Reject validator.
      *
      * Rejecting values are controlled by VALIDATE_FLAG_REJECT, not parameter definition.
      *
-     * @return bool
+     * @return bool true when the value was rejected (error reported).
      */
     private function validateReject(&$validated, $value, $id, $flags, $options, $func_opts)
     {
@@ -1414,9 +1499,10 @@ class Validate
 
 
     /**
-     * Accept null or not. Only null validator accepts null always.
+     * Accept null or not. VALIDATE_NULL always accepts null; every other
+     * validator needs VALIDATE_FLAG_NULL or VALIDATE_FLAG_EMPTY.
      *
-     * @return bool
+     * @return bool false when null was rejected (error reported).
      */
     private function validateAcceptNull($validated, $inputs, $id, $flags, $options, $func_opts)
     {
@@ -1424,7 +1510,7 @@ class Validate
         assert(is_array($options));
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
 
-        if ($id !== VALIDATE_NULL && is_null($inputs) && !($flags & VALIDATE_FLAG_NULL)) {
+        if ($id !== VALIDATE_NULL && is_null($inputs) && !($flags & (VALIDATE_FLAG_NULL | VALIDATE_FLAG_EMPTY))) {
             $vname = $this->getValidatorName($id);
             $this->reportError(
                 [
@@ -1437,51 +1523,6 @@ class Validate
             return false;
         }
         return true;
-    }
-
-
-    /**
-     * Special validator Undefined value validator.
-     *
-     * Undefined values are controlled by VALIDATE_FLAG_UNDEFINED /
-     * VALIDATE_FLAG_UNDEFINED_TO_DEFAULT flags.
-     * All validators may have undefined flags to control undefined values.
-     *
-     * Supported Flags: N/A
-     * Supported Options:
-     * "default" - Default value. Default value is subject to be validated also.
-     *
-     * @return bool
-     */
-    private function validateUndefined(&$inputs, $defined, $param, $id, $flags, $options, $func_opts)
-    {
-        // This function may modify $inputs to handle "undefined" (not existing) input
-        assert(is_array($inputs));
-        assert(is_bool($defined)); // defined/undefined indicator
-        assert(is_string($param) || is_int($param));
-        assert(is_int($flags));
-        assert(is_array($options));
-        assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
-
-        if (!$defined) { // false === undefined value
-            if ($flags & VALIDATE_FLAG_UNDEFINED_TO_DEFAULT) {
-                assert(isset($options['default']));
-                $inputs[$param] = $options['default'];
-                return true; // OK
-            } elseif ($flags & VALIDATE_FLAG_UNDEFINED) {
-                return false; // 1:Ignore
-            }
-            $this->reportError(
-                [
-                    'message' => 'Undefined parameter: Required parameter is not defined.',
-                    'value' => null
-                ],
-                [$id, $flags, $options],
-                $func_opts
-            );
-            return false; // 2:Error - undefined not allowed
-        }
-        return true; // OK
     }
 
 
@@ -1616,10 +1657,16 @@ class Validate
     /**
      * Int validator
      *
+     * Accepted string grammar (both modes): an optional sign (only when
+     * permitted by VALIDATE_INT_POSITIVE_SIGN / VALIDATE_INT_NEGATIVE_SIGN or
+     * a negative "min"), then "0" or a digit string without leading zeros.
+     * "-0", a lone sign and leading zeros are rejected.
+     *
      * Supported Flags: See validate_defs.php
      * Supported Options:
-     * "min" - Minimum length.
-     * "max" - Maximum length.
+     * "min" - Minimum value (int or integer string).
+     * "max" - Maximum value (int or integer string).
+     * "values" - Optional. [int => true, ...] exact-match whitelist; replaces min/max.
      * "filter" - Optional. Filter callback before validation. Use this for normalization.
      * "default" - Default value. Default value is subject to be validated also.
      *
@@ -1632,10 +1679,26 @@ class Validate
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
         assert(empty($options['values']) || is_array($options['values']));
 
+        if ($value instanceof GMP) {
+            $value = gmp_strval($value);
+        }
+        if (!$this->assertScalarType($value, [VALIDATE_INT, $flags, $options], $func_opts)) {
+            return false;
+        }
+
+        if (($flags & VALIDATE_FLAG_EMPTY) && $value === '') {
+            if ($flags & VALIDATE_INT_AS_STRING) {
+                $validated = '';
+            } else {
+                $validated = null;
+            }
+            return true;
+        }
+
         $values = $options['values'] ?? null;
         // Exact values match
         if ($values) {
-            if (!is_int($value) || strlen($value) !== strspn($value, '-1234567890')) {
+            if (!is_int($value) && !(is_string($value) && preg_match('/\A-?(?:0|[1-9][0-9]*)\z/', $value))) {
                 $this->reportError(
                     [
                         'message' => 'VALIDATE_INT: Failed option "values" match. Value is not integer.',
@@ -1657,7 +1720,11 @@ class Validate
                 );
                 return false;
             }
-            $validated = $value;
+            if ($flags & (VALIDATE_INT_AS_STRING | VALIDATE_FLAG_RAW)) {
+                $validated = $value;
+            } else {
+                $validated = (int)$value;
+            }
             return true;
         }
 
@@ -1665,15 +1732,6 @@ class Validate
         assert(is_numeric($options['max']) || is_int($options['max']));
         assert($options['min'] <= $options['max']
                || self::compareBigInt($options['min'], $options['max']) <= 0);
-
-        // Normal validation
-        if (extension_loaded('gmp') && $value instanceof GMP) {
-            $value = gmp_strval($value);
-        }
-
-        if (!$this->assertScalarType($value, [VALIDATE_INT, $flags, $options], $func_opts)) {
-            return false;
-        }
 
         $min = $options['min'];
         $max = $options['max'];
@@ -1695,29 +1753,16 @@ class Validate
             return false;
         }
 
-        if (($flags & VALIDATE_FLAG_EMPTY) && $value === '') {
-            if ($flags & VALIDATE_INT_AS_STRING) {
-                $validated = '';
-            } else {
-                $validated = null;
-            }
-            return true;
-        }
-
-        if (!$this->applyDefaultIfEmpty($value, VALIDATE_INT, $flags, $options)) {
-            return false;
-        }
-
         $ret = (string)$value;
-        $len = strlen($ret);
-        $lead_num = '1234567890';
+        $sign = '';
         if ($flags & VALIDATE_INT_POSITIVE_SIGN) {
-            $lead_num .= '+';
+            $sign .= '+';
         }
-        if ($flags & VALIDATE_INT_NEGATIVE_SIGN || substr($min, 0, 1) === '-') {
-            $lead_num .= '-';
+        if ($flags & VALIDATE_INT_NEGATIVE_SIGN || substr((string)$min, 0, 1) === '-') {
+            $sign .= '\\-';
         }
-        if (strspn($ret, $lead_num, 0, 1) !== 1 || strspn($ret, '1234567890', 1) !== ($len-1)) {
+        $sign = ($sign === '') ? '' : '['.$sign.']?';
+        if (!preg_match('/\A'.$sign.'(?:0|[1-9][0-9]*)\z/', $ret) || $ret === '-0') {
             $this->reportError(
                 [
                     'message' => 'VALIDATE_INT: Invalid int string.',
@@ -1728,10 +1773,13 @@ class Validate
             );
             return false;
         }
+        // An explicit '+' sign (allowed via VALIDATE_INT_POSITIVE_SIGN) is not
+        // part of the canonical int string form.
+        $canonical = ($ret[0] === '+') ? substr($ret, 1) : $ret;
 
         // Int type conversion is problematic with large values, especially on 32 bit platforms.
         if ($flags & VALIDATE_INT_AS_STRING) {
-            if (self::compareBigInt($ret, $min) < 0 || self::compareBigInt($ret, $max) > 0) {
+            if (self::compareBigInt($canonical, $min) < 0 || self::compareBigInt($canonical, $max) > 0) {
                 $this->reportError(
                     [
                         'message' => 'VALIDATE_INT: Out of defined range. min: "'. $min .'" max: "'. $max .'"',
@@ -1746,20 +1794,12 @@ class Validate
                 $validated = $value;
                 return true;
             }
-            assert(is_string($ret));
             $validated = $ret;
             return true;
         }
 
-        // An explicit '+' sign (allowed via VALIDATE_INT_POSITIVE_SIGN) is not
-        // part of PHP's canonical int string form — strip it before the
-        // round-trip check below or "+42" would be misreported as overflow.
-        $cmp = (string)$value;
-        if ($cmp !== '' && $cmp[0] === '+') {
-            $cmp = substr($cmp, 1);
-        }
-        $ret = (int)$cmp;
-        if ((string)$ret !== $cmp) {
+        $int = (int)$canonical;
+        if ((string)$int !== $canonical) {
             // Integer overflows and value is converted to float.
             $this->reportError(
                 [
@@ -1772,11 +1812,11 @@ class Validate
             return false;
         }
 
-        if ($ret < $min || $ret > $max) {
+        if ($int < $min || $int > $max) {
             $this->reportError(
                 [
                     'message' => 'VALIDATE_INT: Out of defined range. min: "'. $min.'" max: "'.$max.'"',
-                    'value' => $ret,
+                    'value' => $int,
                 ],
                 [VALIDATE_INT, $flags, $options],
                 $func_opts
@@ -1784,11 +1824,10 @@ class Validate
             return false;
         }
 
-        assert(is_int($ret));
         if ($flags & VALIDATE_FLAG_RAW) {
             $validated = $value;
         } else {
-            $validated = $ret; // Return int type value
+            $validated = $int; // Return int type value
         }
         return true;
     }
@@ -1829,10 +1868,6 @@ class Validate
         }
 
         $ret = (string)$value;
-        if (!$this->applyDefaultIfEmpty($ret, VALIDATE_BOOL, $flags, $options)) {
-            return false;
-        }
-
         $len = strlen($ret);
         if ($len > 5) {
             $this->reportError(
@@ -2008,8 +2043,9 @@ class Validate
         }
 
         // Resolve empty input first so every later check (type dispatch,
-        // length, format, range) runs on the single final candidate value —
-        // including a substituted 'default', which may be a native float.
+        // length, format, range) runs on the single final candidate value.
+        // (A 'default' for VALIDATE_FLAG_EMPTY_TO_DEFAULT was already
+        // substituted by validateScalar().)
         if (($flags & VALIDATE_FLAG_EMPTY) && $value === '') {
             if ($flags & VALIDATE_FLOAT_AS_STRING) {
                 $validated = '';
@@ -2018,10 +2054,6 @@ class Validate
             }
             return true;
         }
-        if (!$this->applyDefaultIfEmpty($value, VALIDATE_FLOAT, $flags, $options)) {
-            return false;
-        }
-
         if (is_double($value)) {
             if ($flags & VALIDATE_FLOAT_AS_STRING) {
                 // AS_STRING accepts numeric strings only (see validate_defs.php);
@@ -2226,6 +2258,10 @@ class Validate
      *              No multibyte chars are allowed by default. You also need
      *              VALIDATE_STRING_MB flag to enable multibyte chars.
      *              If "encoding" is omitted, "UTF-8" is used by default.
+     * "unicode"  - Optional. [code point => bool] overrides for UTF-8 input:
+     *              true allows a code point, false rejects it. Consulted
+     *              before (and also with) VALIDATE_STRING_RFC3454_C.
+     * "values"   - Optional. [string => true, ...] exact-match whitelist; replaces min/max and char checks.
      * "default" - Default value. Default value is subject to be validated also.
      *
      * @return bool
@@ -2237,22 +2273,15 @@ class Validate
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
         assert(empty($options['values']) || is_array($options['values']));
 
-        $values = $options['values'] ?? null;
         $vname = $this->getValidatorName($id);
+        if (!$this->assertScalarType($value, [$id, $flags, $options], $func_opts)) {
+            return false;
+        }
+
+        $values = $options['values'] ?? null;
         // Exact values match
         if ($values) {
-            if (is_array($value)) {
-                $this->reportError(
-                    [
-                        'message' => $vname .': Array is passed for option "values" validation.',
-                        'value' => $value,
-                    ],
-                    [$id, $flags, $options],
-                    $func_opts
-                );
-                return false;
-            }
-            if (empty($values[$value])) {
+            if (empty($values[(string)$value])) {
                 $this->reportError(
                     [
                         'message' => $vname .': Failed to match defined option "values".',
@@ -2272,19 +2301,10 @@ class Validate
         assert($options['min'] <= $options['max']);
         assert(empty($options['encoding']) || is_string($options['encoding']));
 
-        // Normal string validation
-        if (!$this->assertScalarType($value, [$id, $flags, $options], $func_opts)) {
-            return false;
-        }
-
         $ret = (string)$value;
         if (($flags & VALIDATE_FLAG_EMPTY) && $ret === '') {
             $validated = '';
             return true;
-        }
-
-        if (!$this->applyDefaultIfEmpty($ret, $id, $flags, $options)) {
-            return false;
         }
 
         $min = $options['min'];
@@ -2309,15 +2329,17 @@ class Validate
         }
 
         if ($flags & VALIDATE_STRING_BINARY) {
-            $validated = $value;
+            $validated = ($flags & VALIDATE_FLAG_RAW) ? $value : $ret;
             return true;
         }
 
         $multibyte = ($flags & VALIDATE_STRING_MB);
+        $encoding = $options['encoding'] ?? 'UTF-8';
         if ($multibyte) {
-            $encoding = $options['encoding'] ?? 'UTF-8';
             // Use htmlspecialchars() validation to avoid mbstring dependency.
-            if (!htmlspecialchars($ret, ENT_QUOTES, $encoding)) {
+            // It returns '' for an invalid byte sequence (and rejects UTF-8
+            // overlongs, surrogates and code points beyond U+10FFFF).
+            if (htmlspecialchars($ret, ENT_QUOTES, $encoding) === '') {
                 $this->reportError(
                     [
                         'message' => $vname .': Invalid '.$encoding.' encoding.',
@@ -2330,111 +2352,70 @@ class Validate
             }
         }
 
-        // Create map
-        // Static maps didn't speedup, so keep loops.
-        $map = array_fill(0, 128, false);
-        if ($flags & VALIDATE_STRING_SPACE) {
-            $map[ord(" ")] = true;
-        }
-        if ($flags & VALIDATE_STRING_TAB) {
-            $map[ord("\t")] = true;
-        }
-        if ($flags & (VALIDATE_STRING_LF | VALIDATE_STRING_CRLF_MIXED)) {
-            $map[ord("\n")] = true;
-        }
-        if ($flags & (VALIDATE_STRING_CR | VALIDATE_STRING_CRLF_MIXED)) {
-            $map[ord("\r")] = true;
-        }
-        if ($flags & VALIDATE_STRING_DIGIT) {
-            $max = ord('9');
-            for ($i=ord('0'); $i <= $max; $i++) {
-                $map[$i] = true;
-            }
-        }
-        if ($flags & VALIDATE_STRING_LOWER_ALPHA) {
-            $max = ord('z');
-            for ($i=ord('a'); $i <= $max; $i++) {
-                $map[$i] = true;
-            }
-        }
-        if ($flags & VALIDATE_STRING_UPPER_ALPHA) {
-            $max = ord('Z');
-            for ($i=ord('A'); $i <= $max; $i++) {
-                $map[$i] = true;
-            }
-        }
-        if ($flags & VALIDATE_STRING_SYMBOL) {
-            $max = ord('/');
-            for ($i=ord('!'); $i <= $max; $i++) {
-                $map[$i] = true;
-            }
-            $max = ord('@');
-            for ($i=ord(':'); $i <= $max; $i++) {
-                $map[$i] = true;
-            }
-            $max = ord('`');
-            for ($i=ord('['); $i <= $max; $i++) {
-                $map[$i] = true;
-            }
-            $max = ord('~');
-            for ($i=ord('{'); $i <= $max; $i++) {
-                $map[$i] = true;
-            }
-        }
-        if (isset($options['ascii'])) {
-            assert(is_string($options['ascii']));
-            $chr = $options['ascii'];
-            $len = strlen($chr);
-            for ($i=0; $i < $len; $i++) {
-                assert(ord($chr[$i]) < 128);
-                $map[ord($chr[$i])] = true;
-            }
+        // Strict CRLF mode: CR and LF are only allowed as the "\r\n" pair.
+        $crlf = (($flags & VALIDATE_STRING_CR)
+                  && ($flags & VALIDATE_STRING_LF)
+                  && !($flags & VALIDATE_STRING_CRLF_MIXED));
+        $allowed = self::stringCharset($flags, $options['ascii'] ?? '');
+        if ($crlf) {
+            $allowed = str_replace(["\r", "\n"], '', $allowed);
         }
 
         // Custom unicode validation char map array. [unicode_value => true/false, ...]; true: allowed, false: disallowed.
         assert(!isset($options['unicode']) || is_array($options['unicode']));
         $unimap = $options['unicode'] ?? array();
+        $utf8 = (strcasecmp($encoding, 'UTF-8') === 0 || strcasecmp($encoding, 'UTF8') === 0);
+        $checkUnicode = $multibyte && $utf8 && (!($flags & VALIDATE_STRING_RFC3454_C) || $unimap);
 
-        // Check chars
-        $len = strlen($ret);
-        $crlf = (($flags & VALIDATE_STRING_CR)
-                  && ($flags & VALIDATE_STRING_LF)
-                  && !($flags & VALIDATE_STRING_CRLF_MIXED));
-        for ($i=0; $i < $len; $i++) {
+        // Skip runs of whitelisted ASCII with strspn(); inspect only the
+        // bytes it stops at.
+        $i = 0;
+        while (($i += strspn($ret, $allowed, $i)) < $len) {
             $c = $ret[$i];
-            // UTF-8 multibyte chars should be safe by encoding check.
-            if (ord($c) >= 127) {
-                // At this point, UTF-8 encoding is validated already.
-                if ($multibyte) {
-                    if (!($flags & VALIDATE_STRING_RFC3454_C)
-                        && (empty($options['encoding']) || !strncasecmp('UTF-8', $options['encoding'], 5))) {
-                        $invalid_cp = $this->validateStringUnicodeCntrl($i, $value, $unimap, $id, $flags, $options, $func_opts);
-                        if ($invalid_cp === null) {
-                            continue;
-                        }
-                        $this->reportError(
-                            [
-                                'message' => $vname .': Unicode CNTRL char detected.',
-                                'value' => $ret,
-                            ],
-                            [$id, $flags, $options],
-                            $func_opts
-                        );
-                    }
+            if (ord($c) >= 0x80) {
+                if (!$multibyte) {
+                    $this->reportError(
+                        [
+                            'message' => $vname .': Multibyte char detected.',
+                            'value' => $ret,
+                        ],
+                        [$id, $flags, $options],
+                        $func_opts
+                    );
+                    return false;
+                }
+                if (!$checkUnicode) {
+                    $i++;
                     continue;
                 }
-                $this->reportError(
-                    [
-                        'message' => $vname .': Multibyte char detected.',
-                        'value' => $ret,
-                    ],
-                    [$id, $flags, $options],
-                    $func_opts
-                );
-                return false;
+                // UTF-8 is valid at this point (checked above).
+                $cp = self::utf8CodePointAt($ret, $i, $clen);
+                if (isset($unimap[$cp])) {
+                    $allowedCp = ($unimap[$cp] === true);
+                    $why = 'Detected invalid unicode defined by $option["unicode"].';
+                } else {
+                    $allowedCp = ($flags & VALIDATE_STRING_RFC3454_C) || !self::isRfc3454Prohibited($cp);
+                    $why = 'Unicode CNTRL char detected.';
+                }
+                if (!$allowedCp) {
+                    $this->reportError(
+                        [
+                            'message' => $vname .': '.$why.sprintf(' code point: U+%04X', $cp),
+                            'value' => $ret,
+                        ],
+                        [$id, $flags, $options],
+                        $func_opts
+                    );
+                    return false;
+                }
+                $i += $clen;
+                continue;
             }
-            // CRLF needs special handling
             if ($crlf) {
+                if ($c === "\r" && ($ret[$i + 1] ?? '') === "\n") {
+                    $i += 2;
+                    continue;
+                }
                 if ($c === "\n") {
                     $this->reportError(
                         [
@@ -2447,36 +2428,29 @@ class Validate
                     return false;
                 }
                 if ($c === "\r") {
-                    $c = $ret[++$i];
-                    if ($c !== "\n") {
-                        $this->reportError(
-                            [
-                                'message' => $vname .': Invalid CR/LF detected.',
-                                'value' => $ret,
-                            ],
-                            [$id, $flags, $options],
-                            $func_opts
-                        );
-                        return false;
-                    }
+                    $this->reportError(
+                        [
+                            'message' => $vname .': Invalid CR/LF detected.',
+                            'value' => $ret,
+                        ],
+                        [$id, $flags, $options],
+                        $func_opts
+                    );
+                    return false;
                 }
             }
-            // Others
-            if (!$map[ord($c)]) {
-                $this->reportError(
-                    [
-                        'message' => $vname .': Illegal char detected. ord: "'
-                                     .ord($c).'" chr: "'.addslashes($c).'"',
-                        'value' => $ret,
-                    ],
-                    [$id, $flags, $options],
-                    $func_opts
-                );
-                return false;
-            }
+            $this->reportError(
+                [
+                    'message' => $vname .': Illegal char detected. ord: "'.ord($c).'" chr: "'
+                                 .(ord($c) >= 0x20 && ord($c) < 0x7F ? addslashes($c) : sprintf('\\x%02X', ord($c))).'"',
+                    'value' => $ret,
+                ],
+                [$id, $flags, $options],
+                $func_opts
+            );
+            return false;
         }
 
-        assert(is_string($ret));
         if ($flags & VALIDATE_FLAG_RAW) {
             $validated = $value;
         } else {
@@ -2487,830 +2461,147 @@ class Validate
 
 
     /**
-     * String validator helper that detects unicode control chars.
-     * https://www.ietf.org/rfc/rfc3454.txt C. Prohibition tables
+     * Build the strspn() whitelist of ASCII bytes allowed by the
+     * VALIDATE_STRING_* character-class flags plus the "ascii" option.
+     * Bytes >= 0x80 are never part of it (multibyte chars are handled
+     * separately).
+     *
+     * @param int    $flags Spec flags.
+     * @param string $ascii "ascii" option.
+     *
+     * @return string
      */
-    private function validateStringUnicodeCntrl(&$idx, $value, $unimap, $id, $flags, $options, $func_opts)
+    private static function stringCharset($flags, $ascii)
     {
-        assert(is_int($idx));
-        assert(is_string($value));
-        assert((ord($value[$idx]) & 0x80));
-        assert(is_array($unimap));
-        assert(is_int($id));
         assert(is_int($flags));
-        assert(is_array($options));
-        assert(is_int($func_opts));
+        assert(is_string($ascii));
 
-        $len = 0;
-        $fb = ord($value[$idx]);
-        $c = $fb;
-        for ($i = 0; $i < 6; $i++) {
-            if ($c & 0x80) {
-                $len++;
+        $allowed = '';
+        if ($flags & VALIDATE_STRING_SPACE) {
+            $allowed .= ' ';
+        }
+        if ($flags & VALIDATE_STRING_TAB) {
+            $allowed .= "\t";
+        }
+        if ($flags & (VALIDATE_STRING_LF | VALIDATE_STRING_CRLF_MIXED)) {
+            $allowed .= "\n";
+        }
+        if ($flags & (VALIDATE_STRING_CR | VALIDATE_STRING_CRLF_MIXED)) {
+            $allowed .= "\r";
+        }
+        if ($flags & VALIDATE_STRING_DIGIT) {
+            $allowed .= '0123456789';
+        }
+        if ($flags & VALIDATE_STRING_LOWER_ALPHA) {
+            $allowed .= 'abcdefghijklmnopqrstuvwxyz';
+        }
+        if ($flags & VALIDATE_STRING_UPPER_ALPHA) {
+            $allowed .= 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        }
+        if ($flags & VALIDATE_STRING_SYMBOL) {
+            $allowed .= '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~';
+        }
+        // Spec check guarantees "ascii" is 7-bit; drop anything else defensively.
+        $allowed .= preg_replace('/[\x80-\xFF]/', '', $ascii);
+        return $allowed;
+    }
+
+
+    /**
+     * Decode the UTF-8 character starting at byte $idx of an already
+     * validated UTF-8 string.
+     *
+     * @param string $str  UTF-8 string.
+     * @param int    $idx  Byte offset of a lead byte (>= 0x80).
+     * @param int    $clen Output. Byte length of the character (2-4).
+     *
+     * @return int Code point.
+     */
+    private static function utf8CodePointAt($str, $idx, &$clen)
+    {
+        $b0 = ord($str[$idx]);
+        if ($b0 >= 0xF0) {
+            $clen = 4;
+            return (($b0 & 0x07) << 18) | ((ord($str[$idx + 1]) & 0x3F) << 12)
+                   | ((ord($str[$idx + 2]) & 0x3F) << 6) | (ord($str[$idx + 3]) & 0x3F);
+        }
+        if ($b0 >= 0xE0) {
+            $clen = 3;
+            return (($b0 & 0x0F) << 12) | ((ord($str[$idx + 1]) & 0x3F) << 6) | (ord($str[$idx + 2]) & 0x3F);
+        }
+        $clen = 2;
+        return (($b0 & 0x1F) << 6) | (ord($str[$idx + 1]) & 0x3F);
+    }
+
+
+    /**
+     * Whether a code point is prohibited by RFC 3454 appendix C (tables
+     * C.1.2 and C.2.2 - C.9; ASCII C.1.1 / C.2.1 are governed by the
+     * VALIDATE_STRING_* flags instead).
+     * https://www.ietf.org/rfc/rfc3454.txt C. Prohibition tables
+     *
+     * The table is a sorted list of disjoint inclusive [first, last] ranges
+     * (a static array in the C extension) searched by bisection.
+     *
+     * @param int $cp Code point (>= 0x80).
+     *
+     * @return bool
+     */
+    private static function isRfc3454Prohibited($cp)
+    {
+        static $ranges = [
+            [0x0080, 0x00A0],   // C.2.2 C1 controls, C.1.2 NO-BREAK SPACE
+            [0x0340, 0x0341],   // C.8
+            [0x06DD, 0x06DD],   // C.2.2
+            [0x070F, 0x070F],   // C.2.2
+            [0x1680, 0x1680],   // C.1.2
+            [0x180E, 0x180E],   // C.2.2
+            [0x2000, 0x200F],   // C.1.2 spaces, C.2.2 ZWNJ/ZWJ, C.8 LRM/RLM
+            [0x2028, 0x202F],   // C.2.2 LS/PS, C.8 embedding controls, C.1.2 NNBSP
+            [0x205F, 0x2063],   // C.1.2 MMSP, C.2.2 invisible operators
+            [0x206A, 0x206F],   // C.2.2 / C.8
+            [0x2FF0, 0x2FFB],   // C.7
+            [0x3000, 0x3000],   // C.1.2
+            [0xD800, 0xDFFF],   // C.5 surrogates
+            [0xE000, 0xF8FF],   // C.3 private use
+            [0xFDD0, 0xFDEF],   // C.4
+            [0xFEFF, 0xFEFF],   // C.2.2
+            [0xFFF9, 0xFFFF],   // C.2.2 / C.6 / C.4
+            [0x1D173, 0x1D17A], // C.2.2
+            [0x1FFFE, 0x1FFFF], // C.4
+            [0x2FFFE, 0x2FFFF], // C.4
+            [0x3FFFE, 0x3FFFF], // C.4
+            [0x4FFFE, 0x4FFFF], // C.4
+            [0x5FFFE, 0x5FFFF], // C.4
+            [0x6FFFE, 0x6FFFF], // C.4
+            [0x7FFFE, 0x7FFFF], // C.4
+            [0x8FFFE, 0x8FFFF], // C.4
+            [0x9FFFE, 0x9FFFF], // C.4
+            [0xAFFFE, 0xAFFFF], // C.4
+            [0xBFFFE, 0xBFFFF], // C.4
+            [0xCFFFE, 0xCFFFF], // C.4
+            [0xDFFFE, 0xDFFFF], // C.4
+            [0xE0001, 0xE0001], // C.9
+            [0xE0020, 0xE007F], // C.9
+            [0xEFFFE, 0xEFFFF], // C.4
+            [0xF0000, 0xFFFFF], // C.3 private use, C.4
+            [0x100000, 0x10FFFF], // C.3 private use, C.4
+        ];
+        assert(is_int($cp));
+
+        $lo = 0;
+        $hi = count($ranges) - 1;
+        while ($lo <= $hi) {
+            $mid = ($lo + $hi) >> 1;
+            if ($cp < $ranges[$mid][0]) {
+                $hi = $mid - 1;
+            } elseif ($cp > $ranges[$mid][1]) {
+                $lo = $mid + 1;
             } else {
-                break;
-            }
-            $c = $c << 1;
-        }
-
-        switch ($len) {
-            case 2:
-                $b1 = $fb & 0b00011111;
-                $b2 = ord($value[$idx+1]) & 0b00111111;
-                $cp = ($b1 << 6) | ($b2);
-                break;
-            case 3:
-                $b1 = $fb & 0b00001111;
-                $b2 = ord($value[$idx+1]) & 0b00111111;
-                $b3 = ord($value[$idx+2]) & 0b00111111;
-                $cp = ($b1 << 12) | ($b2 << 6) | ($b3);
-                break;
-            case 4:
-                $b1 = $fb & 0b00000111;
-                $b2 = ord($value[$idx+1]) & 0b00111111;
-                $b3 = ord($value[$idx+2]) & 0b00111111;
-                $b4 = ord($value[$idx+3]) & 0b00111111;
-                $cp = ($b1 << 18) | ($b2 << 12) | ($b3 << 6) | ($b4);
-                break;
-            default:
-                trigger_error('Report this error', E_USER_ERROR); // Validated UTF-8. Shouldn't fail.
-        }
-
-        $idx += $len-1;
-
-        if ($cp > 0x10FFFF) {
-            $vname = $this->getValidatorName($id);
-            $this->reportError(
-                [
-                    'message' => $vname.': Detected invalid unicode exceeds max value (0x10FFFF).',
-                    'value' => $cp,
-                ],
-                [$id, $flags, $options],
-                $func_opts
-            );
-            return $cp;
-        }
-        if (isset($unimap[$cp])) {
-            if ($unimap[$cp] === true) {
-                return null;
-            } else {
-                $vname = $this->getValidatorName($id);
-                $this->reportError(
-                    [
-                        'message' => $vname.': Detected invalid unicode defined by $option["unicode"].',
-                        'value' => $cp,
-                    ],
-                    [$id, $flags, $options],
-                    $func_opts
-                );
-                return $cp;
+                return true;
             }
         }
-
-        $ret = null;
-        if (!($flags & VALIDATE_STRING_RFC3454_C)) {
-            do {
-                // C 1.1 - ASCII Space is ignored here.
-                // C 1.2
-                if ($cp == 0x0000A0) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x001680) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002000) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002001) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002002) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002003) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002004) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002005) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002006) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002007) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002008) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002009) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00200A) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00200B) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00202F) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00205F) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x003000) {
-                    $ret = $cp;
-                    break;
-                }
-                // C 2.1 ｰ ASCII cntrls are ignored here
-                // C 2.2
-                if ($cp >= 0x000080 && $cp <= 0x00009F) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x0006DD) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00070F) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00180E) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00200C) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00200D) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002028) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002029) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002060) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002061) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002062) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x002063) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x00206A && $cp <= 0x00206F) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00FEFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x00FFF9 && $cp <= 0x00FFFC) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x01D173 && $cp <= 0x01D17A) {
-                    $ret = $cp;
-                    break;
-                }
-                // C 3
-                if ($cp >= 0x00E000 && $cp <= 0x00F8FF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x0F0000 && $cp <= 0x0FFFFD) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x100000 && $cp <= 0x10FFFD) {
-                    $ret = $cp;
-                    break;
-                }
-                // C 4
-                if ($cp >= 0x00FDD0 && $cp <= 0x00FDEF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x00FFFE && $cp <= 0x00FFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x01FFFE && $cp <= 0x01FFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x02FFFE && $cp <= 0x02FFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x03FFFE && $cp <= 0x03FFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x04FFFE && $cp <= 0x04FFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x05FFFE && $cp <= 0x05FFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x06FFFE && $cp <= 0x06FFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x07FFFE && $cp <= 0x07FFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x08FFFE && $cp <= 0x08FFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x09FFFE && $cp <= 0x09FFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x0AFFFE && $cp <= 0x0AFFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x0BFFFE && $cp <= 0x0BFFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x0CFFFE && $cp <= 0x0CFFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x0DFFFE && $cp <= 0x0DFFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x0EFFFE && $cp <= 0x0EFFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x0FFFFE && $cp <= 0x0FFFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x10FFFE && $cp <= 0x10FFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                // C 5
-                if ($cp >= 0x00D800 && $cp <= 0x00DFFF) {
-                    $ret = $cp;
-                    break;
-                }
-                // C 6
-                if ($cp == 0x00FFF9) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00FFFA) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00FFFB) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00FFFC) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00FFFD) {
-                    $ret = $cp;
-                    break;
-                }
-                // C 7
-                if ($cp >= 0x002FF0 && $cp <= 0x002FFB) {
-                    $ret = $cp;
-                    break;
-                }
-                // C 8
-                if ($cp == 0x000340) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x000341) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00200E) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00200F) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00202A) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00202B) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00202C) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00202D) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00202E) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00206A) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00206B) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00206C) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00206D) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00206E) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp == 0x00206F) {
-                    $ret = $cp;
-                    break;
-                }
-                // C 9
-                if ($cp == 0x0E0001) {
-                    $ret = $cp;
-                    break;
-                }
-                if ($cp >= 0x0E0020 && $cp <= 0x0E007F) {
-                    $ret = $cp;
-                    break;
-                }
-            } while (0);
-        }
-
-        /*
-        if (!($flags & VALIDATE_STRING_RFC3454_D)) {
-            do {
-                // D 1
-                if ($cp == 0x0005BE)  { $ret = $cp; break; }
-                if ($cp == 0x0005C0)  { $ret = $cp; break; }
-                if ($cp == 0x0005C3)  { $ret = $cp; break; }
-                if ($cp >= 0x0005D0 && $cp <= 0x0005EA)  { $ret = $cp; break; }
-                if ($cp >= 0x0005F0 && $cp <= 0x0005F4)  { $ret = $cp; break; }
-                if ($cp == 0x00061B)  { $ret = $cp; break; }
-                if ($cp == 0x00061F)  { $ret = $cp; break; }
-                if ($cp >= 0x000621 && $cp <= 0x00063A)  { $ret = $cp; break; }
-                if ($cp >= 0x000640 && $cp <= 0x00064A)  { $ret = $cp; break; }
-                if ($cp >= 0x00066D && $cp <= 0x00066F)  { $ret = $cp; break; }
-                if ($cp >= 0x000671 && $cp <= 0x0006D5)  { $ret = $cp; break; }
-                if ($cp == 0x0006DD)  { $ret = $cp; break; }
-                if ($cp >= 0x0006E5 && $cp <= 0x0006E6)  { $ret = $cp; break; }
-                if ($cp >= 0x0006FA && $cp <= 0x0006FE)  { $ret = $cp; break; }
-                if ($cp >= 0x000700 && $cp <= 0x00070D)  { $ret = $cp; break; }
-                if ($cp == 0x000710)  { $ret = $cp; break; }
-                if ($cp >= 0x000712 && $cp <= 0x00072C)  { $ret = $cp; break; }
-                if ($cp >= 0x000780 && $cp <= 0x0007A5)  { $ret = $cp; break; }
-                if ($cp == 0x0007B1)  { $ret = $cp; break; }
-                if ($cp == 0x00200F)  { $ret = $cp; break; }
-                if ($cp == 0x00FB1D)  { $ret = $cp; break; }
-                if ($cp >= 0x00FB1F && $cp <= 0x00FB28)  { $ret = $cp; break; }
-                if ($cp >= 0x00FB2A && $cp <= 0x00FB36)  { $ret = $cp; break; }
-                if ($cp >= 0x00FB38 && $cp <= 0x00FB3C)  { $ret = $cp; break; }
-                if ($cp == 0x00FB3E)  { $ret = $cp; break; }
-                if ($cp >= 0x00FB40 && $cp <= 0x00FB41)  { $ret = $cp; break; }
-                if ($cp >= 0x00FB43 && $cp <= 0x00FB44)  { $ret = $cp; break; }
-                if ($cp >= 0x00FB46 && $cp <= 0x00FBB1)  { $ret = $cp; break; }
-                if ($cp >= 0x00FBD3 && $cp <= 0x00FD3D)  { $ret = $cp; break; }
-                if ($cp >= 0x00FD50 && $cp <= 0x00FD8F)  { $ret = $cp; break; }
-                if ($cp >= 0x00FD92 && $cp <= 0x00FDC7)  { $ret = $cp; break; }
-                if ($cp >= 0x00FDF0 && $cp <= 0x00FDFC)  { $ret = $cp; break; }
-                if ($cp >= 0x00FE70 && $cp <= 0x00FE74)  { $ret = $cp; break; }
-                if ($cp >= 0x00FE76 && $cp <= 0x00FEFC)  { $ret = $cp; break; }
-                // D 2
-                if ($cp >= 0x000041 && $cp <= 0x00005A)  { $ret = $cp; break; }
-                if ($cp >= 0x000061 && $cp <= 0x00007A)  { $ret = $cp; break; }
-                if ($cp == 0x0000AA)  { $ret = $cp; break; }
-                if ($cp == 0x0000B5)  { $ret = $cp; break; }
-                if ($cp == 0x0000BA)  { $ret = $cp; break; }
-                if ($cp >= 0x0000C0 && $cp <= 0x0000D6)  { $ret = $cp; break; }
-                if ($cp >= 0x0000D8 && $cp <= 0x0000F6)  { $ret = $cp; break; }
-                if ($cp >= 0x0000F8 && $cp <= 0x000220)  { $ret = $cp; break; }
-                if ($cp >= 0x000222 && $cp <= 0x000233)  { $ret = $cp; break; }
-                if ($cp >= 0x000250 && $cp <= 0x0002AD)  { $ret = $cp; break; }
-                if ($cp >= 0x0002B0 && $cp <= 0x0002B8)  { $ret = $cp; break; }
-                if ($cp >= 0x0002BB && $cp <= 0x0002C1)  { $ret = $cp; break; }
-                if ($cp >= 0x0002D0 && $cp <= 0x0002D1)  { $ret = $cp; break; }
-                if ($cp >= 0x0002E0 && $cp <= 0x0002E4)  { $ret = $cp; break; }
-                if ($cp == 0x0002EE)  { $ret = $cp; break; }
-                if ($cp == 0x00037A)  { $ret = $cp; break; }
-                if ($cp == 0x000386)  { $ret = $cp; break; }
-                if ($cp >= 0x000388 && $cp <= 0x00038A)  { $ret = $cp; break; }
-                if ($cp == 0x00038C)  { $ret = $cp; break; }
-                if ($cp >= 0x00038E && $cp <= 0x0003A1)  { $ret = $cp; break; }
-                if ($cp >= 0x0003A3 && $cp <= 0x0003CE)  { $ret = $cp; break; }
-                if ($cp >= 0x0003D0 && $cp <= 0x0003F5)  { $ret = $cp; break; }
-                if ($cp >= 0x000400 && $cp <= 0x000482)  { $ret = $cp; break; }
-                if ($cp >= 0x00048A && $cp <= 0x0004CE)  { $ret = $cp; break; }
-                if ($cp >= 0x0004D0 && $cp <= 0x0004F5)  { $ret = $cp; break; }
-                if ($cp >= 0x0004F8 && $cp <= 0x0004F9)  { $ret = $cp; break; }
-                if ($cp >= 0x000500 && $cp <= 0x00050F)  { $ret = $cp; break; }
-                if ($cp >= 0x000531 && $cp <= 0x000556)  { $ret = $cp; break; }
-                if ($cp >= 0x000559 && $cp <= 0x00055F)  { $ret = $cp; break; }
-                if ($cp >= 0x000561 && $cp <= 0x000587)  { $ret = $cp; break; }
-                if ($cp == 0x000589)  { $ret = $cp; break; }
-                if ($cp == 0x000903)  { $ret = $cp; break; }
-                if ($cp >= 0x000905 && $cp <= 0x000939)  { $ret = $cp; break; }
-                if ($cp >= 0x00093D && $cp <= 0x000940)  { $ret = $cp; break; }
-                if ($cp >= 0x000949 && $cp <= 0x00094C)  { $ret = $cp; break; }
-                if ($cp == 0x000950)  { $ret = $cp; break; }
-                if ($cp >= 0x000958 && $cp <= 0x000961)  { $ret = $cp; break; }
-                if ($cp >= 0x000964 && $cp <= 0x000970)  { $ret = $cp; break; }
-                if ($cp >= 0x000982 && $cp <= 0x000983)  { $ret = $cp; break; }
-                if ($cp >= 0x000985 && $cp <= 0x00098C)  { $ret = $cp; break; }
-                if ($cp >= 0x00098F && $cp <= 0x000990)  { $ret = $cp; break; }
-                if ($cp >= 0x000993 && $cp <= 0x0009A8)  { $ret = $cp; break; }
-                if ($cp >= 0x0009AA && $cp <= 0x0009B0)  { $ret = $cp; break; }
-                if ($cp == 0x0009B2)  { $ret = $cp; break; }
-                if ($cp >= 0x0009B6 && $cp <= 0x0009B9)  { $ret = $cp; break; }
-                if ($cp >= 0x0009BE && $cp <= 0x0009C0)  { $ret = $cp; break; }
-                if ($cp >= 0x0009C7 && $cp <= 0x0009C8)  { $ret = $cp; break; }
-                if ($cp >= 0x0009CB && $cp <= 0x0009CC)  { $ret = $cp; break; }
-                if ($cp == 0x0009D7)  { $ret = $cp; break; }
-                if ($cp >= 0x0009DC && $cp <= 0x0009DD)  { $ret = $cp; break; }
-                if ($cp >= 0x0009DF && $cp <= 0x0009E1)  { $ret = $cp; break; }
-                if ($cp >= 0x0009E6 && $cp <= 0x0009F1)  { $ret = $cp; break; }
-                if ($cp >= 0x0009F4 && $cp <= 0x0009FA)  { $ret = $cp; break; }
-                if ($cp >= 0x000A05 && $cp <= 0x000A0A)  { $ret = $cp; break; }
-                if ($cp >= 0x000A0F && $cp <= 0x000A10)  { $ret = $cp; break; }
-                if ($cp >= 0x000A13 && $cp <= 0x000A28)  { $ret = $cp; break; }
-                if ($cp >= 0x000A2A && $cp <= 0x000A30)  { $ret = $cp; break; }
-                if ($cp >= 0x000A32 && $cp <= 0x000A33)  { $ret = $cp; break; }
-                if ($cp >= 0x000A35 && $cp <= 0x000A36)  { $ret = $cp; break; }
-                if ($cp >= 0x000A38 && $cp <= 0x000A39)  { $ret = $cp; break; }
-                if ($cp >= 0x000A3E && $cp <= 0x000A40)  { $ret = $cp; break; }
-                if ($cp >= 0x000A59 && $cp <= 0x000A5C)  { $ret = $cp; break; }
-                if ($cp == 0x000A5E)  { $ret = $cp; break; }
-                if ($cp >= 0x000A66 && $cp <= 0x000A6F)  { $ret = $cp; break; }
-                if ($cp >= 0x000A72 && $cp <= 0x000A74)  { $ret = $cp; break; }
-                if ($cp == 0x000A83)  { $ret = $cp; break; }
-                if ($cp >= 0x000A85 && $cp <= 0x000A8B)  { $ret = $cp; break; }
-                if ($cp == 0x000A8D)  { $ret = $cp; break; }
-                if ($cp >= 0x000A8F && $cp <= 0x000A91)  { $ret = $cp; break; }
-                if ($cp >= 0x000A93 && $cp <= 0x000AA8)  { $ret = $cp; break; }
-                if ($cp >= 0x000AAA && $cp <= 0x000AB0)  { $ret = $cp; break; }
-                if ($cp >= 0x000AB2 && $cp <= 0x000AB3)  { $ret = $cp; break; }
-                if ($cp >= 0x000AB5 && $cp <= 0x000AB9)  { $ret = $cp; break; }
-                if ($cp >= 0x000ABD && $cp <= 0x000AC0)  { $ret = $cp; break; }
-                if ($cp == 0x000AC9)  { $ret = $cp; break; }
-                if ($cp >= 0x000ACB && $cp <= 0x000ACC)  { $ret = $cp; break; }
-                if ($cp == 0x000AD0)  { $ret = $cp; break; }
-                if ($cp == 0x000AE0)  { $ret = $cp; break; }
-                if ($cp >= 0x000AE6 && $cp <= 0x000AEF)  { $ret = $cp; break; }
-                if ($cp >= 0x000B02 && $cp <= 0x000B03)  { $ret = $cp; break; }
-                if ($cp >= 0x000B05 && $cp <= 0x000B0C)  { $ret = $cp; break; }
-                if ($cp >= 0x000B0F && $cp <= 0x000B10)  { $ret = $cp; break; }
-                if ($cp >= 0x000B13 && $cp <= 0x000B28)  { $ret = $cp; break; }
-                if ($cp >= 0x000B2A && $cp <= 0x000B30)  { $ret = $cp; break; }
-                if ($cp >= 0x000B32 && $cp <= 0x000B33)  { $ret = $cp; break; }
-                if ($cp >= 0x000B36 && $cp <= 0x000B39)  { $ret = $cp; break; }
-                if ($cp >= 0x000B3D && $cp <= 0x000B3E)  { $ret = $cp; break; }
-                if ($cp == 0x000B40)  { $ret = $cp; break; }
-                if ($cp >= 0x000B47 && $cp <= 0x000B48)  { $ret = $cp; break; }
-                if ($cp >= 0x000B4B && $cp <= 0x000B4C)  { $ret = $cp; break; }
-                if ($cp == 0x000B57)  { $ret = $cp; break; }
-                if ($cp >= 0x000B5C && $cp <= 0x000B5D)  { $ret = $cp; break; }
-                if ($cp >= 0x000B5F && $cp <= 0x000B61)  { $ret = $cp; break; }
-                if ($cp >= 0x000B66 && $cp <= 0x000B70)  { $ret = $cp; break; }
-                if ($cp == 0x000B83)  { $ret = $cp; break; }
-                if ($cp >= 0x000B85 && $cp <= 0x000B8A)  { $ret = $cp; break; }
-                if ($cp >= 0x000B8E && $cp <= 0x000B90)  { $ret = $cp; break; }
-                if ($cp >= 0x000B92 && $cp <= 0x000B95)  { $ret = $cp; break; }
-                if ($cp >= 0x000B99 && $cp <= 0x000B9A)  { $ret = $cp; break; }
-                if ($cp == 0x000B9C)  { $ret = $cp; break; }
-                if ($cp >= 0x000B9E && $cp <= 0x000B9F)  { $ret = $cp; break; }
-                if ($cp >= 0x000BA3 && $cp <= 0x000BA4)  { $ret = $cp; break; }
-                if ($cp >= 0x000BA8 && $cp <= 0x000BAA)  { $ret = $cp; break; }
-                if ($cp >= 0x000BAE && $cp <= 0x000BB5)  { $ret = $cp; break; }
-                if ($cp >= 0x000BB7 && $cp <= 0x000BB9)  { $ret = $cp; break; }
-                if ($cp >= 0x000BBE && $cp <= 0x000BBF)  { $ret = $cp; break; }
-                if ($cp >= 0x000BC1 && $cp <= 0x000BC2)  { $ret = $cp; break; }
-                if ($cp >= 0x000BC6 && $cp <= 0x000BC8)  { $ret = $cp; break; }
-                if ($cp >= 0x000BCA && $cp <= 0x000BCC)  { $ret = $cp; break; }
-                if ($cp == 0x000BD7)  { $ret = $cp; break; }
-                if ($cp >= 0x000BE7 && $cp <= 0x000BF2)  { $ret = $cp; break; }
-                if ($cp >= 0x000C01 && $cp <= 0x000C03)  { $ret = $cp; break; }
-                if ($cp >= 0x000C05 && $cp <= 0x000C0C)  { $ret = $cp; break; }
-                if ($cp >= 0x000C0E && $cp <= 0x000C10)  { $ret = $cp; break; }
-                if ($cp >= 0x000C12 && $cp <= 0x000C28)  { $ret = $cp; break; }
-                if ($cp >= 0x000C2A && $cp <= 0x000C33)  { $ret = $cp; break; }
-                if ($cp >= 0x000C35 && $cp <= 0x000C39)  { $ret = $cp; break; }
-                if ($cp >= 0x000C41 && $cp <= 0x000C44)  { $ret = $cp; break; }
-                if ($cp >= 0x000C60 && $cp <= 0x000C61)  { $ret = $cp; break; }
-                if ($cp >= 0x000C66 && $cp <= 0x000C6F)  { $ret = $cp; break; }
-                if ($cp >= 0x000C82 && $cp <= 0x000C83)  { $ret = $cp; break; }
-                if ($cp >= 0x000C85 && $cp <= 0x000C8C)  { $ret = $cp; break; }
-                if ($cp >= 0x000C8E && $cp <= 0x000C90)  { $ret = $cp; break; }
-                if ($cp >= 0x000C92 && $cp <= 0x000CA8)  { $ret = $cp; break; }
-                if ($cp >= 0x000CAA && $cp <= 0x000CB3)  { $ret = $cp; break; }
-                if ($cp >= 0x000CB5 && $cp <= 0x000CB9)  { $ret = $cp; break; }
-                if ($cp == 0x000CBE)  { $ret = $cp; break; }
-                if ($cp >= 0x000CC0 && $cp <= 0x000CC4)  { $ret = $cp; break; }
-                if ($cp >= 0x000CC7 && $cp <= 0x000CC8)  { $ret = $cp; break; }
-                if ($cp >= 0x000CCA && $cp <= 0x000CCB)  { $ret = $cp; break; }
-                if ($cp >= 0x000CD5 && $cp <= 0x000CD6)  { $ret = $cp; break; }
-                if ($cp == 0x000CDE)  { $ret = $cp; break; }
-                if ($cp >= 0x000CE0 && $cp <= 0x000CE1)  { $ret = $cp; break; }
-                if ($cp >= 0x000CE6 && $cp <= 0x000CEF)  { $ret = $cp; break; }
-                if ($cp >= 0x000D02 && $cp <= 0x000D03)  { $ret = $cp; break; }
-                if ($cp >= 0x000D05 && $cp <= 0x000D0C)  { $ret = $cp; break; }
-                if ($cp >= 0x000D0E && $cp <= 0x000D10)  { $ret = $cp; break; }
-                if ($cp >= 0x000D12 && $cp <= 0x000D28)  { $ret = $cp; break; }
-                if ($cp >= 0x000D2A && $cp <= 0x000D39)  { $ret = $cp; break; }
-                if ($cp >= 0x000D3E && $cp <= 0x000D40)  { $ret = $cp; break; }
-                if ($cp >= 0x000D46 && $cp <= 0x000D48)  { $ret = $cp; break; }
-                if ($cp >= 0x000D4A && $cp <= 0x000D4C)  { $ret = $cp; break; }
-                if ($cp == 0x000D57)  { $ret = $cp; break; }
-                if ($cp >= 0x000D60 && $cp <= 0x000D61)  { $ret = $cp; break; }
-                if ($cp >= 0x000D66 && $cp <= 0x000D6F)  { $ret = $cp; break; }
-                if ($cp >= 0x000D82 && $cp <= 0x000D83)  { $ret = $cp; break; }
-                if ($cp >= 0x000D85 && $cp <= 0x000D96)  { $ret = $cp; break; }
-                if ($cp >= 0x000D9A && $cp <= 0x000DB1)  { $ret = $cp; break; }
-                if ($cp >= 0x000DB3 && $cp <= 0x000DBB)  { $ret = $cp; break; }
-                if ($cp == 0x000DBD)  { $ret = $cp; break; }
-                if ($cp >= 0x000DC0 && $cp <= 0x000DC6)  { $ret = $cp; break; }
-                if ($cp >= 0x000DCF && $cp <= 0x000DD1)  { $ret = $cp; break; }
-                if ($cp >= 0x000DD8 && $cp <= 0x000DDF)  { $ret = $cp; break; }
-                if ($cp >= 0x000DF2 && $cp <= 0x000DF4)  { $ret = $cp; break; }
-                if ($cp >= 0x000E01 && $cp <= 0x000E30)  { $ret = $cp; break; }
-                if ($cp >= 0x000E32 && $cp <= 0x000E33)  { $ret = $cp; break; }
-                if ($cp >= 0x000E40 && $cp <= 0x000E46)  { $ret = $cp; break; }
-                if ($cp >= 0x000E4F && $cp <= 0x000E5B)  { $ret = $cp; break; }
-                if ($cp >= 0x000E81 && $cp <= 0x000E82)  { $ret = $cp; break; }
-                if ($cp == 0x000E84)  { $ret = $cp; break; }
-                if ($cp >= 0x000E87 && $cp <= 0x000E88)  { $ret = $cp; break; }
-                if ($cp == 0x000E8A)  { $ret = $cp; break; }
-                if ($cp == 0x000E8D)  { $ret = $cp; break; }
-                if ($cp >= 0x000E94 && $cp <= 0x000E97)  { $ret = $cp; break; }
-                if ($cp >= 0x000E99 && $cp <= 0x000E9F)  { $ret = $cp; break; }
-                if ($cp >= 0x000EA1 && $cp <= 0x000EA3)  { $ret = $cp; break; }
-                if ($cp == 0x000EA5)  { $ret = $cp; break; }
-                if ($cp == 0x000EA7)  { $ret = $cp; break; }
-                if ($cp >= 0x000EAA && $cp <= 0x000EAB)  { $ret = $cp; break; }
-                if ($cp >= 0x000EAD && $cp <= 0x000EB0)  { $ret = $cp; break; }
-                if ($cp >= 0x000EB2 && $cp <= 0x000EB3)  { $ret = $cp; break; }
-                if ($cp == 0x000EBD)  { $ret = $cp; break; }
-                if ($cp >= 0x000EC0 && $cp <= 0x000EC4)  { $ret = $cp; break; }
-                if ($cp == 0x000EC6)  { $ret = $cp; break; }
-                if ($cp >= 0x000ED0 && $cp <= 0x000ED9)  { $ret = $cp; break; }
-                if ($cp >= 0x000EDC && $cp <= 0x000EDD)  { $ret = $cp; break; }
-                if ($cp >= 0x000F00 && $cp <= 0x000F17)  { $ret = $cp; break; }
-                if ($cp >= 0x000F1A && $cp <= 0x000F34)  { $ret = $cp; break; }
-                if ($cp == 0x000F36)  { $ret = $cp; break; }
-                if ($cp == 0x000F38)  { $ret = $cp; break; }
-                if ($cp >= 0x000F3E && $cp <= 0x000F47)  { $ret = $cp; break; }
-                if ($cp >= 0x000F49 && $cp <= 0x000F6A)  { $ret = $cp; break; }
-                if ($cp == 0x000F7F)  { $ret = $cp; break; }
-                if ($cp == 0x000F85)  { $ret = $cp; break; }
-                if ($cp >= 0x000F88 && $cp <= 0x000F8B)  { $ret = $cp; break; }
-                if ($cp >= 0x000FBE && $cp <= 0x000FC5)  { $ret = $cp; break; }
-                if ($cp >= 0x000FC7 && $cp <= 0x000FCC)  { $ret = $cp; break; }
-                if ($cp == 0x000FCF)  { $ret = $cp; break; }
-                if ($cp >= 0x001000 && $cp <= 0x001021)  { $ret = $cp; break; }
-                if ($cp >= 0x001023 && $cp <= 0x001027)  { $ret = $cp; break; }
-                if ($cp >= 0x001029 && $cp <= 0x00102A)  { $ret = $cp; break; }
-                if ($cp == 0x00102C)  { $ret = $cp; break; }
-                if ($cp == 0x001031)  { $ret = $cp; break; }
-                if ($cp == 0x001038)  { $ret = $cp; break; }
-                if ($cp >= 0x001040 && $cp <= 0x001057)  { $ret = $cp; break; }
-                if ($cp >= 0x0010A0 && $cp <= 0x0010C5)  { $ret = $cp; break; }
-                if ($cp >= 0x0010D0 && $cp <= 0x0010F8)  { $ret = $cp; break; }
-                if ($cp == 0x0010FB)  { $ret = $cp; break; }
-                if ($cp >= 0x001100 && $cp <= 0x001159)  { $ret = $cp; break; }
-                if ($cp >= 0x00115F && $cp <= 0x0011A2)  { $ret = $cp; break; }
-                if ($cp >= 0x0011A8 && $cp <= 0x0011F9)  { $ret = $cp; break; }
-                if ($cp >= 0x001200 && $cp <= 0x001206)  { $ret = $cp; break; }
-                if ($cp >= 0x001208 && $cp <= 0x001246)  { $ret = $cp; break; }
-                if ($cp == 0x001248)  { $ret = $cp; break; }
-                if ($cp >= 0x00124A && $cp <= 0x00124D)  { $ret = $cp; break; }
-                if ($cp >= 0x001250 && $cp <= 0x001256)  { $ret = $cp; break; }
-                if ($cp == 0x001258)  { $ret = $cp; break; }
-                if ($cp >= 0x00125A && $cp <= 0x00125D)  { $ret = $cp; break; }
-                if ($cp >= 0x001260 && $cp <= 0x001286)  { $ret = $cp; break; }
-                if ($cp == 0x001288)  { $ret = $cp; break; }
-                if ($cp >= 0x00128A && $cp <= 0x00128D)  { $ret = $cp; break; }
-                if ($cp >= 0x001290 && $cp <= 0x0012AE)  { $ret = $cp; break; }
-                if ($cp == 0x0012B0)  { $ret = $cp; break; }
-                if ($cp >= 0x0012B2 && $cp <= 0x0012B5)  { $ret = $cp; break; }
-                if ($cp >= 0x0012B8 && $cp <= 0x0012BE)  { $ret = $cp; break; }
-                if ($cp == 0x0012C0)  { $ret = $cp; break; }
-                if ($cp >= 0x0012C2 && $cp <= 0x0012C5)  { $ret = $cp; break; }
-                if ($cp >= 0x0012C8 && $cp <= 0x0012CE)  { $ret = $cp; break; }
-                if ($cp >= 0x0012D0 && $cp <= 0x0012D6)  { $ret = $cp; break; }
-                if ($cp >= 0x0012D8 && $cp <= 0x0012EE)  { $ret = $cp; break; }
-                if ($cp >= 0x0012F0 && $cp <= 0x00130E)  { $ret = $cp; break; }
-                if ($cp == 0x001310)  { $ret = $cp; break; }
-                if ($cp >= 0x001312 && $cp <= 0x001315)  { $ret = $cp; break; }
-                if ($cp >= 0x001318 && $cp <= 0x00131E)  { $ret = $cp; break; }
-                if ($cp >= 0x001320 && $cp <= 0x001346)  { $ret = $cp; break; }
-                if ($cp >= 0x001348 && $cp <= 0x00135A)  { $ret = $cp; break; }
-                if ($cp >= 0x001361 && $cp <= 0x00137C)  { $ret = $cp; break; }
-                if ($cp >= 0x0013A0 && $cp <= 0x0013F4)  { $ret = $cp; break; }
-                if ($cp >= 0x001401 && $cp <= 0x001676)  { $ret = $cp; break; }
-                if ($cp >= 0x001681 && $cp <= 0x00169A)  { $ret = $cp; break; }
-                if ($cp >= 0x0016A0 && $cp <= 0x0016F0)  { $ret = $cp; break; }
-                if ($cp >= 0x001700 && $cp <= 0x00170C)  { $ret = $cp; break; }
-                if ($cp >= 0x00170E && $cp <= 0x001711)  { $ret = $cp; break; }
-                if ($cp >= 0x001720 && $cp <= 0x001731)  { $ret = $cp; break; }
-                if ($cp >= 0x001735 && $cp <= 0x001736)  { $ret = $cp; break; }
-                if ($cp >= 0x001740 && $cp <= 0x001751)  { $ret = $cp; break; }
-                if ($cp >= 0x001760 && $cp <= 0x00176C)  { $ret = $cp; break; }
-                if ($cp >= 0x00176E && $cp <= 0x001770)  { $ret = $cp; break; }
-                if ($cp >= 0x001780 && $cp <= 0x0017B6)  { $ret = $cp; break; }
-                if ($cp >= 0x0017BE && $cp <= 0x0017C5)  { $ret = $cp; break; }
-                if ($cp >= 0x0017C7 && $cp <= 0x0017C8)  { $ret = $cp; break; }
-                if ($cp >= 0x0017D4 && $cp <= 0x0017DA)  { $ret = $cp; break; }
-                if ($cp == 0x0017DC)  { $ret = $cp; break; }
-                if ($cp >= 0x0017E0 && $cp <= 0x0017E9)  { $ret = $cp; break; }
-                if ($cp >= 0x001810 && $cp <= 0x001819)  { $ret = $cp; break; }
-                if ($cp >= 0x001820 && $cp <= 0x001877)  { $ret = $cp; break; }
-                if ($cp >= 0x001880 && $cp <= 0x0018A8)  { $ret = $cp; break; }
-                if ($cp >= 0x001E00 && $cp <= 0x001E9B)  { $ret = $cp; break; }
-                if ($cp >= 0x001EA0 && $cp <= 0x001EF9)  { $ret = $cp; break; }
-                if ($cp >= 0x001F00 && $cp <= 0x001F15)  { $ret = $cp; break; }
-                if ($cp >= 0x001F18 && $cp <= 0x001F1D)  { $ret = $cp; break; }
-                if ($cp >= 0x001F20 && $cp <= 0x001F45)  { $ret = $cp; break; }
-                if ($cp >= 0x001F48 && $cp <= 0x001F4D)  { $ret = $cp; break; }
-                if ($cp >= 0x001F50 && $cp <= 0x001F57)  { $ret = $cp; break; }
-                if ($cp == 0x001F59)  { $ret = $cp; break; }
-                if ($cp == 0x001F5B)  { $ret = $cp; break; }
-                if ($cp == 0x001F5D)  { $ret = $cp; break; }
-                if ($cp >= 0x001F5F && $cp <= 0x001F7D)  { $ret = $cp; break; }
-                if ($cp >= 0x001F80 && $cp <= 0x001FB4)  { $ret = $cp; break; }
-                if ($cp >= 0x001FB6 && $cp <= 0x001FBC)  { $ret = $cp; break; }
-                if ($cp == 0x001FBE)  { $ret = $cp; break; }
-                if ($cp >= 0x001FC2 && $cp <= 0x001FC4)  { $ret = $cp; break; }
-                if ($cp >= 0x001FC6 && $cp <= 0x001FCC)  { $ret = $cp; break; }
-                if ($cp >= 0x001FD0 && $cp <= 0x001FD3)  { $ret = $cp; break; }
-                if ($cp >= 0x001FD6 && $cp <= 0x001FDB)  { $ret = $cp; break; }
-                if ($cp >= 0x001FE0 && $cp <= 0x001FEC)  { $ret = $cp; break; }
-                if ($cp >= 0x001FF2 && $cp <= 0x001FF4)  { $ret = $cp; break; }
-                if ($cp >= 0x001FF6 && $cp <= 0x001FFC)  { $ret = $cp; break; }
-                if ($cp == 0x00200E)  { $ret = $cp; break; }
-                if ($cp == 0x002071)  { $ret = $cp; break; }
-                if ($cp == 0x00207F)  { $ret = $cp; break; }
-                if ($cp == 0x002102)  { $ret = $cp; break; }
-                if ($cp == 0x002107)  { $ret = $cp; break; }
-                if ($cp >= 0x00210A && $cp <= 0x002113)  { $ret = $cp; break; }
-                if ($cp == 0x002115)  { $ret = $cp; break; }
-                if ($cp >= 0x002119 && $cp <= 0x00211D)  { $ret = $cp; break; }
-                if ($cp == 0x002124)  { $ret = $cp; break; }
-                if ($cp == 0x002126)  { $ret = $cp; break; }
-                if ($cp == 0x002128)  { $ret = $cp; break; }
-                if ($cp >= 0x00212A && $cp <= 0x00212D)  { $ret = $cp; break; }
-                if ($cp >= 0x00212F && $cp <= 0x002131)  { $ret = $cp; break; }
-                if ($cp >= 0x002133 && $cp <= 0x002139)  { $ret = $cp; break; }
-                if ($cp >= 0x00213D && $cp <= 0x00213F)  { $ret = $cp; break; }
-                if ($cp >= 0x002145 && $cp <= 0x002149)  { $ret = $cp; break; }
-                if ($cp >= 0x002160 && $cp <= 0x002183)  { $ret = $cp; break; }
-                if ($cp >= 0x002336 && $cp <= 0x00237A)  { $ret = $cp; break; }
-                if ($cp == 0x002395)  { $ret = $cp; break; }
-                if ($cp >= 0x00249C && $cp <= 0x0024E9)  { $ret = $cp; break; }
-                if ($cp >= 0x003005 && $cp <= 0x003007)  { $ret = $cp; break; }
-                if ($cp >= 0x003021 && $cp <= 0x003029)  { $ret = $cp; break; }
-                if ($cp >= 0x003031 && $cp <= 0x003035)  { $ret = $cp; break; }
-                if ($cp >= 0x003038 && $cp <= 0x00303C)  { $ret = $cp; break; }
-                if ($cp >= 0x003041 && $cp <= 0x003096)  { $ret = $cp; break; }
-                if ($cp >= 0x00309D && $cp <= 0x00309F)  { $ret = $cp; break; }
-                if ($cp >= 0x0030A1 && $cp <= 0x0030FA)  { $ret = $cp; break; }
-                if ($cp >= 0x0030FC && $cp <= 0x0030FF)  { $ret = $cp; break; }
-                if ($cp >= 0x003105 && $cp <= 0x00312C)  { $ret = $cp; break; }
-                if ($cp >= 0x003131 && $cp <= 0x00318E)  { $ret = $cp; break; }
-                if ($cp >= 0x003190 && $cp <= 0x0031B7)  { $ret = $cp; break; }
-                if ($cp >= 0x0031F0 && $cp <= 0x00321C)  { $ret = $cp; break; }
-                if ($cp >= 0x003220 && $cp <= 0x003243)  { $ret = $cp; break; }
-                if ($cp >= 0x003260 && $cp <= 0x00327B)  { $ret = $cp; break; }
-                if ($cp >= 0x00327F && $cp <= 0x0032B0)  { $ret = $cp; break; }
-                if ($cp >= 0x0032C0 && $cp <= 0x0032CB)  { $ret = $cp; break; }
-                if ($cp >= 0x0032D0 && $cp <= 0x0032FE)  { $ret = $cp; break; }
-                if ($cp >= 0x003300 && $cp <= 0x003376)  { $ret = $cp; break; }
-                if ($cp >= 0x00337B && $cp <= 0x0033DD)  { $ret = $cp; break; }
-                if ($cp >= 0x0033E0 && $cp <= 0x0033FE)  { $ret = $cp; break; }
-                if ($cp >= 0x003400 && $cp <= 0x004DB5)  { $ret = $cp; break; }
-                if ($cp >= 0x004E00 && $cp <= 0x009FA5)  { $ret = $cp; break; }
-                if ($cp >= 0x00A000 && $cp <= 0x00A48C)  { $ret = $cp; break; }
-                if ($cp >= 0x00AC00 && $cp <= 0x00D7A3)  { $ret = $cp; break; }
-                if ($cp >= 0x00D800 && $cp <= 0x00FA2D)  { $ret = $cp; break; }
-                if ($cp >= 0x00FA30 && $cp <= 0x00FA6A)  { $ret = $cp; break; }
-                if ($cp >= 0x00FB00 && $cp <= 0x00FB06)  { $ret = $cp; break; }
-                if ($cp >= 0x00FB13 && $cp <= 0x00FB17)  { $ret = $cp; break; }
-                if ($cp >= 0x00FF21 && $cp <= 0x00FF3A)  { $ret = $cp; break; }
-                if ($cp >= 0x00FF41 && $cp <= 0x00FF5A)  { $ret = $cp; break; }
-                if ($cp >= 0x00FF66 && $cp <= 0x00FFBE)  { $ret = $cp; break; }
-                if ($cp >= 0x00FFC2 && $cp <= 0x00FFC7)  { $ret = $cp; break; }
-                if ($cp >= 0x00FFCA && $cp <= 0x00FFCF)  { $ret = $cp; break; }
-                if ($cp >= 0x00FFD2 && $cp <= 0x00FFD7)  { $ret = $cp; break; }
-                if ($cp >= 0x00FFDA && $cp <= 0x00FFDC)  { $ret = $cp; break; }
-                if ($cp >= 0x010300 && $cp <= 0x01031E)  { $ret = $cp; break; }
-                if ($cp >= 0x010320 && $cp <= 0x010323)  { $ret = $cp; break; }
-                if ($cp >= 0x010330 && $cp <= 0x01034A)  { $ret = $cp; break; }
-                if ($cp >= 0x010400 && $cp <= 0x010425)  { $ret = $cp; break; }
-                if ($cp >= 0x010428 && $cp <= 0x01044D)  { $ret = $cp; break; }
-                if ($cp >= 0x01D000 && $cp <= 0x01D0F5)  { $ret = $cp; break; }
-                if ($cp >= 0x01D100 && $cp <= 0x01D126)  { $ret = $cp; break; }
-                if ($cp >= 0x01D12A && $cp <= 0x01D166)  { $ret = $cp; break; }
-                if ($cp >= 0x01D16A && $cp <= 0x01D172)  { $ret = $cp; break; }
-                if ($cp >= 0x01D183 && $cp <= 0x01D184)  { $ret = $cp; break; }
-                if ($cp >= 0x01D18C && $cp <= 0x01D1A9)  { $ret = $cp; break; }
-                if ($cp >= 0x01D1AE && $cp <= 0x01D1DD)  { $ret = $cp; break; }
-                if ($cp >= 0x01D400 && $cp <= 0x01D454)  { $ret = $cp; break; }
-                if ($cp >= 0x01D456 && $cp <= 0x01D49C)  { $ret = $cp; break; }
-                if ($cp >= 0x01D49E && $cp <= 0x01D49F)  { $ret = $cp; break; }
-                if ($cp == 0x01D4A2)  { $ret = $cp; break; }
-                if ($cp >= 0x01D4A5 && $cp <= 0x01D4A6)  { $ret = $cp; break; }
-                if ($cp >= 0x01D4A9 && $cp <= 0x01D4AC)  { $ret = $cp; break; }
-                if ($cp >= 0x01D4AE && $cp <= 0x01D4B9)  { $ret = $cp; break; }
-                if ($cp == 0x01D4BB)  { $ret = $cp; break; }
-                if ($cp >= 0x01D4BD && $cp <= 0x01D4C0)  { $ret = $cp; break; }
-                if ($cp >= 0x01D4C2 && $cp <= 0x01D4C3)  { $ret = $cp; break; }
-                if ($cp >= 0x01D4C5 && $cp <= 0x01D505)  { $ret = $cp; break; }
-                if ($cp >= 0x01D507 && $cp <= 0x01D50A)  { $ret = $cp; break; }
-                if ($cp >= 0x01D50D && $cp <= 0x01D514)  { $ret = $cp; break; }
-                if ($cp >= 0x01D516 && $cp <= 0x01D51C)  { $ret = $cp; break; }
-                if ($cp >= 0x01D51E && $cp <= 0x01D539)  { $ret = $cp; break; }
-                if ($cp >= 0x01D53B && $cp <= 0x01D53E)  { $ret = $cp; break; }
-                if ($cp >= 0x01D540 && $cp <= 0x01D544)  { $ret = $cp; break; }
-                if ($cp == 0x01D546)  { $ret = $cp; break; }
-                if ($cp >= 0x01D54A && $cp <= 0x01D550)  { $ret = $cp; break; }
-                if ($cp >= 0x01D552 && $cp <= 0x01D6A3)  { $ret = $cp; break; }
-                if ($cp >= 0x01D6A8 && $cp <= 0x01D7C9)  { $ret = $cp; break; }
-                if ($cp >= 0x020000 && $cp <= 0x02A6D6)  { $ret = $cp; break; }
-                if ($cp >= 0x02F800 && $cp <= 0x02FA1D)  { $ret = $cp; break; }
-                if ($cp >= 0x0F0000 && $cp <= 0x0FFFFD)  { $ret = $cp; break; }
-                if ($cp >= 0x100000 && $cp <= 0x10FFFD)  { $ret = $cp; break; }
-            } while(0);
-        }
-        */
-        if ($ret !== null) {
-            $vname = $this->getValidatorName($id);
-            $this->reportError(
-                [
-                    'message' => $vname.': Detected invalid unicode.',
-                    'value' => $ret,
-                ],
-                [$id, $flags, $options],
-                $func_opts
-            );
-            return $cp;
-        }
-        return null;
+        return false;
     }
 
 
@@ -3337,8 +2628,6 @@ class Validate
         assert($options['min'] <= $options['max']);
         assert(isset($options['regexp']));
 
-        $min = $options['min'];
-        $max = $options['max'];
         $regexp = $options['regexp'];
         $ret = (string)$value;
 
@@ -3346,11 +2635,17 @@ class Validate
         if (!$this->validateString($ret, $value, $flags, $options, $func_opts, VALIDATE_REGEXP)) {
             return false;
         }
+        if (($flags & VALIDATE_FLAG_EMPTY) && $ret === '') {
+            $validated = ''; // Allowed empty input; the pattern does not apply.
+            return true;
+        }
 
-        if (!preg_match($regexp, $ret)) {
+        $matched = preg_match($regexp, (string)$ret);
+        if ($matched !== 1) {
             $this->reportError(
                 [
-                    'message' => 'VALIDATE_REGEXP: Failed to match.',
+                    'message' => 'VALIDATE_REGEXP: '.($matched === false
+                                 ? 'PCRE error: '.preg_last_error_msg().'.' : 'Failed to match.'),
                     'value' => $ret,
                 ],
                 [VALIDATE_REGEXP, $flags, $options],
@@ -3358,7 +2653,6 @@ class Validate
             );
             return false;
         }
-        assert(is_string($ret));
         if ($flags & VALIDATE_FLAG_RAW) {
             $validated = $value;
         } else {
@@ -3373,19 +2667,22 @@ class Validate
      *
      * Supported Flags: See validate_defs.php
      * Supported Options:
-     * "min" - Minimum length.
-     * "max" - Maximum length.
-     * "callback" - Callback function that perform validation.
-     *              It must have following parameters:
-     *               &$validated - Although Validate is not a filter, but it may change. The result.
-     *               $value - Value to be validated.
-     *               $ctx - Validator context.
-     *              Return value:
-     *               Return value can be any thing, but strongly recommends not to sanitize input.
+     * String input is first validated like VALIDATE_STRING (flags, "min",
+     * "max", "ascii", ...); any other input type reaches the callback as is.
+     *
+     * Supported Flags: See validate_defs.php
+     * Supported Options:
+     * "min" - Minimum length (string input).
+     * "max" - Maximum length (string input).
+     * "callback" - function (Validate $ctx, mixed &$validated, mixed $value): bool
+     *               $ctx       - Validator context.
+     *               $validated - The result; pre-set to the string-validated value.
+     *               $value     - Value to be validated.
+     *              Return true to accept. Do not sanitize input here.
      * "filter" - Optional. Filter callback before validation. Use this for normalization.
      * "default" - Default value. Default value is subject to be validated also.
      *
-     * @return mixed
+     * @return bool
      */
     private function validateCallback(&$validated, $value, $flags, $options, $func_opts)
     {
@@ -3431,10 +2728,12 @@ class Validate
      *
      * Supported Flags: See validate_defs.php
      * Supported Options:
-     * "class" - Class name of object.
-     * ”callback" - Callback method.
+     * "callback" - Method name. Called as $value->callback($ctx); must return true to accept.
+     * "class" - Optional. Required class/interface name (instanceof check).
      * "filter" - Optional. Filter callback before validation. Use this for normalization.
      * "default" - Default value. Default value is subject to be validated also.
+     *
+     * @return bool
      */
     private function validateObject(&$validated, $value, $flags, $options, $func_opts)
     {
@@ -3449,18 +2748,30 @@ class Validate
                     'message' => 'VALIDATE_OBJECT: Value is not an object. Type: \''.gettype($value).'\'',
                     'value' => $value,
                 ],
-                [VALIDATE_CALLBACK, $flags, $options],
+                [VALIDATE_OBJECT, $flags, $options],
                 $func_opts
             );
             return false;
         }
-        if (!is_object($value) || !is_callable([$value, $options['callback']])) {
+        if (isset($options['class']) && !($value instanceof $options['class'])) {
+            $this->reportError(
+                [
+                    'message' => 'VALIDATE_OBJECT: Object is not an instance of \''.$options['class'].'\'. '
+                                 .'Class: \''.get_class($value).'\'',
+                    'value' => $value,
+                ],
+                [VALIDATE_OBJECT, $flags, $options],
+                $func_opts
+            );
+            return false;
+        }
+        if (!is_callable([$value, $options['callback']])) {
             $this->reportError(
                 [
                     'message' => 'VALIDATE_OBJECT: "'. get_class($value) . '" class validation callback is not callable or does not exist. Callback: \''.$options['callback'].'\'',
                     'value' => $value,
                 ],
-                [VALIDATE_CALLBACK, $flags, $options],
+                [VALIDATE_OBJECT, $flags, $options],
                 $func_opts
             );
             return false;
@@ -3474,7 +2785,7 @@ class Validate
                     'message' => 'VALIDATE_OBJECT: Object validation failed.',
                     'value' => $value,
                 ],
-                [VALIDATE_CALLBACK, $flags, $options],
+                [VALIDATE_OBJECT, $flags, $options],
                 $func_opts
             );
             return false;
@@ -3488,46 +2799,61 @@ class Validate
 
 
     /**
-     * Dispatch a system-level message (error/warning/notice) to the
-     * appropriate bucket and optionally trigger a PHP error.
+     * Record a message and act on it.
      *
-     * @param string   $message   Message text.
-     * @param int      $type      Severity. One of E_USER_ERROR / E_USER_WARNING / E_USER_NOTICE.
+     * $type selects the bucket:
+     *   E_ERROR / E_WARNING / E_NOTICE                 - system message from the engine
+     *                                                    (E_WARNING / E_NOTICE when the spec has
+     *                                                    VALIDATE_FLAG_WARNING / VALIDATE_FLAG_NOTICE).
+     *   E_USER_ERROR / E_USER_WARNING / E_USER_NOTICE  - user message (validate_error() & co.).
+     *
+     * Everything except E_USER_WARNING / E_USER_NOTICE is a validation
+     * failure and clears $status. A failure is "fatal" (exception and, with
+     * VALIDATE_OPT_RAISE_ERROR, a PHP error) unless the spec downgrades it
+     * with VALIDATE_FLAG_WARNING / VALIDATE_FLAG_NOTICE.
+     *
+     * While VALIDATE_MULTI_OR alternatives are tried ($this->silent > 0)
+     * nothing is recorded; failures only set $this->silentFailed.
+     *
+     * @param string $message Message text.
+     * @param int    $type    One of the six levels above.
      *
      * @return null
+     *
+     * @throws ValidateInvalidValueException On a fatal failure unless VALIDATE_OPT_DISABLE_EXCEPTION.
      */
     private function dispatchError($message, $type)
     {
         assert(is_string($message));
-
-        assert(isset($this->context_vars['value']) || is_null($this->context_vars['value']));
-        //assert($this->validateSpec($this->context_vars['spec']));
+        assert(in_array($type, [E_ERROR, E_WARNING, E_NOTICE, E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE], true));
+        assert(array_key_exists('value', $this->context_vars));
         assert(is_int($this->context_vars['func_opts']) && !($this->context_vars['func_opts'] & VALIDATE_OPT_UPPER));
 
-        $this->status = false;
-        $param = end($this->currentElem);
+        $failure = ($type !== E_USER_WARNING && $type !== E_USER_NOTICE);
+        if ($this->silent) {
+            if ($failure) {
+                $this->silentFailed = true;
+            }
+            return;
+        }
+        if ($failure) {
+            $this->status = false;
+        }
+
+        $func_opts = $this->context_vars['func_opts'];
         $error = [
             'type'       => $type,
             'param'      => $this->currentElem,
             'defined'    => $this->context_vars['defined'],
             'message'    => $message,
             'spec'       => $this->context_vars['spec'],
-            'func_opts'  => $this->context_vars['func_opts'],
+            'func_opts'  => $func_opts,
             'value'      => $this->context_vars['value'],
             'orig_value' => $this->context_vars['orig_value'],
         ];
 
-        if (!is_scalar($this->context_vars['value']) || is_null($this->context_vars['value'])) {
-            $value = serialize($this->context_vars['value']);
-        } elseif (is_float($this->context_vars['value']) && is_nan($this->context_vars['value'])) {
-            // PHP 8.5+ warns when NAN is implicitly coerced to string.
-            $value = 'NAN';
-        } else {
-            $value = $this->context_vars['value'];
-        }
-
         $error_msg = 'param: \''.join('=>', $this->currentElem).'\' '.
-                     'error: \''. $message .'\' val: \''. substr($value, 0, 2048) .'\'';
+                     'error: \''. $message .'\' val: \''. substr(self::valueToString($this->context_vars['value']), 0, 2048) .'\'';
 
         // System errors are stored always.
         if ($type === E_ERROR) {
@@ -3538,12 +2864,12 @@ class Validate
             $this->appendError($this->notices, $error);
         }
 
-        // Set error type flags setting controls ERROR / EXCEPTION.
-        // Warning would not raise ERROR nor EXCEPTION.
-        $func_opts = $this->context_vars['spec'][1] ?? 0;
-        $fatal = !($type & (E_USER_WARNING | E_USER_NOTICE))
-                 && !($func_opts & (VALIDATE_FLAG_WARNING | VALIDATE_FLAG_NOTICE));
-        $user_error_msg = $this->context_vars['spec'][2]['error_message'] ?? null;
+        // VALIDATE_FLAG_WARNING / VALIDATE_FLAG_NOTICE turn the failure into
+        // a recorded message only: no ERROR, no EXCEPTION.
+        $spec_flags = $this->context_vars['spec'][VALIDATE_FLAGS] ?? 0;
+        $fatal = ($type === E_ERROR || $type === E_USER_ERROR)
+                 && !($spec_flags & (VALIDATE_FLAG_WARNING | VALIDATE_FLAG_NOTICE));
+        $user_error_msg = $this->context_vars['spec'][VALIDATE_OPTIONS]['error_message'] ?? null;
 
         // Store error messages
         // User "error_message" defined in spec option is stored only once.
@@ -3576,12 +2902,10 @@ class Validate
             case E_USER_NOTICE:
                 $this->appendError($this->userNotices, $message);
                 break;
-            default:
-                trigger_error('Cannot mix error level. e.g. E_WARNING | E_NOTICE', E_USER_ERROR);
         }
 
         // Logger
-        if ($this->context_vars['func_opts'] & VALIDATE_OPT_LOG_ERROR) {
+        if ($func_opts & VALIDATE_OPT_LOG_ERROR) {
             if ($this->loggerFunction) {
                 ($this->loggerFunction)($this, $error);
             } else {
@@ -3589,29 +2913,43 @@ class Validate
             }
         }
 
-        // Error
-        if ($fatal && $this->context_vars['func_opts'] & VALIDATE_OPT_RAISE_ERROR) {
-            switch ($type) {
-                case E_ERROR:
-                case E_USER_ERROR:
-                    trigger_error($error_msg, $this->error_level);
-                    break;
-                case E_WARNING:
-                case E_USER_WARNING:
-                    trigger_error($error_msg, E_USER_WARNING);
-                    break;
-                case E_NOTICE:
-                case E_USER_NOTICE:
-                    trigger_error($error_msg, E_USER_WARNING);
-                    break;
-                default:
-                    trigger_error('Report this error.', E_USER_ERROR);
-            }
+        if (!$fatal) {
+            return;
         }
-
+        // Error
+        if ($func_opts & VALIDATE_OPT_RAISE_ERROR) {
+            trigger_error($error_msg, $this->error_level);
+        }
         // Exception
-        if ($fatal && !($this->context_vars['func_opts'] & VALIDATE_OPT_DISABLE_EXCEPTION)) {
-            throw new InvalidArgumentException($error_msg);
+        if (!($func_opts & VALIDATE_OPT_DISABLE_EXCEPTION)) {
+            throw new ValidateInvalidValueException($error_msg, $error);
+        }
+    }
+
+
+    /**
+     * Render a value for an error message without failing on values that
+     * cannot be serialized (closures, ...).
+     *
+     * @param mixed $value
+     *
+     * @return string
+     */
+    private static function valueToString($value)
+    {
+        if (is_float($value) && is_nan($value)) {
+            return 'NAN'; // PHP 8.5+ warns when NAN is implicitly coerced to string.
+        }
+        if (is_scalar($value)) {
+            return (string)$value;
+        }
+        if (is_resource($value)) {
+            return 'resource('.get_resource_type($value).')';
+        }
+        try {
+            return serialize($value);
+        } catch (Throwable $e) {
+            return is_object($value) ? 'object('.get_class($value).')' : gettype($value);
         }
     }
 
@@ -3633,15 +2971,15 @@ class Validate
         }
 
         if (is_string($error)) {
-            foreach ($this->context_vars['spec'][2] as $opt => $opt_val) {
+            // "{{option}}" placeholders in user messages expand to option values.
+            foreach ($this->context_vars['spec'][VALIDATE_OPTIONS] as $opt => $opt_val) {
                 if (is_scalar($opt_val)) {
-                    $error = str_replace('{{'.$opt.'}}', $opt_val, $error);
+                    $error = str_replace('{{'.$opt.'}}', (string)$opt_val, $error);
                 }
             }
         }
 
         if ($mode & VALIDATE_OPT_ERROR_FULL) {
-            $storage = $storage;
             foreach ($this->currentElem as $el) {
                 if (!isset($storage[$el])) {
                     $storage[$el] = array();
@@ -3661,23 +2999,31 @@ class Validate
     /**
      * Handle internal validation errors.
      *
-     * @param array $error     Error message. ['message'=>$msg, 'param'=>$parm, 'value'=>$val]
+     * VALIDATE_FLAG_PASSTHRU on the spec drops the failure entirely (nothing
+     * recorded, raised or thrown; the status is unchanged); the validator
+     * still returns false, so the value is left out of the result.
+     * VALIDATE_FLAG_NOTICE / VALIDATE_FLAG_WARNING downgrade it to a
+     * recorded system notice / warning.
+     *
+     * @param array $error     Error message. ['message'=>$msg, 'value'=>$val]
      * @param array $spec      Validator spec array
      * @param int   $func_opts Validator function bit mask options.
      *
      * @return null
      */
-    private function reportError($error, $spec, $func_opts, $type = E_ERROR)
+    private function reportError($error, $spec, $func_opts)
     {
         assert(is_array($error));
         assert(is_string($error['message']));
-        assert(is_null($error['value']) || isset($error['value']));
+        assert(array_key_exists('value', $error));
         assert(is_array($spec));
-        // $spec could be array of specs for a var. i.e. is_array($spec[VALIDATE_ID])
-        assert(!isset($spec[VALIDATE_ID]) || is_array($spec[VALIDATE_ID]) || (is_int($spec[VALIDATE_ID]) && is_int($spec[VALIDATE_FLAGS]) && is_array($spec[VALIDATE_OPTIONS])));
+        assert(is_int($spec[VALIDATE_ID]) && is_int($spec[VALIDATE_FLAGS]) && is_array($spec[VALIDATE_OPTIONS]));
         assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
-        assert($type === E_ERROR || $type === E_WARNING || $type === E_NOTICE);
 
+        if ($spec[VALIDATE_FLAGS] & VALIDATE_FLAG_PASSTHRU) {
+            return;
+        }
+        $type = E_ERROR;
         if ($spec[VALIDATE_FLAGS] & VALIDATE_FLAG_NOTICE) {
             $type = E_NOTICE;
         }
@@ -3691,76 +3037,27 @@ class Validate
 
 
     /**
-     * Handle internal validation warnings.
-     *
-     * @param array $error     Error message. ['message'=>$msg, 'param'=>$parm, 'value'=>$val]
-     * @param array $spec      Validator spec array
-     * @param int   $func_opts Validator function bit mask options.
-     *
-     * @return null
-     */
-    private function reportWarning($error, $spec, $func_opts)
-    {
-        assert(is_array($error));
-        assert(is_string($error['message']));
-        assert(is_null($error['value']) || isset($error['value']));
-        assert(is_array($spec));
-        // $spec could be array of specs for a var. i.e. is_array($spec[VALIDATE_ID])
-        assert(!isset($spec[VALIDATE_ID]) || is_array($spec[VALIDATE_ID]) || (is_int($spec[VALIDATE_ID]) && is_int($spec[VALIDATE_FLAGS]) && is_array($spec[VALIDATE_OPTIONS])));
-        assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
-
-        $this->setContextErrorValue($error['value']);
-        $this->dispatchError($error['message'], E_WARNING);
-    }
-
-
-    /**
-     * Handle internal validation notices.
-     *
-     * @param array $error     Error message. ['message'=>$msg, 'param'=>$parm, 'value'=>$val]
-     * @param array $spec      Validator spec array
-     * @param int   $func_opts Validator function bit mask options.
-     *
-     * @return null
-     */
-    private function reportNotice($error, $spec, $func_opts)
-    {
-        assert(is_array($error));
-        assert(is_string($error['message']));
-        assert(is_null($error['value']) || isset($error['value']));
-        assert(is_array($spec));
-        // $spec could be array of specs for a var. i.e. is_array($spec[VALIDATE_ID])
-        assert(!isset($spec[VALIDATE_ID]) || is_array($spec[VALIDATE_ID]) || (is_int($spec[VALIDATE_ID]) && is_int($spec[VALIDATE_FLAGS]) && is_array($spec[VALIDATE_OPTIONS])));
-        assert(is_int($func_opts) && (!($func_opts & VALIDATE_OPT_UPPER)));
-
-        $this->setContextErrorValue($error['value']);
-        $this->dispatchError($error['message'], E_NOTICE);
-    }
-
-
-    /**
      * Get error and warnings
+     *
+     * @param int $type E_USER_ERROR for user messages, E_ERROR for system messages.
      *
      * @return array
      */
     private function collectErrors($type)
     {
-        $report = array();
-        switch ($type) {
-            case E_USER_ERROR:
-                $report['error']   = $this->userErrors ?? [];
-                $report['warning'] = $this->userWarnings ?? [];
-                $report['notice']  = $this->userNotices ?? [];
-                break;
-            case E_ERROR:
-                $report['error']   = $this->errors ?? [];
-                $report['warning'] = $this->warnings ?? [];
-                $report['notice']  = $this->notices ?? [];
-                break;
-            default:
-                trigger_error('Report this error.', E_USER_ERROR);
+        assert($type === E_USER_ERROR || $type === E_ERROR);
+        if ($type === E_USER_ERROR) {
+            return [
+                'error'   => $this->userErrors,
+                'warning' => $this->userWarnings,
+                'notice'  => $this->userNotices,
+            ];
         }
-        return $report;
+        return [
+            'error'   => $this->errors,
+            'warning' => $this->warnings,
+            'notice'  => $this->notices,
+        ];
     }
 
 
@@ -3808,7 +3105,7 @@ class Validate
                 ]
             );
             return false;
-        } elseif (!is_int($spec[VALIDATE_ID]) || $spec[VALIDATE_ID] <= VALIDATE_INVALID || ($spec[VALIDATE_ID] > VALIDATE_LAST && $spec[VALIDATE_ID] !== VALIDATE_UNVALIDATED)) {
+        } elseif (!is_int($spec[VALIDATE_ID]) || $spec[VALIDATE_ID] <= VALIDATE_INVALID || $spec[VALIDATE_ID] > VALIDATE_LAST) {
             $this->specError(
                 [
                     'message' => 'Validator ID must be valid int.',
@@ -3827,6 +3124,7 @@ class Validate
                     'flags'   => '',
                 ]
             );
+            return false;
         } elseif (!is_int($spec[VALIDATE_FLAGS])) {
             $this->specError(
                 [
@@ -3835,6 +3133,7 @@ class Validate
                     'flags'   => '',
                 ]
             );
+            return false;
         }
         // Options
         if (!isset($spec[VALIDATE_OPTIONS])) {
@@ -3857,14 +3156,6 @@ class Validate
             return false;
         }
 
-
-        // Special validation validates unvalidated result(value).
-        // Unvalidated result is checked after runValidation().
-        // Spec check is called from inside Validate, then this is used.
-        if ($spec[VALIDATE_ID] === VALIDATE_UNVALIDATED) {
-            // No check is needed.
-            return true;
-        }
 
         // Multi specs
         if ($spec[VALIDATE_ID] === VALIDATE_MULTI) {
@@ -3980,10 +3271,51 @@ class Validate
         }
 
         $options = $spec[VALIDATE_OPTIONS];
+        if (count($spec) > 4) {
+            $this->specWarning(
+                [
+                    'message' => 'VALIDATE_ARRAY: Too many elements. Spec must have 4 elements.',
+                    'spec'    => $spec,
+                    'flags'   => '',
+                ]
+            );
+        }
+        // Only presence / reporting flags mean something for VALIDATE_ARRAY.
+        $array_flags = VALIDATE_FLAG_REJECT | VALIDATE_FLAG_UNDEFINED | VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
+                       | VALIDATE_FLAG_WARNING | VALIDATE_FLAG_NOTICE | VALIDATE_FLAG_PASSTHRU;
+        if ($spec[VALIDATE_FLAGS] & ~$array_flags) {
+            $this->specWarning(
+                [
+                    'message' => 'VALIDATE_ARRAY has flags that have no effect. Only VALIDATE_FLAG_REJECT, '
+                                .'VALIDATE_FLAG_UNDEFINED, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, VALIDATE_FLAG_WARNING, '
+                                .'VALIDATE_FLAG_NOTICE and VALIDATE_FLAG_PASSTHRU apply.',
+                    'spec'    => $spec,
+                    'flags'   => '',
+                ]
+            );
+        }
+        if (($spec[VALIDATE_FLAGS] & VALIDATE_FLAG_UNDEFINED_TO_DEFAULT) && !isset($options['default'])) {
+            $this->specError(
+                [
+                    'message' => 'VALIDATE_ARRAY has VALIDATE_FLAG_UNDEFINED_TO_DEFAULT but "default" option is missing.',
+                    'spec'    => $spec,
+                    'flags'   => '',
+                ]
+            );
+        }
         if (!isset($options['min']) || !isset($options['max'])) {
             $this->specError(
                 [
                     'message' => 'Array parameter must have "min" and "max" options.',
+                    'spec'    => $spec,
+                    'flags'   => '',
+                ]
+            );
+            return false;
+        } elseif (!is_int($options['min']) || !is_int($options['max'])) {
+            $this->specError(
+                [
+                    'message' => 'Array "min" and "max" options must be int.',
                     'spec'    => $spec,
                     'flags'   => '',
                 ]
@@ -4142,6 +3474,9 @@ class Validate
                 if ($flags & VALIDATE_STRING_BINARY) {
                     $f[] = 'VALIDATE_STRING_BINARY';
                 }
+                if ($flags & VALIDATE_STRING_RFC3454_C) {
+                    $f[] = 'VALIDATE_STRING_RFC3454_C';
+                }
                 if ($flags & VALIDATE_STRING_RFC3454_D) {
                     $f[] = 'VALIDATE_STRING_RFC3454_D';
                 }
@@ -4222,7 +3557,7 @@ class Validate
                 $ret = true;
                 break;
             default:
-                trigger_error('Report this error.', E_USER_ERROR);
+                throw new LogicException('Validate: unexpected validator ID in spec check. Report this error.');
         }
         if (!$ret) {
             $this->specWarning(
@@ -4252,14 +3587,23 @@ class Validate
         if ($flags & VALIDATE_FLAG_EMPTY_TO_DEFAULT) {
             $f[] = 'VALIDATE_FLAG_EMPTY_TO_DEFAULT';
         }
+        if ($flags & VALIDATE_FLAG_NULL) {
+            $f[] = 'VALIDATE_FLAG_NULL';
+        }
         if ($flags & VALIDATE_FLAG_ARRAY) {
             $f[] = 'VALIDATE_FLAG_ARRAY';
+        }
+        if ($flags & VALIDATE_FLAG_ARRAY_RECURSIVE) {
+            $f[] = 'VALIDATE_FLAG_ARRAY_RECURSIVE';
         }
         if ($flags & VALIDATE_FLAG_ARRAY_KEY_ALNUM) {
             $f[] = 'VALIDATE_FLAG_ARRAY_KEY_ALNUM';
         }
         if ($flags & VALIDATE_FLAG_WARNING) {
             $f[] = 'VALIDATE_FLAG_WARNING';
+        }
+        if ($flags & VALIDATE_FLAG_NOTICE) {
+            $f[] = 'VALIDATE_FLAG_NOTICE';
         }
         if ($flags & VALIDATE_FLAG_PASSTHRU) {
             $f[] = 'VALIDATE_FLAG_PASSTHRU';
@@ -4287,6 +3631,7 @@ class Validate
             'values', // INT / STRING option. (REGEXP / CALLBACK may use, but not use with them)
             'regexp', // REGEXP option.
             'resource', // RESOURCE option. Required resource type name.
+            'class', // OBJECT option. Required class/interface name.
             'default', // default value for VALIDATE_FLAG_EMPTY_TO_DEFAULT and VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
             'filter', // Filter callback. All validators may have filter.
             'callback', // CALLBACK validator callback.
@@ -4301,7 +3646,7 @@ class Validate
                         // Callback may have any default value
                         continue;
                     }
-                    if (($flags & VALIDATE_FLAG_ARRAY) && !is_array($options[$known]) && !is_callable($options[$known])) {
+                    if (($flags & VALIDATE_FLAG_ARRAY) && !is_array($options[$known])) {
                         $this->specError(
                             [
                                 'message' => $vname.' has invalid "default" option. "default" value must be array with VALIDATE_FLAG_ARRAY.',
@@ -4311,11 +3656,11 @@ class Validate
                         );
                         $ret = false;
                     }
-                    if ($spec[VALIDATE_ID] === VALIDATE_OBJECT && !(is_object($options[$known]) || is_callable($options[$known]))) {
+                    if ($spec[VALIDATE_ID] === VALIDATE_OBJECT && !is_object($options[$known])) {
                         $this->specError(
                             [
                                 'message' => 'VALIDATE_OBJECT has invalid "default" option. "default" value must '.
-                                             'be object or callable returns object for VALIDATE_OBJECT.',
+                                             'be object for VALIDATE_OBJECT.',
                                 'spec'    => $spec,
                                 'flags'   => $str_flags
                             ]
@@ -4333,10 +3678,11 @@ class Validate
                         $ret = false;
                     }
                 }
-                if ($known !== 'default' && $known !== 'values' && !is_scalar($options[$known]) && !is_callable($options[$known])) {
+                if ($known !== 'default' && $known !== 'values' && $known !== 'unicode'
+                    && !is_scalar($options[$known]) && !is_callable($options[$known])) {
                     $this->specError(
                         [
-                            'message' => $vname.' has invalid "'.$known.'" option. Option value must be scalar or callable returns proper default value.',
+                            'message' => $vname.' has invalid "'.$known.'" option. Option value must be scalar or callable.',
                             'spec'    => $spec,
                             'flags'   => $str_flags
                         ]
@@ -4420,9 +3766,7 @@ class Validate
                     // would make bccomp() throw instead of reporting the
                     // broken spec.
                     $int_minmax_ok = function ($v) {
-                        return is_int($v)
-                               || (is_string($v) && strlen($v)
-                                   && strlen($v) === strspn($v, '-1234567890'));
+                        return is_int($v) || (is_string($v) && preg_match('/\A-?[0-9]+\z/', $v));
                     };
                     if (!(isset($options['min']) && isset($options['max']))) {
                         $this->specError(
@@ -4465,18 +3809,25 @@ class Validate
                         ]
                     );
                     $ret = false;
-                } elseif (!($flags & VALIDATE_FLOAT_AS_STRING)) {
-                    if ($options['min'] > $options['max']) {
-                        $this->specError(
-                            [
-                                'message' => $vname.' must have valid "min" and "max" options. min: "'
-                                            .$options['min'].'" max:"'.$options['max'].'"',
-                                'spec'    => $spec,
-                                'flags'   => $str_flags
-                            ]
-                        );
-                        $ret = false;
-                    }
+                } elseif (!is_numeric($options['min']) || !is_numeric($options['max'])) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' "min" and "max" options must be numeric.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
+                } elseif ($options['min'] > $options['max']) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' must have valid "min" and "max" options. min: "'
+                                        .$options['min'].'" max:"'.$options['max'].'"',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
                 }
                 break;
             case VALIDATE_NULL:
@@ -4494,7 +3845,7 @@ class Validate
                 }
                 break;
             default:
-                trigger_error('Report this error.', E_USER_ERROR);
+                throw new LogicException('Validate: unexpected validator ID in spec check. Report this error.');
         }
 
         // encoding check
@@ -4611,7 +3962,7 @@ class Validate
                 }
                 break;
             default:
-                trigger_error('Report this error.', E_USER_ERROR);
+                throw new LogicException('Validate: unexpected validator ID in spec check. Report this error.');
         }
 
         // default check
@@ -4629,8 +3980,8 @@ class Validate
                     && !($flags & (VALIDATE_FLAG_EMPTY_TO_DEFAULT | VALIDATE_FLAG_UNDEFINED_TO_DEFAULT))) {
                     $this->specWarning(
                         [
-                            'message' => $vname.' has "default" option, but VALIDATE_FLAGS_EMPTY_TO_DEFAULT '
-                                        .'and/or VALIDATE_UNDEFINED_TO_DEFAULT is not set.',
+                            'message' => $vname.' has "default" option, but VALIDATE_FLAG_EMPTY_TO_DEFAULT '
+                                        .'and/or VALIDATE_FLAG_UNDEFINED_TO_DEFAULT is not set.',
                             'spec'    => $spec,
                             'flags'   => $str_flags
                         ]
@@ -4658,7 +4009,7 @@ class Validate
                 }
                 break;
             default:
-                trigger_error('Report this error.', E_USER_ERROR);
+                throw new LogicException('Validate: unexpected validator ID in spec check. Report this error.');
         }
 
         // callback check
@@ -4716,7 +4067,7 @@ class Validate
                 }
                 break;
             default:
-                trigger_error('Report this error.', E_USER_ERROR);
+                throw new LogicException('Validate: unexpected validator ID in spec check. Report this error.');
         }
 
         // amin/amax/key_callback check
@@ -4741,7 +4092,7 @@ class Validate
                     $ret = false;
                 }
                 if (isset($options['amin']) || isset($options['amax'])) {
-                    if (!is_int($options['amin']) || !is_int($options['amax'])) {
+                    if (!is_int($options['amin'] ?? null) || !is_int($options['amax'] ?? null)) {
                         $this->specError(
                             [
                                 'message' => $vname.'. "amin" and "amax" options must be int.',
@@ -4750,8 +4101,16 @@ class Validate
                             ]
                         );
                         $ret = false;
-                    }
-                    if ($options['amin'] > $options['amax']) {
+                    } elseif ($options['amin'] < 0) {
+                        $this->specError(
+                            [
+                                'message' => $vname.'. "amin" option must not be negative.',
+                                'spec'    => $spec,
+                                'flags'   => $str_flags
+                            ]
+                        );
+                        $ret = false;
+                    } elseif ($options['amin'] > $options['amax']) {
                         $this->specError(
                             [
                                 'message'=> $vname.'. "amin" option is larger than "amax" option.',
@@ -4771,10 +4130,10 @@ class Validate
                         ]
                     );
                 }
-                if (isset($options['key_callback']) && !($flags & VALIDATE_FLAG_ARRAY_KEY_ALNUM)) {
+                if (isset($options['key_callback']) && ($flags & VALIDATE_FLAG_ARRAY_KEY_ALNUM)) {
                     $this->specWarning(
                         [
-                            'message' => $vname.' has VALIDATE_FLAG_ARRAY_KEY_ALNUM flag, but "key_callback" option is defined.',
+                            'message' => $vname.' has VALIDATE_FLAG_ARRAY_KEY_ALNUM flag that has no effect: "key_callback" option is defined.',
                             'spec'    => $spec,
                             'flags'   => $str_flags
                         ]
@@ -4788,6 +4147,16 @@ class Validate
                             'flags'   => $str_flags
                         ]
                     );
+                }
+                if (isset($options['alimit']) && (!is_int($options['alimit']) || $options['alimit'] < ($options['amax'] ?? 0))) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' "alimit" option must be int and not smaller than "amax".',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
                 }
                 if (isset($options['alimit']) && !($flags & VALIDATE_FLAG_ARRAY)) {
                     $this->specWarning(
@@ -4829,7 +4198,7 @@ class Validate
                 }
                 break;
             default:
-                trigger_error('Report this error.', E_USER_ERROR);
+                throw new LogicException('Validate: unexpected validator ID in spec check. Report this error.');
         }
 
         // VALIDATE_*_BINARY / VALIDATE_FLAG_RAW / VALIDATE_*_SYMBOL / VALIDATE_*_CRLF_MIXED
@@ -4901,7 +4270,7 @@ class Validate
             case VALIDATE_OBJECT:
                 break;
             default:
-                trigger_error('Report this error.', E_USER_ERROR);
+                throw new LogicException('Validate: unexpected validator ID in spec check. Report this error.');
         }
 
         // Misc checks
@@ -5045,7 +4414,7 @@ class Validate
                             $ret = false;
                             break;
                         }
-                        if (strlen($k) !== strspn($k, '-1234567890')) {
+                        if (!is_int($k)) {
                             $this->specError(
                                 [
                                     'message' => $vname.' "values" option key must be integer.',
@@ -5085,9 +4454,49 @@ class Validate
                 }
                 break;
             case VALIDATE_OBJECT:
+                if (isset($options['class']) && (!is_string($options['class']) || $options['class'] === '')) {
+                    $this->specError(
+                        [
+                            'message' => $vname.' "class" option must be a non-empty class/interface name.',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        ]
+                    );
+                    $ret = false;
+                }
                 break;
             default:
-                trigger_error('Report this error.', E_USER_ERROR);
+                throw new LogicException('Validate: unexpected validator ID in spec check. Report this error.');
+        }
+
+        // "unicode" code point overrides
+        if (isset($options['unicode'])) {
+            $unicode_ok = is_array($options['unicode']);
+            foreach ($unicode_ok ? $options['unicode'] : [] as $cp => $allow) {
+                if (!is_int($cp) || $cp < 0x80 || $cp > 0x10FFFF || !is_bool($allow)) {
+                    $unicode_ok = false;
+                    break;
+                }
+            }
+            if (!$unicode_ok) {
+                $this->specError(
+                    [
+                        'message' => $vname.' "unicode" option must be an array of [code point (0x80-0x10FFFF) => bool].',
+                        'spec'    => $spec,
+                        'flags'   => $str_flags
+                    ]
+                );
+                $ret = false;
+            } elseif (!in_array($spec[VALIDATE_ID], [VALIDATE_STRING, VALIDATE_REGEXP, VALIDATE_CALLBACK], true)
+                      || !($flags & VALIDATE_STRING_MB)) {
+                $this->specWarning(
+                    [
+                        'message' => $vname.' has "unicode" option that has no effect. It needs a string validator with the _MB flag.',
+                        'spec'    => $spec,
+                        'flags'   => $str_flags
+                    ]
+                );
+            }
         }
 
         return $ret;

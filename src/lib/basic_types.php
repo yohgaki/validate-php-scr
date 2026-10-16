@@ -54,7 +54,7 @@ $basicTypes['uint16'] = [
 $basicTypes['int32'] = [
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    ['min' => -2147483648, 'max' => 2147483647]
+    ['min' => -2147483647 - 1, 'max' => 2147483647] // -2147483648 written as a literal is a float on 32-bit builds.
 ];
 
 $basicTypes['uint32'] = [
@@ -104,11 +104,11 @@ $basicTypes['uint128'] = [
 // represented natively. Flip the affected specs to AS_STRING mode so the
 // validator compares numeric strings without overflow.
 if (PHP_INT_SIZE === 4) {
-    $basicTypes['uint32'][2] = VALIDATE_INT_AS_STRING;
-    $basicTypes['int53'][2] = VALIDATE_INT_AS_STRING;
-    $basicTypes['uint53'][2] = VALIDATE_INT_AS_STRING;
-    $basicTypes['int64'][2] = VALIDATE_INT_AS_STRING;
-    $basicTypes['uint64'][2] = VALIDATE_INT_AS_STRING;
+    $basicTypes['uint32'][VALIDATE_FLAGS] |= VALIDATE_INT_AS_STRING;
+    $basicTypes['int53'][VALIDATE_FLAGS] |= VALIDATE_INT_AS_STRING;
+    $basicTypes['uint53'][VALIDATE_FLAGS] |= VALIDATE_INT_AS_STRING;
+    $basicTypes['int64'][VALIDATE_FLAGS] |= VALIDATE_INT_AS_STRING;
+    $basicTypes['uint64'][VALIDATE_FLAGS] |= VALIDATE_INT_AS_STRING;
 }
 
 // Boolean — accepts PHP true/false. Add VALIDATE_BOOL_* flags below to also
@@ -143,8 +143,9 @@ $basicTypes['float_pos'] = [
 // ===========================================================================
 
 // Password: alnum + ASCII symbols + spaces. 8..768 bytes.
-// Range chosen for argon2/bcrypt input safety (768 keeps single-block bcrypt
-// inputs while leaving room for passphrases).
+// 768 leaves room for passphrases. NOTE: bcrypt (PASSWORD_BCRYPT /
+// PASSWORD_DEFAULT) only uses the first 72 bytes; lower 'max' to 72 or use
+// PASSWORD_ARGON2ID if longer inputs must count in full.
 $basicTypes['password'] = [
     VALIDATE_STRING,
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_SYMBOL | VALIDATE_STRING_SPACE,
@@ -926,19 +927,25 @@ $basicTypes['ipv4'] = [
     [
         'min' => 7, 'max' => 15,
         'ascii' => '0123456789.',
-        'regexp' => '/\A((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\z/'
+        // Dotted decimal without leading zeros ("010" would be octal for inet_aton()).
+        'regexp' => '/\A((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\z/'
     ]
 ];
 
 $basicTypes['ipv6'] = [
-    VALIDATE_REGEXP,
+    VALIDATE_CALLBACK,
     VALIDATE_FLAG_NONE,
     [
-        'min' => 3, 'max' => 45, // Includes IPv4 mapped IPv6. Otherwise, max => 39
+        'min' => 2, 'max' => 45, // "::" .. IPv4-embedded forms. Zone IDs ("%eth0") are not accepted.
         'ascii' => '0123456789abcdefABCDEF:.',
-        // https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
-        // phpcs:ignore Generic.Files.LineLength.TooLong
-        'regexp' => '/\A(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\z/'
+        'callback' => function ($ctx, &$result, $input) {
+            if (!is_string($input) || filter_var($input, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) === false) {
+                validate_error($ctx, 'Invalid IPv6 address.');
+                return false;
+            }
+            $result = $input;
+            return true;
+        },
     ]
 ];
 
@@ -949,7 +956,7 @@ $basicTypes['cidr4'] = [
     [
         'min' => 9, 'max' => 18,
         'ascii' => '0123456789./',
-        'regexp' => '/\A((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)\/(3[0-2]|[12]?\d)\z/',
+        'regexp' => '/\A((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\/(3[0-2]|[12]?\d)\z/',
     ]
 ];
 
@@ -960,18 +967,28 @@ $basicTypes['cidr4'] = [
 // 'hostname' : single label only, no dot, format only.
 // 'domain'   : multi-label, format only (no DNS lookup).
 // ---------------------------------------------------------------------------
+// Live DNS check shared by 'fqdn' and 'active_url'. The trailing dot makes
+// the name absolute (no resolver search-list expansion), and explicit record
+// types avoid DNS_ANY, which RFC 8482 servers answer with synthetic records.
+$dnsResolvable = function ($host) {
+    return (bool)@dns_get_record(rtrim($host, '.').'.', DNS_A | DNS_AAAA | DNS_CNAME | DNS_MX);
+};
+
 $basicTypes['fqdn'] = [
     VALIDATE_CALLBACK,
     VALIDATE_STRING_ALNUM,
     [
         'min' => 3, 'max' => 253,
         'ascii' => '.-_',
-        'callback' => function ($ctx, &$result, $input) {
-            if (!strpos($input, '.') || $input[strlen($input)-1] === '.') {
+        'callback' => function ($ctx, &$result, $input) use ($dnsResolvable) {
+            // Labels: 1-63 chars, no leading/trailing '-'; at least two labels.
+            if (!is_string($input)
+                || !preg_match('/\A(?:[A-Za-z0-9_](?:[A-Za-z0-9_-]{0,61}[A-Za-z0-9_])?\.)+'
+                               .'[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\z/', $input)) {
                 validate_error($ctx, 'Invalid FQDN');
                 return false;
             }
-            if (!dns_get_record($input)) {
+            if (!$dnsResolvable($input)) {
                 validate_error($ctx, 'Cannot resolve by DNS');
                 return false;
             }
@@ -980,13 +997,14 @@ $basicTypes['fqdn'] = [
         }]
 ];
 
-// Hostname only
+// Hostname only — one RFC 1123 label: alnum and '-', not at either end.
 $basicTypes['hostname'] = [
-    VALIDATE_STRING,
-    VALIDATE_STRING_ALNUM,
+    VALIDATE_REGEXP,
+    VALIDATE_REGEXP_ALNUM,
     [
         'min' => 1, 'max' => 63,
-        'ascii' => '-_',
+        'ascii' => '-',
+        'regexp' => '/\A[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\z/',
     ]
 ];
 
@@ -1039,11 +1057,11 @@ $basicTypes['slug'] = [
 // ===========================================================================
 $vtrim = function ($ctx, $input, &$error) {
     assert($ctx instanceof Validate);
-    if (is_array($input)) {
+    if (!is_scalar($input)) {
         $error = 'HTTP Header Filter error: HTTP header must be string.';
-        return;
+        return null;
     }
-    return trim($input);
+    return trim((string)$input, " \t"); // OWS is SP / HTAB only; CR, LF, NUL stay and are rejected.
 };
 
 // HTTP headers may contain SYMBOL characters by RFC, so the character-set
@@ -1238,11 +1256,17 @@ $basicTypes['header32ku'] = [
 // ---------------------------------------------------------------------------
 $basicTypes['json'] = [
     VALIDATE_CALLBACK,
+    // JSON whitespace may be any of SP, HTAB, LF, CR, so line endings are not
+    // forced to strict CRLF (VALIDATE_CALLBACK_CRLF_MIXED).
     VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL | VALIDATE_CALLBACK_SPACE
-     | VALIDATE_CALLBACK_CRLF | VALIDATE_CALLBACK_TAB | VALIDATE_CALLBACK_MB,
+     | VALIDATE_CALLBACK_CRLF_MIXED | VALIDATE_CALLBACK_TAB | VALIDATE_CALLBACK_MB,
     [
         'min' => 2, 'max' => 65535,
         'callback' => function ($ctx, &$result, $input) {
+            if (!is_string($input)) {
+                validate_error($ctx, 'Invalid JSON: input must be a string.');
+                return false;
+            }
             json_decode($input);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 validate_error($ctx, 'Invalid JSON: ' . json_last_error_msg());
@@ -1308,15 +1332,21 @@ $basicTypes['hex_color'] = [
     ]
 ];
 
-// URL — format-only check via filter_var(FILTER_VALIDATE_URL). Use 'active_url'
-// when you also need the host to resolve.
+// URL — format check via filter_var(FILTER_VALIDATE_URL), restricted to the
+// http/https schemes (FILTER_VALIDATE_URL alone accepts "javascript:",
+// "file:", ... which are unsafe in links). Use 'active_url' when you also
+// need the host to resolve. Override 'callback' to allow other schemes.
+$httpUrlOk = function ($input) {
+    return is_string($input) && filter_var($input, FILTER_VALIDATE_URL) !== false
+           && in_array(strtolower((string)parse_url($input, PHP_URL_SCHEME)), ['http', 'https'], true);
+};
 $basicTypes['url'] = [
     VALIDATE_CALLBACK,
     VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
     [
         'min' => 7, 'max' => 2048,
-        'callback' => function ($ctx, &$result, $input) {
-            if (!filter_var($input, FILTER_VALIDATE_URL)) {
+        'callback' => function ($ctx, &$result, $input) use ($httpUrlOk) {
+            if (!$httpUrlOk($input)) {
                 validate_error($ctx, 'Invalid URL format.');
                 return false;
             }
@@ -1332,13 +1362,13 @@ $basicTypes['active_url'] = [
     VALIDATE_CALLBACK_ALNUM | VALIDATE_CALLBACK_SYMBOL,
     [
         'min' => 7, 'max' => 2048,
-        'callback' => function ($ctx, &$result, $input) {
-            if (!filter_var($input, FILTER_VALIDATE_URL)) {
+        'callback' => function ($ctx, &$result, $input) use ($httpUrlOk, $dnsResolvable) {
+            if (!$httpUrlOk($input)) {
                 validate_error($ctx, 'Invalid URL format.');
                 return false;
             }
             $host = parse_url($input, PHP_URL_HOST);
-            if (!$host || !dns_get_record($host)) {
+            if (!$host || !$dnsResolvable($host)) {
                 validate_error($ctx, 'Cannot resolve URL host by DNS.');
                 return false;
             }
@@ -1525,7 +1555,9 @@ $basicTypes['email_dns'] = [
             }
             $at = strrpos($input, '@');
             $domain = $at === false ? '' : substr($input, $at + 1);
-            if ($domain === '' || (!checkdnsrr($domain, 'MX') && !checkdnsrr($domain, 'A'))) {
+            // Trailing dot: absolute name, no resolver search-list expansion.
+            if ($domain === '' || (!checkdnsrr($domain.'.', 'MX') && !checkdnsrr($domain.'.', 'A')
+                                   && !checkdnsrr($domain.'.', 'AAAA'))) {
                 validate_error($ctx, 'Email domain does not resolve.');
                 return false;
             }
@@ -1534,3 +1566,7 @@ $basicTypes['email_dns'] = [
         },
     ]
 ];
+
+// Helper closures were captured by the specs above; keep them out of the
+// including scope.
+unset($dnsResolvable, $httpUrlOk);

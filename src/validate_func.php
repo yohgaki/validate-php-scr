@@ -49,6 +49,8 @@ function validate_init($root_name = 'ROOT')
  * after the call $inputs holds only the leftover (unvalidated) input. This
  * lets a caller validate a request in multiple stages or detect unexpected
  * extra parameters. Pass VALIDATE_OPT_KEEP_INPUTS to keep $inputs untouched.
+ * Input keys a VALIDATE_ARRAY spec does not declare are validation errors
+ * unless VALIDATE_OPT_UNVALIDATED is set (needed for multi-stage validation).
  *
  * @param Validate|null $ctx       Validate context. If null, a fresh one is created and assigned back.
  * @param mixed         $inputs    Scalar or array of inputs. Validated elements are removed by reference.
@@ -56,33 +58,20 @@ function validate_init($root_name = 'ROOT')
  * @param int           $func_opts Bitmask of VALIDATE_OPT_* flags controlling function behavior.
  *
  * @return mixed Validated value(s), or null on failure when exceptions are disabled.
+ *
+ * @throws InvalidArgumentException      Bad argument ($ctx, $specs, $func_opts).
+ * @throws ValidateInvalidSpecException  VALIDATE_OPT_CHECK_SPEC found spec errors.
+ * @throws ValidateInvalidValueException Validation failed (unless VALIDATE_OPT_DISABLE_EXCEPTION).
  */
 function validate(&$ctx, &$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
 {
     if (!(is_null($ctx) || ($ctx instanceof Validate))) {
         throw new InvalidArgumentException('1st parameter is not a Validate context.');
     }
-    if (!is_array($specs)) {
-        throw new InvalidArgumentException('Spec must be array.');
-    } elseif (($func_opts & VALIDATE_OPT_CHECK_SPEC)
-         && !validate_spec($specs, $unvalidatedSpecs, $specCheckCtx)) {
-        print_r($specCheckCtx->getSystemErrors());
-        throw new InvalidArgumentException('Invalid validation spec detected. Fix spec errors first.');
-    }
-    if (!is_int($func_opts)) {
-        throw new InvalidArgumentException('Function option must be int.');
-    }
-
-    //assert(validate_spec($specs));
-
     if (!$ctx) {
         $ctx = new Validate();
     }
-
-    $ctx->validate_params_checked = true;
-    $validated = $ctx->validate($inputs, $specs, $func_opts);
-
-    return $validated;
+    return $ctx->validate($inputs, $specs, $func_opts);
 }
 
 
@@ -102,10 +91,11 @@ function validate_get_status($ctx)
 
 
 /**
- * Set the PHP error level used when a hard validation error is dispatched.
+ * Set the PHP error level used by VALIDATE_OPT_RAISE_ERROR (default E_USER_WARNING).
  *
  * @param Validate $ctx   The Validate context.
- * @param int      $level Error level constant. One of E_USER_ERROR / E_USER_WARNING / E_USER_NOTICE.
+ * @param int      $level E_USER_WARNING / E_USER_NOTICE. E_USER_ERROR is still
+ *                        accepted, but PHP 8.4+ deprecates passing it to trigger_error().
  *
  * @return null
  */
@@ -201,10 +191,12 @@ function validate_get_user_errors($ctx)
 /**
  * Set the error-logger callback. The logger is only invoked when
  * VALIDATE_OPT_LOG_ERROR is set in $func_opts on the validate() call.
- * Default behavior (with no custom logger registered) is trigger_error().
+ * Without a registered logger, VALIDATE_OPT_LOG_ERROR raises an
+ * E_USER_WARNING ("Validate logger function is not registered") per error.
  *
  * @param Validate $ctx         The Validate context.
- * @param callable $logger_func Callback taking a single string argument (the error message).
+ * @param callable $logger_func function (Validate $ctx, array $error): void — $error is the
+ *                              structured record (same shape as validate_get_system_errors() entries).
  *
  * @return null
  */
@@ -252,22 +244,19 @@ function validate_set_logger_function($ctx, $logger_func)
  *
  * @param array         $specs       Validation spec array to check.
  * @param array|null    $unvalidated Output. Receives entries from $specs that could not be checked.
- * @param Validate|null $ctx         Optional context. A fresh one is created if null.
+ * @param Validate|null $ctx         Optional context. A fresh one is created if null. Spec
+ *                                   errors are read with validate_get_system_errors($ctx).
  *
  * @return bool true if the spec is well-formed, false otherwise.
+ *
+ * @throws InvalidArgumentException $specs is not an array or $ctx is not a Validate.
  */
 function validate_spec($specs, &$unvalidated = null, &$ctx = null)
 {
-    if (!is_array($specs)) {
-        throw new InvalidArgumentException('1st parameter must be validation spec array.');
-    }
     if (is_null($ctx)) {
         $ctx = new Validate;
     } elseif (!($ctx instanceof Validate)) {
         throw new InvalidArgumentException('3rd parameter must be instance of Validate object.');
     }
-    $ctx->spec_params_checked = true;
-    $ret = $ctx->validateSpec($specs, $unvalidated, $ctx);
-    $ctx->spec_params_checked = false;
-    return $ret;
+    return $ctx->validateSpec($specs, $unvalidated, $ctx);
 }

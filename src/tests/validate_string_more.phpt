@@ -81,7 +81,7 @@ string(3) "red"
 bool(true)
 string(93) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined option "values".' val: 'green'"
 bool(false)
-string(115) "param: 'ROOT' error: 'VALIDATE_STRING: Array is passed for option "values" validation.' val: 'a:1:{i:0;s:3:"red";}'"
+string(115) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'a:1:{i:0;s:3:"red";}'"
 bool(false)
 
 **** bool input is rejected ****

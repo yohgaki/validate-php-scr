@@ -90,7 +90,7 @@ string(98) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is pas
 bool(false)
 string(111) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
 bool(false)
-string(41) "Serialization of 'Closure' is not allowed"
+string(107) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.' val: 'object(Closure)'"
 bool(false)
 string(64) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: ''"
 bool(false)
@@ -114,7 +114,7 @@ string(100) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is 
 bool(false)
 string(113) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
 bool(false)
-string(41) "Serialization of 'Closure' is not allowed"
+string(109) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.' val: 'object(Closure)'"
 bool(false)
 string(61) "param: 'ROOT' error: 'VALIDATE_FLOAT: Empty input.' val: 'N;'"
 bool(false)
@@ -138,7 +138,7 @@ string(101) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is
 bool(false)
 string(114) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
 bool(false)
-string(41) "Serialization of 'Closure' is not allowed"
+string(110) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'object(Closure)'"
 bool(false)
 string(90) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "3"' val: '0'"
 bool(false)
@@ -158,7 +158,7 @@ string(90) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of range. min: 2 max
 bool(false)
 string(92) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: 'O:8:"stdClass":0:{}'"
 bool(false)
-string(41) "Serialization of 'Closure' is not allowed"
+string(88) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: 'object(Closure)'"
 bool(false)
 string(74) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: '0'"
 bool(false)

@@ -43,6 +43,10 @@ test:php8.4:
   extends: .test
   image: php:8.4-cli
 
+test:php8.5:
+  extends: .test
+  image: php:8.5-cli
+
 # ── lint ─────────────────────────────────────────────────────────────────────
 lint:phpcs:
   stage: lint

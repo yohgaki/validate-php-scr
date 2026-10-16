@@ -548,11 +548,7 @@ array(4) {
 bool(false)
 
 ** Validate object **
-object(Validate)#2 (16) {
-  ["validate_params_checked"]=>
-  bool(false)
-  ["spec_params_checked"]=>
-  bool(false)
+object(Validate)#2 (15) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -575,6 +571,8 @@ object(Validate)#2 (16) {
       [3]=>
       bool(false)
     }
+    ["value"]=>
+    string(1) "f"
     ["defined"]=>
     bool(true)
     ["spec"]=>
@@ -593,11 +591,9 @@ object(Validate)#2 (16) {
     }
     ["func_opts"]=>
     int(2)
-    ["value"]=>
-    string(1) "f"
   }
   ["error_level":"Validate":private]=>
-  int(256)
+  int(512)
   ["errors":"Validate":private]=>
   array(2) {
     ["ROOT"]=>
@@ -1051,8 +1047,10 @@ object(Validate)#2 (16) {
   }
   ["status":"Validate":private]=>
   bool(false)
-  ["value_validation":"Validate":private]=>
-  bool(true)
+  ["silent":"Validate":private]=>
+  int(0)
+  ["silentFailed":"Validate":private]=>
+  bool(false)
   ["loggerFunction":"Validate":private]=>
   NULL
 }
@@ -1070,11 +1068,7 @@ array(2) {
 bool(true)
 
 ** Validate object **
-object(Validate)#2 (16) {
-  ["validate_params_checked"]=>
-  bool(false)
-  ["spec_params_checked"]=>
-  bool(false)
+object(Validate)#2 (15) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -1087,6 +1081,13 @@ object(Validate)#2 (16) {
     ["param"]=>
     string(5) "debug"
     ["orig_value"]=>
+    array(2) {
+      [0]=>
+      string(1) "t"
+      [1]=>
+      string(1) "f"
+    }
+    ["value"]=>
     array(2) {
       [0]=>
       string(1) "t"
@@ -1111,16 +1112,9 @@ object(Validate)#2 (16) {
     }
     ["func_opts"]=>
     int(2)
-    ["value"]=>
-    array(2) {
-      [0]=>
-      string(1) "t"
-      [1]=>
-      string(1) "f"
-    }
   }
   ["error_level":"Validate":private]=>
-  int(256)
+  int(512)
   ["errors":"Validate":private]=>
   array(2) {
     ["ROOT"]=>
@@ -1570,8 +1564,10 @@ object(Validate)#2 (16) {
   }
   ["status":"Validate":private]=>
   bool(true)
-  ["value_validation":"Validate":private]=>
-  bool(true)
+  ["silent":"Validate":private]=>
+  int(0)
+  ["silentFailed":"Validate":private]=>
+  bool(false)
   ["loggerFunction":"Validate":private]=>
   NULL
 }
@@ -1595,11 +1591,7 @@ array(4) {
 bool(true)
 
 ** Validate object **
-object(Validate)#2 (16) {
-  ["validate_params_checked"]=>
-  bool(false)
-  ["spec_params_checked"]=>
-  bool(false)
+object(Validate)#2 (15) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -1612,6 +1604,17 @@ object(Validate)#2 (16) {
     ["param"]=>
     string(5) "debug"
     ["orig_value"]=>
+    array(4) {
+      [0]=>
+      string(1) "t"
+      [1]=>
+      string(1) "f"
+      [2]=>
+      bool(true)
+      [3]=>
+      bool(false)
+    }
+    ["value"]=>
     array(4) {
       [0]=>
       string(1) "t"
@@ -1640,20 +1643,9 @@ object(Validate)#2 (16) {
     }
     ["func_opts"]=>
     int(3)
-    ["value"]=>
-    array(4) {
-      [0]=>
-      string(1) "t"
-      [1]=>
-      string(1) "f"
-      [2]=>
-      bool(true)
-      [3]=>
-      bool(false)
-    }
   }
   ["error_level":"Validate":private]=>
-  int(256)
+  int(512)
   ["errors":"Validate":private]=>
   array(2) {
     ["ROOT"]=>
@@ -2107,8 +2099,10 @@ object(Validate)#2 (16) {
   }
   ["status":"Validate":private]=>
   bool(true)
-  ["value_validation":"Validate":private]=>
-  bool(true)
+  ["silent":"Validate":private]=>
+  int(0)
+  ["silentFailed":"Validate":private]=>
+  bool(false)
   ["loggerFunction":"Validate":private]=>
   NULL
 }
@@ -2130,11 +2124,7 @@ array(4) {
 bool(true)
 
 ** Validate context **
-object(Validate)#2 (16) {
-  ["validate_params_checked"]=>
-  bool(false)
-  ["spec_params_checked"]=>
-  bool(false)
+object(Validate)#2 (15) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -2147,6 +2137,17 @@ object(Validate)#2 (16) {
     ["param"]=>
     string(5) "debug"
     ["orig_value"]=>
+    array(4) {
+      [0]=>
+      string(1) "t"
+      [1]=>
+      string(1) "f"
+      [2]=>
+      bool(true)
+      [3]=>
+      bool(false)
+    }
+    ["value"]=>
     array(4) {
       [0]=>
       string(1) "t"
@@ -2175,20 +2176,9 @@ object(Validate)#2 (16) {
     }
     ["func_opts"]=>
     int(2)
-    ["value"]=>
-    array(4) {
-      [0]=>
-      string(1) "t"
-      [1]=>
-      string(1) "f"
-      [2]=>
-      bool(true)
-      [3]=>
-      bool(false)
-    }
   }
   ["error_level":"Validate":private]=>
-  int(256)
+  int(512)
   ["errors":"Validate":private]=>
   array(2) {
     ["ROOT"]=>
@@ -2642,8 +2632,10 @@ object(Validate)#2 (16) {
   }
   ["status":"Validate":private]=>
   bool(true)
-  ["value_validation":"Validate":private]=>
-  bool(true)
+  ["silent":"Validate":private]=>
+  int(0)
+  ["silentFailed":"Validate":private]=>
+  bool(false)
   ["loggerFunction":"Validate":private]=>
   NULL
 }
@@ -2665,11 +2657,7 @@ array(4) {
 bool(true)
 
 ** Validate object **
-object(Validate)#2 (16) {
-  ["validate_params_checked"]=>
-  bool(false)
-  ["spec_params_checked"]=>
-  bool(false)
+object(Validate)#2 (15) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -2692,24 +2680,6 @@ object(Validate)#2 (16) {
       [3]=>
       bool(false)
     }
-    ["defined"]=>
-    bool(true)
-    ["spec"]=>
-    array(3) {
-      [0]=>
-      int(2)
-      [1]=>
-      int(276824068)
-      [2]=>
-      array(2) {
-        ["amin"]=>
-        int(1)
-        ["amax"]=>
-        int(4)
-      }
-    }
-    ["func_opts"]=>
-    int(3)
     ["value"]=>
     array(4) {
       [0]=>
@@ -2721,13 +2691,31 @@ object(Validate)#2 (16) {
       [3]=>
       bool(false)
     }
+    ["defined"]=>
+    bool(true)
+    ["spec"]=>
+    array(3) {
+      [0]=>
+      int(2)
+      [1]=>
+      int(8388612)
+      [2]=>
+      array(2) {
+        ["amin"]=>
+        int(1)
+        ["amax"]=>
+        int(4)
+      }
+    }
+    ["func_opts"]=>
+    int(3)
   }
   ["error_level":"Validate":private]=>
-  int(256)
+  int(512)
   ["errors":"Validate":private]=>
   array(2) {
     ["ROOT"]=>
-    array(12) {
+    array(10) {
       [0]=>
       array(8) {
         ["type"]=>
@@ -3112,92 +3100,6 @@ object(Validate)#2 (16) {
           bool(false)
         }
       }
-      [10]=>
-      array(8) {
-        ["type"]=>
-        int(1)
-        ["param"]=>
-        array(1) {
-          [0]=>
-          string(4) "ROOT"
-        }
-        ["defined"]=>
-        bool(true)
-        ["message"]=>
-        string(28) "VALIDATE_BOOL: Invalid bool."
-        ["spec"]=>
-        array(3) {
-          [0]=>
-          int(2)
-          [1]=>
-          int(276824064)
-          [2]=>
-          array(2) {
-            ["amin"]=>
-            int(1)
-            ["amax"]=>
-            int(4)
-          }
-        }
-        ["func_opts"]=>
-        int(3)
-        ["value"]=>
-        string(1) "t"
-        ["orig_value"]=>
-        array(4) {
-          [0]=>
-          string(1) "t"
-          [1]=>
-          string(1) "f"
-          [2]=>
-          bool(true)
-          [3]=>
-          bool(false)
-        }
-      }
-      [11]=>
-      array(8) {
-        ["type"]=>
-        int(1)
-        ["param"]=>
-        array(1) {
-          [0]=>
-          string(4) "ROOT"
-        }
-        ["defined"]=>
-        bool(true)
-        ["message"]=>
-        string(28) "VALIDATE_BOOL: Invalid bool."
-        ["spec"]=>
-        array(3) {
-          [0]=>
-          int(2)
-          [1]=>
-          int(276824064)
-          [2]=>
-          array(2) {
-            ["amin"]=>
-            int(1)
-            ["amax"]=>
-            int(4)
-          }
-        }
-        ["func_opts"]=>
-        int(3)
-        ["value"]=>
-        string(1) "f"
-        ["orig_value"]=>
-        array(4) {
-          [0]=>
-          string(1) "t"
-          [1]=>
-          string(1) "f"
-          [2]=>
-          bool(true)
-          [3]=>
-          bool(false)
-        }
-      }
     }
     ["debug"]=>
     array(1) {
@@ -3263,8 +3165,10 @@ object(Validate)#2 (16) {
   }
   ["status":"Validate":private]=>
   bool(true)
-  ["value_validation":"Validate":private]=>
-  bool(true)
+  ["silent":"Validate":private]=>
+  int(0)
+  ["silentFailed":"Validate":private]=>
+  bool(false)
   ["loggerFunction":"Validate":private]=>
   NULL
 }

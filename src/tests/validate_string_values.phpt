@@ -3,7 +3,6 @@ validate() STRING validation with "values" option.
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
-if (!extension_loaded('GMP')) die('skip no GMP');
 if (!class_exists("Validate")) die("skip");
 ?>
 --INI--
@@ -63,5 +62,5 @@ string(89) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined optio
 bool(false)
 string(0) ""
 bool(true)
-string(118) "param: 'ROOT' error: 'VALIDATE_STRING: Array is passed for option "values" validation.' val: 'a:1:{i:0;s:6:"scalar";}'"
+string(118) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'a:1:{i:0;s:6:"scalar";}'"
 bool(false)

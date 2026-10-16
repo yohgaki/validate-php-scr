@@ -34,7 +34,9 @@ $spec1 = [
 
 // validate() removes the values it consumed from $request_headers_orig,
 // leaving only the unvalidated (unknown) headers behind.
-$request_headers = validate($ctx, $request_headers_orig, $spec1);
+// VALIDATE_OPT_UNVALIDATED: unknown headers are not an error here because
+// stage 2 validates every one of them.
+$request_headers = validate($ctx, $request_headers_orig, $spec1, VALIDATE_OPT_CHECK_SPEC | VALIDATE_OPT_UNVALIDATED);
 
 // Stage 2: catch-all spec for the remaining headers.
 // VALIDATE_FLAG_ARRAY applies $basicTypes['header512'] to each element.

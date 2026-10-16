@@ -29,8 +29,8 @@ $email = [
     'error_message'=>'Please enter a valid email address. We only accept addresses with a DNS MX record.',
     'callback'=> function($ctx, &$result, $input) {     // Custom rule in plain PHP.
         $parts = explode('@', $input);
-        if (count($parts) > 2) {         // Character set, min, and max are already validated.
-            $err =  "Only one '@' is allowed."; // This could be an i18n function for multilingual sites.
+        if (count($parts) !== 2 || $parts[0] === '' || $parts[1] === '') {         // Character set, min, and max are already validated.
+            $err =  "Exactly one '@' is required."; // This could be an i18n function for multilingual sites.
             validate_error($ctx, $err);
             return false;
         }

@@ -47,7 +47,8 @@ $spec = [
 ];
 
 try {
-	var_dump(validate($ctx, $values, $spec), $ctx->getStatus(), $ctx->getValidated());
+	// 'foo' is not declared: VALIDATE_OPT_UNVALIDATED allows the leftover.
+	var_dump(validate($ctx, $values, $spec, VALIDATE_OPT_CHECK_SPEC | VALIDATE_OPT_UNVALIDATED), $ctx->getStatus(), $ctx->getValidated());
 } catch (Exception $e) {
 	var_dump($e->getMessage());
 }
@@ -87,7 +88,7 @@ $spec = [
 try {
 	$ctx = validate_init();
 	validate_set_error_level($ctx, E_USER_WARNING);
-	var_dump(validate($ctx, $values, $spec, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_RAISE_ERROR),
+	var_dump(validate($ctx, $values, $spec, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_RAISE_ERROR | VALIDATE_OPT_UNVALIDATED),
 			 $ctx->getStatus(), $ctx->getValidated());
 } catch (Exception $e) {
 	var_dump($e->getMessage());

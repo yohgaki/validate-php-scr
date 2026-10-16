@@ -285,6 +285,10 @@ Array
             [undefined_to_default] => 0
         )
 
+    [HEADER] => Array
+        (
+        )
+
 )
 
 Unvalidated values $the_input:
@@ -304,10 +308,6 @@ Array
                     [5] => 6
                 )
 
-        )
-
-    [HEADER] => Array
-        (
         )
 
     [GET] => Array

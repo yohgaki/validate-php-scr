@@ -1,10 +1,11 @@
 # How to test
 
-Get PHP source code. There is "run-tests.php" in source root.
-Execute tests like:
+"run-tests.php" (borrowed from PHP's own test suite) is in this directory.
+Execute tests from here like:
 
 ```bash
-$ /path/to/run-tests.php -p /path/to/php-cli/binary/php --show-diff tests
+$ cd src
+$ php run-tests.php -p $(which php) --show-diff tests
 ```
 
 **Note: Some distribution's, e.g. Fedora, PHP CLI binary does not have

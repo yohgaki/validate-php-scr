@@ -123,7 +123,6 @@ filter not callable: FAIL
   error: VALIDATE_STRING "filter" option is not callable.
 key_callback not callable: FAIL
   error: VALIDATE_STRING "key_callback" option is not callable.
-  warning: VALIDATE_STRING has VALIDATE_FLAG_ARRAY_KEY_ALNUM flag, but "key_callback" option is defined.
 BOOL no format flags: OK
   warning: VALIDATE_BOOL has no boolean format flags. No value can be accepted.
 ascii non-ASCII: FAIL

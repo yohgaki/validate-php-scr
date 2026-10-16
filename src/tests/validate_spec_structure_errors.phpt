@@ -83,7 +83,6 @@ ERROR: Validator ID must be valid int.
 == FLAGS missing (options present) ==
 bool(false)
 ERROR: Validator Flag(int) is missing.
-ERROR: VALIDATE_INT: Too few elements. Spec must have 3 elements.
 
 == OPTIONS missing ==
 bool(false)
@@ -94,7 +93,8 @@ bool(false)
 ERROR: Validation option must be array.
 
 == VALIDATE_UNVALIDATED passes ==
-bool(true)
+bool(false)
+ERROR: Validator ID must be valid int.
 
 == MULTI needs 4 elements ==
 bool(false)

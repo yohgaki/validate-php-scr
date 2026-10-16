@@ -12,6 +12,13 @@
 // Define validate(), etc.
 require_once __DIR__.'/../validate_func.php';
 
+// Echo a submitted form value back into the page. Inputs can be arrays
+// (e.g. "username[]=x"), so never pass them to htmlspecialchars() unchecked.
+function h($value)
+{
+    return htmlspecialchars(is_string($value) ? $value : '', ENT_QUOTES, 'UTF-8');
+}
+
 // Load parameter spec definitions
 require_once __DIR__.'/99-web-specs.php';
 
@@ -41,6 +48,10 @@ $spec1 = [
                 'weight'   => $weight,
                 'country'  => $country,
                 'comment'  => $comment,
+                // The submit button is an input too: declare it, or it is
+                // an undeclared (leftover) key.
+                'submit'   => [VALIDATE_STRING, VALIDATE_STRING_LOWER_ALPHA | VALIDATE_FLAG_UNDEFINED,
+                               ['values' => ['submit' => true]]],
             ],
         ],
         'header' => [ // HTTP headers — stage 1 only handles the known ones.
@@ -49,8 +60,9 @@ $spec1 = [
             VALIDATE_FLAG_NONE,
             ['min' => 2, 'max' => 50],
             [
-                'HTTP_CONTENT_LENGTH' => $content_length,
-                'HTTP_CONTENT_TYPE' => $content_type,
+                // PHP stores these two request headers without the HTTP_ prefix.
+                'CONTENT_LENGTH' => $content_length,
+                'CONTENT_TYPE' => $content_type,
             ]
         ]
     ],
@@ -95,14 +107,14 @@ $spec2 = $tmp;
     </div>
     <div>
     <ul>
-        <li><div>Username: </div><input type="text" name="username" value="<?php echo htmlspecialchars($_POST['username'] ?? 'Test User');?>" /></li>
-        <li><div>Email: </div><input type="text" name="email" value="<?php echo htmlspecialchars($_POST['email'] ?? 'user@example.com');?>" /></li>
-        <li><div>Age: </div><input type="text" name="age" value="<?php echo htmlspecialchars($_POST['age'] ?? 34);?>"  /></li>
-        <li><div>Weight: </div><input type="text" name="weight" value="<?php echo htmlspecialchars($_POST['weight'] ?? '1234');?>"  /></li>
+        <li><div>Username: </div><input type="text" name="username" value="<?php echo h($_POST['username'] ?? 'Test User');?>" /></li>
+        <li><div>Email: </div><input type="text" name="email" value="<?php echo h($_POST['email'] ?? 'user@example.com');?>" /></li>
+        <li><div>Age: </div><input type="text" name="age" value="<?php echo h($_POST['age'] ?? '34');?>"  /></li>
+        <li><div>Weight: </div><input type="text" name="weight" value="<?php echo h($_POST['weight'] ?? '62.5');?>"  /></li>
         <li><div>Country: </div>
         <input type="radio" name="country" value="japan" <?php if (isset($_POST['country']) && $_POST['country']=='japan') echo 'checked="checked"'; ?> />Japan<br />
         <input type="radio" name="country" value="other" <?php if (isset($_POST['country']) && $_POST['country']=='other') echo 'checked="checked"'; ?> />Other<br /></li>
-        <li><div>Comment: </div><textarea name="comment"><?php echo htmlspecialchars($_POST['comment'] ?? 'Write comment');?></textarea>
+        <li><div>Comment: </div><textarea name="comment"><?php echo h($_POST['comment'] ?? 'Write comment');?></textarea>
         <li><div>Send These!</div><input type="submit" name="submit" value="submit" /></li>
     </ul>
     </div>
@@ -123,12 +135,18 @@ if (!empty($_POST)):
     // Two-stage validation pattern.
     // Stage 1: enforce the strict $spec1. Validated values are removed from
     // $inputs (the engine unsets them by reference).
-    $result1 = validate($ctx, $inputs, $spec1, VALIDATE_OPT_DISABLE_EXCEPTION);
+    // VALIDATE_OPT_UNVALIDATED: headers $spec1 does not declare are checked
+    // by stage 2, so they are not an error here.
+    $result1 = validate($ctx, $inputs, $spec1, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_UNVALIDATED);
     $status1 = $ctx->getStatus();
     $partial_result1 = $ctx->getValidated();
     // Stage 2: catch headers $spec1 left behind using the loose $spec2.
     // Without this, unexpected headers would slip past the trust boundary.
-    $result2 = validate($ctx, $inputs['header'], $spec2, VALIDATE_OPT_DISABLE_EXCEPTION);
+    // Only 'header' is declared, so any other leftover (an unknown GET/POST
+    // key) is an error here.
+    $spec2[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED;
+    $leftover_spec = [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 1], ['header' => $spec2]];
+    $result2 = validate($ctx, $inputs, $leftover_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
     $status2 = $ctx->getStatus();
     $partial_result2 = $ctx->getValidated();
     // Equivalent OO one-liner (no separate $ctx):

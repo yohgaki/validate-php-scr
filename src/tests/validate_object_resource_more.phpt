@@ -88,7 +88,7 @@ bool(false)
 **** VALIDATE_RESOURCE ****
 string(82) "param: 'ROOT' error: 'VALIDATE_RESOURCE: Not a resource. Type: integer ' val: '42'"
 bool(false)
-string(119) "param: 'ROOT' error: 'VALIDATE_RESOURCE: Resource type does not match. Returned: 'stream' Expected: 'curl'' val: 'i:0;'"
+string(131) "param: 'ROOT' error: 'VALIDATE_RESOURCE: Resource type does not match. Returned: 'stream' Expected: 'curl'' val: 'resource(stream)'"
 bool(false)
 bool(true)
 bool(true)

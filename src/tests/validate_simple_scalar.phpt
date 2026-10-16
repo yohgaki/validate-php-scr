@@ -113,11 +113,11 @@ string(47) "99999999999999999999999999999999999999999999999"
 bool(true)
 
 **** validate() STRING ****
-string(0) ""
+NULL
 bool(true)
-float(12.34)
+string(5) "12.34"
 bool(true)
-int(1234)
+string(4) "1234"
 bool(true)
 string(4) "1234"
 bool(true)

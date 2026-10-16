@@ -39,8 +39,8 @@ $email = [
     'error_message'=>'Please enter a valid email address. We only accept addresses with a DNS MX record.',
     'callback'=> function($ctx, &$result, $input) {
         $parts = explode('@', $input);
-        if (count($parts) > 2) {         // Character set, min, and max are already validated.
-            $err =  "Only one '@' is allowed."; // Wrap in an i18n call for multilingual sites.
+        if (count($parts) !== 2 || $parts[0] === '' || $parts[1] === '') {         // Character set, min, and max are already validated.
+            $err =  "Exactly one '@' is required."; // Wrap in an i18n call for multilingual sites.
             validate_error($ctx, $err);
             return false;
         }
@@ -143,7 +143,9 @@ $comment_by_regexp_validator = [
         'min' => $comment_min,
         'max' => $comment_max,
         'error_message' => 'Comment should be between {{min}} and {{max}} bytes.',
-        'regexp' => '/damn|stupid|fool/', // Trivial deny-pattern, kept simple for the example.
+        // Trivial deny-list, kept simple for the example: the pattern must
+        // match, so the forbidden words go into a negative lookahead.
+        'regexp' => '/\A(?![\s\S]*(?:damn|stupid|fool))/i',
     ]
 ];
 
@@ -157,7 +159,7 @@ $comment_by_string_validator = [
     [
         'min' => $comment_min,
         'max' => $comment_max,
-        'ascii' => '\t', // (VALIDATE_STRING_TAB would do the same; shown here for the 'ascii' syntax.)
+        'ascii' => "\t", // Double quotes: a real TAB. (VALIDATE_STRING_TAB would do the same; shown here for the 'ascii' syntax.)
         'encoding' => 'UTF-8', // Informational — only UTF-8 is supported and the option may be omitted.
         'error_message' => 'Comment should be between {{min}} and {{max}} bytes.',
     ]

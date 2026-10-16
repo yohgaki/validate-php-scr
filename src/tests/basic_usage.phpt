@@ -202,6 +202,12 @@ Array
             [comment] => my default
         )
 
-    [GET] => 
-    [HEADER] => 
+    [GET] => Array
+        (
+        )
+
+    [HEADER] => Array
+        (
+        )
+
 )

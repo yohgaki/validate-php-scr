@@ -35,7 +35,7 @@ $validated = validate($ctx, $var, $basicTypes['int8'], VALIDATE_OPT_DISABLE_EXCE
 var_dump($validated); // NULL — the conventional "failure" return when exceptions are disabled.
 
 $var = -4503599627370496;
-$validated = validate($ctx, $var, $basicTypes['int53']); // Success — minimum safe integer.
+$validated = validate($ctx, $var, $basicTypes['int53']); // Success — inside the safe-integer range (int53 is -(2^53-1)..2^53-1).
 $var = '-4503599627370496'; // Web input typically arrives as a string; int validators accept the numeric string.
 $validated = validate($ctx, $var, $basicTypes['int53']); // Success — integer validators normalize the result to int.
 $var = -4503599627370497;

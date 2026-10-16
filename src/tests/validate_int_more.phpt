@@ -102,16 +102,15 @@ int(1)
 bool(true)
 string(86) "param: 'ROOT' error: 'VALIDATE_INT: Failed to match defined option "values".' val: '2'"
 bool(false)
-string(97) "param: 'ROOT' error: 'VALIDATE_INT: Failed option "values" match. Value is not integer.' val: '1'"
-bool(false)
+int(1)
+bool(true)
 string(99) "param: 'ROOT' error: 'VALIDATE_INT: Failed option "values" match. Value is not integer.' val: 'abc'"
 bool(false)
 
 **** bool / null inputs ****
 string(109) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.' val: '1'"
 bool(false)
-string(60) "param: 'ROOT' error: 'VALIDATE_INT: Not a scalar.' val: 'N;'"
-bool(false)
+NULL
 
 **** VALIDATE_INT_POSITIVE_SIGN ****
 int(42)

@@ -244,10 +244,12 @@ $default_specs = [
 // fields your business logic happens to read this minute.
 $my_inputs = ['post' => $POST, 'get' => $GET, 'header' => $HEADER];
 
-// Validate the full request in a single call.
+// Validate the full request in a single call. Input keys a spec does not
+// declare are errors unless VALIDATE_OPT_UNVALIDATED is set; this first pass
+// sets it because the second pass below validates the leftovers.
 // Equivalent OO one-liner (no need to keep a $ctx):
-//   $result = (new Validate)->validate($my_inputs, $specs, VALIDATE_OPT_DISABLE_EXCEPTION);
-$inputs = validate($ctx, $my_inputs, $specs, 0);
+//   $result = (new Validate)->validate($my_inputs, $specs, VALIDATE_OPT_UNVALIDATED);
+$inputs = validate($ctx, $my_inputs, $specs, VALIDATE_OPT_CHECK_SPEC | VALIDATE_OPT_UNVALIDATED);
 var_dump($inputs, $ctx->getStatus()); // true on success.
 
 // Any keys NOT consumed by $specs remain in $my_inputs (validate() unsets
@@ -255,7 +257,8 @@ var_dump($inputs, $ctx->getStatus()); // true on success.
 var_dump($my_inputs);
 
 // Second pass — validate the leftover, optional parameters with looser rules.
-$extras = validate($ctx, $my_inputs, $default_specs, 0);
+// No VALIDATE_OPT_UNVALIDATED here: anything still undeclared is an error.
+$extras = validate($ctx, $my_inputs, $default_specs);
 
 
 // Always log validation failures. A failed input validation almost always

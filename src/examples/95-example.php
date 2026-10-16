@@ -33,7 +33,7 @@ $getSpec = [
     VALIDATE_FLAG_NONE,
     ['min' => 1, 'max' => 1],
     [
-        'csrf' => $basicTypes['hex64'], // 64-char lowercase hex (SHA-256)
+        'csrf' => $basicTypes['hex64'], // 64-char hex (SHA-256)
     ]
 ];
 
@@ -82,18 +82,21 @@ $cookieSpec = [
     ]
 ];
 
-// ---- $_FILES: single avatar upload (5 keys per upload) ----------------------
-// Each $_FILES[<field>] is an array: name, type, tmp_name, error, size.
+// ---- $_FILES: single avatar upload (5-6 keys per upload) --------------------
+// Each $_FILES[<field>] is an array: name, type, tmp_name, error, size, and
+// full_path on PHP 8.1+ (the browser-supplied relative path; optional here).
 // Whitelist MIME type by regex; bound size explicitly.
 // NOTE: 'type' is browser-supplied and not trustworthy. Re-check the uploaded
 // file with finfo_file() before storing or serving it.
 $uploadSpec = [
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 5, 'max' => 5],
+    ['min' => 5, 'max' => 6],
     [
         'name'     => [VALIDATE_STRING, VALIDATE_STRING_ALNUM,
                        ['min' => 1, 'max' => 255, 'ascii' => '._-']],
+        'full_path' => [VALIDATE_STRING, VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED,
+                        ['min' => 1, 'max' => 255, 'ascii' => '._-/']],
         'type'     => [VALIDATE_REGEXP, VALIDATE_FLAG_NONE,
                        ['min' => 6, 'max' => 32,
                         'ascii' => 'abcdefghijklmnopqrstuvwxyz/',
@@ -228,23 +231,29 @@ $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // interactive form: collect errors
 
 // Stage 1: validate everything at once. validate() removes validated entries
 // from $inputs, so $inputs['header'] will end up holding only the headers
-// that $headerKnownSpec did NOT consume.
-$result = validate($ctx, $inputs, $spec, $func_opts);
+// that $headerKnownSpec did NOT consume. VALIDATE_OPT_UNVALIDATED lets those
+// leftovers through this stage; stage 2 checks them.
+$result = validate($ctx, $inputs, $spec, $func_opts | VALIDATE_OPT_UNVALIDATED);
+$ok = validate_get_status($ctx); // Status of the most recent validate() call.
 
-// Stage 2: validate the leftover headers with the catch-all spec, so EVERY
-// header is checked - no header bypasses the trust boundary.
-$headersRemaining = $inputs['header'] ?? [];
-$catchResult = validate($ctx, $headersRemaining, $headerCatchSpec, $func_opts);
-if (is_array($catchResult) && is_array($result) && isset($result['header'])) {
-    $result['header'] += $catchResult;
+// Stage 2: validate the leftovers. Only 'header' is declared, so a leftover
+// in get/post/cookie/files (an undeclared or failed key) is an error, and
+// every remaining header goes through the catch-all spec — nothing bypasses
+// the trust boundary.
+$headerCatchSpec[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED; // No unknown headers is fine.
+$leftoverSpec = [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min' => 0, 'max' => 1], ['header' => $headerCatchSpec]];
+$catchResult = validate($ctx, $inputs, $leftoverSpec, $func_opts);
+$ok = $ok && validate_get_status($ctx);
+if ($ok && isset($catchResult['header'])) {
+    $result['header'] += $catchResult['header'];
 }
 
 // =============================================================================
 // 5. Report
 // =============================================================================
 
-echo 'Status: ', var_export(validate_get_status($ctx), true), PHP_EOL;
-if (!validate_get_status($ctx)) {
+echo 'Status: ', var_export($ok, true), PHP_EOL;
+if (!$ok) {
     // APPLICATION INPUT failures (broken types, oversized strings) should be
     // rejected fast without user-facing detail. BUSINESS LOGIC failures (using
     // the 'error_message' option) can be shown back to the form.

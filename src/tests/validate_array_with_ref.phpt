@@ -43,17 +43,24 @@ var_dump($ctx->getStatus(), $array, $array2);
 string(37) "Without VALIDATE_FLAG_ARRAY_RECURSION"
 NULL
 bool(false)
-array(0) {
+array(1) {
+  [0]=>
+  string(2) "12"
 }
 array(1) {
   [0]=>
-  &array(0) {
+  &array(1) {
+    [0]=>
+    string(2) "12"
   }
 }
 string(34) "With VALIDATE_FLAG_ARRAY_RECURSIVE"
 array(1) {
   [0]=>
-  NULL
+  array(1) {
+    [0]=>
+    int(12)
+  }
 }
 bool(true)
 array(0) {

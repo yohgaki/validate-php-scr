@@ -739,47 +739,47 @@ END ***** TEST: string_abc#  VALUE: 'abc# ' (string) ******
 START ***** TEST: string_ abc  VALUE: ' abc 	' (string) ******
 FALG(0) none          OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(94) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: ' abc 	'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: ' abc 	'"
 }
 ******
 FALG(8) lf            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(94) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: ' abc 	'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: ' abc 	'"
 }
 ******
 FALG(16) cr            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(94) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: ' abc 	'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: ' abc 	'"
 }
 ******
 FALG(24) crlf          OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(94) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: ' abc 	'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: ' abc 	'"
 }
 ******
 FALG(192) alpha         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(94) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: ' abc 	'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: ' abc 	'"
 }
 ******
 FALG(193) alpha+space   OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(94) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: ' abc 	'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: ' abc 	'"
 }
 ******
 FALG(2) digit         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(94) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: ' abc 	'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: ' abc 	'"
 }
 ******
 FALG(194) alnum         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(94) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: ' abc 	'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: ' abc 	'"
 }
 ******
 FALG(512) mb            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(94) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: ' abc 	'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: ' abc 	'"
 }
 ******
 END ***** TEST: string_ abc  VALUE: ' abc 	' (string) ******
@@ -840,22 +840,19 @@ START ***** TEST: string_123\n VALUE: '123
 ' (string) ******
 FALG(0) none          OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(93) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "
-"' val: '123
+  string(96) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: '123
 '"
 }
 ******
 FALG(4) tab           OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(93) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "
-"' val: '123
+  string(96) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: '123
 '"
 }
 ******
 FALG(16) cr            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(93) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "
-"' val: '123
+  string(96) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: '123
 '"
 }
 ******
@@ -867,29 +864,25 @@ FALG(24) crlf          OPT(0) RESULT: array(1) {
 ******
 FALG(192) alpha         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(93) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "
-"' val: '123
+  string(96) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: '123
 '"
 }
 ******
 FALG(2) digit         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(93) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "
-"' val: '123
+  string(96) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: '123
 '"
 }
 ******
 FALG(194) alnum         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(93) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "
-"' val: '123
+  string(96) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: '123
 '"
 }
 ******
 FALG(512) mb            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(93) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "
-"' val: '123
+  string(96) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: '123
 '"
 }
 ******
@@ -1076,42 +1069,42 @@ END ***** TEST: string_日本 VALUE: '日本' (string) ******
 START ***** TEST: string_tab VALUE: 'abc	xyz' (string) ******
 FALG(0) none          OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: 'abc	xyz'"
+  string(98) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: 'abc	xyz'"
 }
 ******
 FALG(8) lf            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: 'abc	xyz'"
+  string(98) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: 'abc	xyz'"
 }
 ******
 FALG(16) cr            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: 'abc	xyz'"
+  string(98) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: 'abc	xyz'"
 }
 ******
 FALG(24) crlf          OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: 'abc	xyz'"
+  string(98) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: 'abc	xyz'"
 }
 ******
 FALG(192) alpha         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: 'abc	xyz'"
+  string(98) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: 'abc	xyz'"
 }
 ******
 FALG(2) digit         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: 'abc	xyz'"
+  string(98) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: 'abc	xyz'"
 }
 ******
 FALG(194) alnum         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: 'abc	xyz'"
+  string(98) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: 'abc	xyz'"
 }
 ******
 FALG(512) mb             OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: 'abc	xyz'"
+  string(98) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: 'abc	xyz'"
 }
 ******
 END ***** TEST: string_tab VALUE: 'abc	xyz' (string) ******
@@ -1172,17 +1165,17 @@ xyz
 START ***** TEST: string_cr VALUE: 'abcxyz' (string) ******
 FALG(0) none          OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abcxyz'"
+  string(100) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abcxyz'"
 }
 ******
 FALG(4) tab           OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abcxyz'"
+  string(100) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abcxyz'"
 }
 ******
 FALG(8) lf            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abcxyz'"
+  string(100) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abcxyz'"
 }
 ******
 FALG(24) crlf          OPT(0) RESULT: array(1) {
@@ -1192,22 +1185,22 @@ FALG(24) crlf          OPT(0) RESULT: array(1) {
 ******
 FALG(192) alpha         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abcxyz'"
+  string(100) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abcxyz'"
 }
 ******
 FALG(2) digit         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abcxyz'"
+  string(100) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abcxyz'"
 }
 ******
 FALG(194) alnum         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abcxyz'"
+  string(100) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abcxyz'"
 }
 ******
 FALG(512) mb            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abcxyz'"
+  string(100) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abcxyz'"
 }
 ******
 END ***** TEST: string_cr VALUE: 'abcxyz' (string) ******
@@ -1219,49 +1212,49 @@ xyz
 ' (string) ******
 FALG(0) none          OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(99) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abc
+  string(102) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abc
 xyz
 '"
 }
 ******
 FALG(4) tab           OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(99) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abc
+  string(102) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abc
 xyz
 '"
 }
 ******
 FALG(8) lf            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(99) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abc
+  string(102) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abc
 xyz
 '"
 }
 ******
 FALG(192) alpha         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(99) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abc
+  string(102) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abc
 xyz
 '"
 }
 ******
 FALG(2) digit         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(99) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abc
+  string(102) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abc
 xyz
 '"
 }
 ******
 FALG(194) alnum         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(99) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abc
+  string(102) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abc
 xyz
 '"
 }
 ******
 FALG(512) mb            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(99) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: ""' val: 'abc
+  string(102) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "13" chr: "\x0D"' val: 'abc
 xyz
 '"
 }
@@ -1291,47 +1284,47 @@ END ***** TEST: string_lfcr VALUE: 'abc
 START ***** TEST: string_cntrl VALUE: '\b abc' (string) ******
 FALG(0) none          OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\0"' val: '\b abc'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\x00"' val: '\b abc'"
 }
 ******
 FALG(4) tab           OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\0"' val: '\b abc'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\x00"' val: '\b abc'"
 }
 ******
 FALG(8) lf            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\0"' val: '\b abc'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\x00"' val: '\b abc'"
 }
 ******
 FALG(16) cr            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\0"' val: '\b abc'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\x00"' val: '\b abc'"
 }
 ******
 FALG(24) crlf          OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\0"' val: '\b abc'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\x00"' val: '\b abc'"
 }
 ******
 FALG(192) alpha         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\0"' val: '\b abc'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\x00"' val: '\b abc'"
 }
 ******
 FALG(2) digit         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\0"' val: '\b abc'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\x00"' val: '\b abc'"
 }
 ******
 FALG(194) alnum         OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\0"' val: '\b abc'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\x00"' val: '\b abc'"
 }
 ******
 FALG(512) mb            OPT(0) RESULT: array(1) {
   ["ErrorMsg"]=>
-  string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\0"' val: '\b abc'"
+  string(97) "param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "0" chr: "\x00"' val: '\b abc'"
 }
 ******
 END ***** TEST: string_cntrl VALUE: '\b abc' (string) ******

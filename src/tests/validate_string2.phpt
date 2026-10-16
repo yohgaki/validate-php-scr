@@ -79,38 +79,4 @@ string(7) "1234567"
 bool(true)
 param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "8" max: "10"' val: '1234567'
 param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "9" max: "10"' val: '1234567'
-Array
-(
-    [error] => Array
-        (
-            [0] => Array
-                (
-                    [message] => VALIDATE_STRING must have valid "min" and "max" options. min: "10" max:"1"
-                    [spec] => Array
-                        (
-                            [0] => 5
-                            [1] => 194
-                            [2] => Array
-                                (
-                                    [min] => 10
-                                    [max] => 1
-                                )
-
-                        )
-
-                    [flags] => VALIDATE_STRING_DIGIT | VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_UPPER_ALPHA | VALIDATE_STRING_ALPHA | VALIDATE_STRING_ALNUM
-                    [param] => ROOT
-                )
-
-        )
-
-    [warning] => Array
-        (
-        )
-
-    [notice] => Array
-        (
-        )
-
-)
-Invalid validation spec detected. Fix spec errors first.
+Invalid validation spec detected. Fix spec errors first. Errors: 1 Warnings: 0. First error: param: 'ROOT' message: 'VALIDATE_STRING must have valid "min" and "max" options. min: "10" max:"1"'. Hint: validate_spec($spec, $unvalidated, $ctx); validate_get_system_errors($ctx);

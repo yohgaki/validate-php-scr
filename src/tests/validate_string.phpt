@@ -228,7 +228,7 @@ DATA: num2=>'123456789'  FLAG: none=>0
 param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
 
 DATA: num2=>'123456789'  FLAG: binary=>1024
-int(123456789)
+string(9) "123456789"
 bool(true)
 
 
@@ -264,7 +264,7 @@ DATA: float=>'123.456'  FLAG: none=>0
 param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123.456'
 
 DATA: float=>'123.456'  FLAG: binary=>1024
-float(123.456)
+string(7) "123.456"
 bool(true)
 
 
@@ -439,7 +439,7 @@ DATA: space=>'   '  FLAG: mb=>512
 param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "' val: '   '
 
 DATA: tab=>'	'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
 
 DATA: tab=>'	'  FLAG: binary=>1024
 string(1) "	"
@@ -447,28 +447,28 @@ bool(true)
 
 
 DATA: tab=>'	'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
 
 DATA: tab=>'	'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
 
 DATA: tab=>'	'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
 
 DATA: tab=>'	'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
 
 DATA: tab=>'	'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
 
 DATA: tab=>'	'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
 
 DATA: tab=>'	'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
 
 DATA: tab=>'	'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
 
 DATA: almum=>'abc1234'  FLAG: none=>0
 param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc1234'
@@ -596,8 +596,7 @@ XYZ
 DATA: multiline=>'abc
 XYZ
 '  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "
-"' val: 'abc
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: 'abc
 XYZ
 '
 
@@ -611,8 +610,7 @@ XYZ
 DATA: multiline=>'abc
 XYZ
 '  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "
-"' val: 'abc
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: 'abc
 XYZ
 '
 
@@ -626,8 +624,7 @@ XYZ
 DATA: multiline=>'abc
 XYZ
 '  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "
-"' val: 'abc
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: 'abc
 XYZ
 '
 
@@ -1062,7 +1059,7 @@ param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid val
 param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
 
 \DATA: tab=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "	"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
 
 \DATA: tab=>'1'  FLAG: binary=>1024
 param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'

@@ -230,7 +230,10 @@ Array
             [comment] => my default
         )
 
-    [HEADER] => 
+    [HEADER] => Array
+        (
+        )
+
     [GET] => Array
         (
             [allowed] => 1

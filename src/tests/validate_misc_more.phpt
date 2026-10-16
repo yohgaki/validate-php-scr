@@ -55,23 +55,20 @@ foreach (['FULL'=>VALIDATE_OPT_ERROR_FULL, 'PARAM'=>VALIDATE_OPT_ERROR_PARAM,
 }
 
 echo "\n**** unvalidated input remains ****\n";
-// Note: with a plain VALIDATE_ARRAY spec, leftover keys stay in $inputs
-// without an error; the "Unvalidated value remains" check only fires when
-// the top-level spec also carries VALIDATE_FLAG_ARRAY.
+// An input key the VALIDATE_ARRAY spec does not declare is an error by
+// default; it stays in $inputs either way.
 $specs = [VALIDATE_ARRAY, VALIDATE_FLAG_NONE, ['min'=>0, 'max'=>10], ['a'=>$int_spec]];
 $ctx = validate_init();
 $copy = ['a'=>5, 'extra'=>'x'];
 var_dump(validate($ctx, $copy, $specs, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());
-var_dump($copy); // leftover input remains silently
-$specs = [VALIDATE_ARRAY, VALIDATE_FLAG_ARRAY, ['min'=>0, 'max'=>10], ['a'=>$int_spec]];
-$ctx = validate_init();
-$copy = ['a'=>5, 'extra'=>'x'];
-var_dump(validate($ctx, $copy, $specs, VALIDATE_OPT_DISABLE_EXCEPTION), $ctx->getStatus());
+var_dump($copy);
 var_dump(validate_get_system_errors($ctx)['error']['ROOT'][0]['message']);
+// VALIDATE_OPT_UNVALIDATED allows leftovers (multi-stage validation).
 $ctx = validate_init();
 $copy = ['a'=>5, 'extra'=>'x'];
 var_dump(validate($ctx, $copy, $specs, VALIDATE_OPT_DISABLE_EXCEPTION | VALIDATE_OPT_UNVALIDATED),
          $ctx->getStatus());
+var_dump($copy);
 
 echo "\n**** OO validate() with spec warnings only ****\n";
 $v = new Validate();
@@ -101,34 +98,6 @@ try {
 } catch (Exception $e) {
     var_dump($e->getMessage());
 }
-
-echo "\n**** reportWarning / reportNotice (internal, via reflection) ****\n";
-$ctx = validate_init();
-$ctx->setContext($ctx, 'p', true, 'v', [VALIDATE_INT, VALIDATE_FLAG_NONE, []],
-                 VALIDATE_OPT_DISABLE_EXCEPTION);
-$ctx->setContextErrorValue('v');
-foreach (['reportWarning'=>'warning', 'reportNotice'=>'notice'] as $method => $bucket) {
-    $m = new ReflectionMethod('Validate', $method);
-    if (PHP_VERSION_ID < 80100) {
-    $m->setAccessible(true); // required on PHP 8.0, deprecated no-op on 8.5+
-}
-    $m->invoke($ctx, ['message'=>"internal $bucket", 'value'=>'v'],
-               [VALIDATE_INT, VALIDATE_FLAG_NONE, []], VALIDATE_OPT_DISABLE_EXCEPTION);
-    var_dump(validate_get_system_errors($ctx)[$bucket]['ROOT'][0]['message']);
-}
-
-echo "\n**** validateInvalid (internal, via reflection) ****\n";
-$ctx = validate_init();
-$ctx->setContext($ctx, 'p', true, 'v', [VALIDATE_INT, VALIDATE_FLAG_NONE, []],
-                 VALIDATE_OPT_DISABLE_EXCEPTION);
-$m = new ReflectionMethod('Validate', 'validateInvalid');
-if (PHP_VERSION_ID < 80100) {
-    $m->setAccessible(true); // required on PHP 8.0, deprecated no-op on 8.5+
-}
-$validated = null;
-$args = [&$validated, 'v', VALIDATE_INVALID, 0, [], VALIDATE_OPT_DISABLE_EXCEPTION];
-var_dump($m->invokeArgs($ctx, $args));
-var_dump(validate_get_system_errors($ctx)['error']['ROOT'][0]['message']);
 
 ?>
 --EXPECTF--
@@ -163,6 +132,13 @@ array(1) {
 }
 
 **** unvalidated input remains ****
+NULL
+bool(false)
+array(1) {
+  ["extra"]=>
+  string(1) "x"
+}
+string(61) "Validate: Unvalidated value remains. Undeclared keys: 'extra'"
 array(1) {
   ["a"]=>
   int(5)
@@ -172,14 +148,6 @@ array(1) {
   ["extra"]=>
   string(1) "x"
 }
-NULL
-bool(false)
-string(36) "Validate: Unvalidated value remains."
-array(1) {
-  ["a"]=>
-  int(5)
-}
-bool(true)
 
 **** OO validate() with spec warnings only ****
 int(5)
@@ -187,12 +155,4 @@ int(5)
 **** procedural wrapper argument errors ****
 string(40) "1st parameter is not a Validate context."
 string(19) "Spec must be array."
-string(28) "Function option must be int."
-
-**** reportWarning / reportNotice (internal, via reflection) ****
-string(16) "internal warning"
-string(15) "internal notice"
-
-**** validateInvalid (internal, via reflection) ****
-bool(false)
-string(55) "VALIDATE_INVALID: This validator should not be called. "
+string(56) "Function option must be int made of VALIDATE_OPT_* bits."

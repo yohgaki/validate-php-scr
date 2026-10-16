@@ -37,23 +37,23 @@ Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.m
 
 ## Requirements
 
-* PHP 8.0 and up.
-* BCMath module.
+* PHP 8.0 and up (CI tests 8.0 - 8.5).
+* No extension is required.
 
 ### Recommended
 
-* PHP 7.2 and up - Newer mbstring provides better performance.
-* mbstring module - mb_ord() improves performance, more supported encodings and better encoding checks.
-* GMP module - "Validate" supports GMP integer also.
+* BCMath or GMP module - used for big-integer range checks (VALIDATE_INT_AS_STRING); a pure PHP fallback is used otherwise.
+* GMP module - VALIDATE_INT also accepts GMP objects.
 
 ## Basic Behaviors
 
 * validate() does not allow anything unless explicitly specified. i.e. Strictly white listing.
 * validate() converts input values to native types when it is possible. e.g. '123' to int. 'yes'/'no' to bool.
 * validate() processes input values and validation specs recursively. i.e. Any input values (scalar/array/object) are accepted.
-* validate() checks validation spec format by default. i.e. Disable spec format check for production.
-* validate() stores validation statuses to context. e.g. $ctx in examples below.
-* validate() throws InvalidArgumentException by default.
+* validate() checks validation spec format by default (spec errors throw ValidateInvalidSpecException). i.e. Disable spec format check for production.
+* validate() rejects input keys that a VALIDATE_ARRAY spec does not declare ("Unvalidated value remains."). Pass VALIDATE_OPT_UNVALIDATED for multi-stage validation.
+* validate() stores validation statuses to context. e.g. $ctx in examples below. validate_get_status() reports the most recent validate() call.
+* validate() throws ValidateInvalidValueException by default. Both exception classes extend InvalidArgumentException.
 
 Tip:
 
@@ -69,16 +69,15 @@ src/examples/91-example.php
 ```php
 <?php
 require_once __DIR__.'/../validate_func.php';
-// Define basic type specifications array $B. You can define any validation rule as you like.
-require_once __DIR__.'/../lib/basic_types.php';
+require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array.
 
-// Validate domain name
+// Validate a DNS-resolvable domain name.
 $domain = 'es-i.jp';
 $domain = validate($ctx, $domain, $basicTypes['fqdn']);
-// Validate record ID
+// Validate a record ID as a 32-bit unsigned integer.
 $id = '1234';
 $id = validate($ctx, $id, $basicTypes['uint32']);
-// Check results
+// Both calls returned the validated, natively-typed values.
 var_dump($domain, $id);
 ```
 
@@ -93,27 +92,32 @@ src/examples/92-example.php
 ```php
 <?php
 require_once __DIR__.'/../validate_func.php';
-require_once __DIR__.'/../lib/basic_types.php'; // Defines basic type array $B
+require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array.
 
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION;
-// Validate domain name w/o exception
+// validate_get_status() reports the most recent validate() call only, so
+// check it after each call (or validate everything with one VALIDATE_ARRAY spec).
+$ok = true;
+// Validate a domain name without throwing on failure.
 $domain = 'es-i.jp';
 $domain = validate($ctx, $domain, $basicTypes['fqdn'], $func_opts);
-// Validate record ID
+$ok = $ok && validate_get_status($ctx);
+// Validate a record ID as a 32-bit unsigned integer.
 $id = '1234';
 $id = validate($ctx, $id, $basicTypes['uint32'], $func_opts);
+$ok = $ok && validate_get_status($ctx);
 
-if (validate_get_status($ctx) == false) {
-    // Check last validation error
+if (!$ok) {
+    // At least one validation failed — re-render the form, etc.
 }
-// Get all user error
+// User-facing errors collected for any 'error_message' options or validate_error() calls.
 $errors = validate_get_user_errors($ctx);
 
-//Check results
+// Inspect the validated values and any error messages.
 var_dump($domain, $id, $errors);
 ```
 
-Validation errors are stored in $ctx. Application business logic data validation errors should be handled without error/exception for interactive error handling.
+Validation errors are stored in $ctx (they accumulate across calls on the same context, while validate_get_status() reflects the most recent call). Application business logic data validation errors should be handled without error/exception for interactive error handling.
 
 ## Example #3: Multiple value validations at once.
 
@@ -121,38 +125,36 @@ src/examples/93-example.php
 
 ```php
 <?php
-// Simple "username" and "email" form validation example.
-// "Validate" is suitable for "From Validations" also.
 require_once __DIR__.'/../validate_func.php';
-require_once __DIR__.'/../lib/basic_types.php'; // Defines basic type array $B
+require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array.
 
-// In practice, you would define all inputs specifications at central repository.
-// If your web app does not have strict client side validations, you will need
-// "Input validation spec" AND "Business logic(Form) validation spec".
+// In practice, define all input specifications in a central repository.
+// If your web app does not have strict client-side validation, you will need
+// BOTH an INPUT validation spec AND a BUSINESS LOGIC (form) validation spec.
 
-// If client JavaScript has validation
+// Username spec — relies on the client form to do basic length/character checks.
 $username = [
-    VALIDATE_STRING,        // "username" is string
-    VALIDATE_STRING_ALNUM,  // "username" has only alphanumeric chars.
-    ['min'=> 6, 'max'=> 40, // "username" can be 6 to 40 chars.
+    VALIDATE_STRING,        // "username" is a string.
+    VALIDATE_STRING_ALNUM,  // Only alphanumeric characters are allowed.
+    ['min'=> 6, 'max'=> 40, // Length must be between 6 and 40 chars.
     'error_message'=>'Username is 6 to 40 chars. Alphanumeric char only.']
 ];
 
-// "Validate" can be extend by callbacks.
+// "Validate" can be extended with callbacks for rules that don't fit flags.
 $email = [
-    VALIDATE_CALLBACK, // "email" is complex, so write PHP script for it.
-    VALIDATE_CALLBACK_ALNUM, // Allow alpha numeric chars.
-    ['min'=> 6, 'max'=> 256, 'ascii'=>'@._-', // Allow 6 to 256 chars and additional '@._-'
-    'error_message'=>'Please enter valid email address. We only accepts address with DNS MX record.',
-    'callback'=> function($ctx, &$result, $input) {     // Let's define rules by PHP function.
+    VALIDATE_CALLBACK, // Email is complex, so we write a PHP callback.
+    VALIDATE_CALLBACK_ALNUM, // Allow alphanumeric characters.
+    ['min'=> 6, 'max'=> 256, 'ascii'=>'@._-', // 6 to 256 chars plus the symbols '@._-'.
+    'error_message'=>'Please enter a valid email address. We only accept addresses with a DNS MX record.',
+    'callback'=> function($ctx, &$result, $input) {     // Custom rule in plain PHP.
         $parts = explode('@', $input);
-        if (count($parts) > 2) {         // Chars/min/max is already validated.
-            $err =  "Only one '@' is allowed."; // This could be i18n function for multilingual sites.
+        if (count($parts) !== 2 || $parts[0] === '' || $parts[1] === '') {         // Character set, min, and max are already validated.
+            $err =  "Exactly one '@' is required."; // This could be an i18n function for multilingual sites.
             validate_error($ctx, $err);
             return false;
         }
-        if (!dns_get_mx($parts[1], $mx)) {
-            $err = "Sorry, we only allow hosts with MX record.";
+        if (!getmxrr($parts[1], $mx)) {
+            $err = "Sorry, we only allow hosts with an MX record.";
             validate_error($ctx, $err);
             return false;
         }
@@ -180,15 +182,16 @@ $inputs = [
 $func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // Disable exception, to check errors, etc.
 $results = validate($ctx, $inputs, $spec, $func_opts); // Now, let's validate and done.
 
-// Check results
-var_dump(validate_get_status($ctx));        // $results is NULL when error. validate_get_status() can be used also.
-var_dump($results, $inputs);                // $inputs contains unvalidated values.
-var_dump(validate_get_user_errors($ctx));   // Get user errors.
-var_dump(validate_get_system_errors($ctx)); // Get system errors.
+// Inspect results.
+var_dump(validate_get_status($ctx));        // $results is null on failure; validate_get_status() is the reliable check.
+var_dump($results, $inputs);                // $inputs holds only the values that were NOT validated.
+var_dump(validate_get_user_errors($ctx));   // User-facing errors (from 'error_message' / validate_error()).
+var_dump(validate_get_system_errors($ctx)); // System-level errors (bad types, oversized strings, etc.).
 ```
 
 "Validate" removes validated elements from $inputs. You can validate remaining elements
-by next validation.
+by next validation: pass VALIDATE_OPT_UNVALIDATED to every stage except the last, because
+input keys a spec does not declare are errors by default.
 
 A little more realistic working example is here:
  * https://sample.ohgaki.net/validate-php/validate-php-scr/src/examples/99-web.php
@@ -201,39 +204,47 @@ src/examples/94-example.php
 ```php
 <?php
 require_once __DIR__.'/../validate_func.php';
-require_once __DIR__.'/../lib/basic_types.php'; // Defines $B (basic type) array
+require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array.
 
-$request_headers_orig = ['a'=>'abc', 'b'=>'456']; //apache_request_headers(); // Get request headers
+// In a real app: $request_headers_orig = apache_request_headers();
+$request_headers_orig = ['a'=>'abc', 'b'=>'456'];
 
-// Check cookie and user agent. Allow undefined and extra headers.
-$basicTypes['cookie'][VALIDATE_FLAGS]                 |= VALIDATE_FLAG_UNDEFINED; // Allow undefined(optional)
-$basicTypes['user-agent'][VALIDATE_FLAGS]             |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT; // Allow undefined and set default
-$basicTypes['user-agent'][VALIDATE_OPTIONS]['default'] = '';
-$basicTypes['user-agent'][VALIDATE_OPTIONS]['min']     = 0; // Allow 0 length(empty)
-$spec1 = [ // Explicit validations
+// Stage 1: explicit specs for known headers. Cookie is optional; User-Agent
+// is optional with a default of '' so the rest of the code can assume it exists.
+$cookie_spec = $basicTypes['cookie'];
+$cookie_spec[VALIDATE_FLAGS]                 |= VALIDATE_FLAG_UNDEFINED;
+$useragent_spec = $basicTypes['user-agent'];
+$useragent_spec[VALIDATE_FLAGS]             |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT;
+$useragent_spec[VALIDATE_OPTIONS]['default'] = '';
+$useragent_spec[VALIDATE_OPTIONS]['min']     = 0; // Allow zero-length / empty value.
+$spec1 = [
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min'=>2, 'max'=>20], // Inputs must have 2 to 20 elements.
+    ['min'=>2, 'max'=>20], // Total request must have 2-20 headers.
     [
-        'Cookie' => $basicTypes['cookie'],
-        'User-Agent' => $basicTypes['user-agent'],
+        'Cookie' => $cookie_spec,
+        'User-Agent' => $useragent_spec,
     ]
 ];
 
-// validate() removes validated values from $request_headers_orig
-$request_headers = validate($ctx, $request_headers_orig, $spec1);
+// validate() removes the values it consumed from $request_headers_orig,
+// leaving only the unvalidated (unknown) headers behind.
+// VALIDATE_OPT_UNVALIDATED: unknown headers are not an error here because
+// stage 2 validates every one of them.
+$request_headers = validate($ctx, $request_headers_orig, $spec1, VALIDATE_OPT_CHECK_SPEC | VALIDATE_OPT_UNVALIDATED);
 
-// Check the rest of headers.
-// Allow array 'header512' strings and ALNUM + '_' + '-' keys
-$basicTypes['header512'][VALIDATE_FLAGS]   |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
-$basicTypes['header512'][VALIDATE_OPTIONS]['min'] = 0; // Allow 0 length(empty) headers
-$basicTypes['header512'][VALIDATE_OPTIONS]['amin'] = 0; // Allow 0 extra headers
-$basicTypes['header512'][VALIDATE_OPTIONS]['amax'] = 20; // Allow 20 extra headers
+// Stage 2: catch-all spec for the remaining headers.
+// VALIDATE_FLAG_ARRAY applies $basicTypes['header512'] to each element.
+// VALIDATE_FLAG_ARRAY_KEY_ALNUM also restricts keys to alnum + '_' + '-'.
 $spec2 = $basicTypes['header512'];
+$spec2[VALIDATE_FLAGS]   |= VALIDATE_FLAG_ARRAY | VALIDATE_FLAG_ARRAY_KEY_ALNUM;
+$spec2[VALIDATE_OPTIONS]['min'] = 0; // Allow empty header values.
+$spec2[VALIDATE_OPTIONS]['amin'] = 0; // Accept 0 extra headers.
+$spec2[VALIDATE_OPTIONS]['amax'] = 20; // Accept up to 20 extra headers.
 
-// $request_headers has only validated values. No control chars nor multibyte chars.
+// Merge stage 2 results back in. $request_headers now holds only validated
+// values — no control characters, no multibyte characters.
 $request_headers += validate($ctx, $request_headers_orig, $spec2);
-// Check results
 var_dump($request_headers, $request_headers_orig);
 ```
 
@@ -250,7 +261,7 @@ require_once __DIR__.'/../lib/basic_types.php'; // Defines $basicTypes
 
 // ---- Per-source specs -------------------------------------------------------
 
-// $_GET: only a CSRF token is expected (64-char lowercase hex, SHA-256).
+// $_GET: only a CSRF token is expected (64-char hex, SHA-256).
 $getSpec = [
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
@@ -303,14 +314,17 @@ $cookieSpec = [
 ];
 
 // $_FILES: single avatar upload. Each $_FILES[<name>] is itself an array of 5
-// keys: name, type, tmp_name, error, size. Validate every key.
+// keys: name, type, tmp_name, error, size (plus full_path on PHP 8.1+).
+// Validate every key.
 $uploadSpec = [
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 5, 'max' => 5],
+    ['min' => 5, 'max' => 6],
     [
         'name'     => [VALIDATE_STRING, VALIDATE_STRING_ALNUM,
                        ['min' => 1, 'max' => 255, 'ascii' => '._-']],
+        'full_path' => [VALIDATE_STRING, VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED,
+                        ['min' => 1, 'max' => 255, 'ascii' => '._-/']],
         'type'     => [VALIDATE_REGEXP, VALIDATE_FLAG_NONE,
                        ['min' => 6, 'max' => 32,
                         'ascii' => 'abcdefghijklmnopqrstuvwxyz/',
@@ -377,8 +391,8 @@ var_dump($result);
 Key points:
 
 * **One call per request.** Nesting `VALIDATE_ARRAY` specs lets you validate every HTTP source in a single `validate()` call, so no input bypasses the trust boundary.
-* **`min`/`max` reject extra and missing keys.** Unknown `$_POST` fields or extra cookies become validation errors instead of being silently passed through.
-* **`$_FILES` is just a nested array.** Each upload's 5 keys (`name`, `type`, `tmp_name`, `error`, `size`) are validated like any other parameter; whitelist `type` against allowed MIME types and bound `size` explicitly. **Do not trust `type` for security decisions** — always re-check the uploaded file's content with `finfo_file()` before storing or serving it.
+* **Undeclared keys are errors.** Unknown `$_POST` fields or extra cookies are reported as "Unvalidated value remains." instead of being silently passed through; missing required keys are errors too. `min`/`max` additionally bound the element count.
+* **`$_FILES` is just a nested array.** Each upload's keys (`name`, `type`, `tmp_name`, `error`, `size`, and `full_path` on PHP 8.1+) are validated like any other parameter; whitelist `type` against allowed MIME types and bound `size` explicitly. **Do not trust `type` for security decisions** — always re-check the uploaded file's content with `finfo_file()` before storing or serving it.
 * **Use `validate_get_user_errors($ctx)` for the form**, and let the application reject "impossible" inputs (wrong types, oversized strings) fast with no user-facing message, per the "FAIL FAST" principle.
 
 ## "APPLICATION INPUT" and "BUSINESS LOGIC" Data Validation Basics
