@@ -67,8 +67,13 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
 * `basic_types.php` `json`: the error message is fixed per `json_last_error()`
   code (e.g. "Invalid JSON: Syntax error") instead of `json_last_error_msg()`,
   whose text depends on the PHP version (8.6 appends "near location 1:2").
+  PHP < 8.6 reports an unterminated string (`["abc`) as a control character
+  error and 8.6+ as a syntax error; on PHP < 8.6 the spec tells them apart
+  with the PHP 8.6+ rules, so every PHP version reports a syntax error.
   Objects are decoded as arrays, so keys a PHP object cannot hold
-  (`{"\u0000a":1}`) are valid JSON.
+  (`{"\u0000a":1}`) are valid JSON. 120,000 inputs from
+  `dev/fuzz_inputs.php gen json` (seeds 1 - 4, 30,000 each) give the same
+  results on PHP 8.0 / 8.5 as on PHP 8.6.0RC3.
 
 ### Fixed
 

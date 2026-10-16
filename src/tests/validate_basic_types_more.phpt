@@ -49,6 +49,8 @@ $jsonCases = [
     'nesting 512'    => str_repeat('[', 512).str_repeat(']', 512),
     'tab in string'  => "[\"a\tb\"]",
     'lone surrogate' => '["\ud800"]',
+    'unterminated'   => '["abc',
+    'tab, then end'  => "[\"a\tb",
     'NUL key'        => '{"\u0000a":1}',
     'empty key'      => '{"":1}',
     'spaces'         => " [1] ",
@@ -99,6 +101,10 @@ json(tab in string): NULL
   user error: Invalid JSON: Control character error, possibly incorrectly encoded
 json(lone surrogate): NULL
   user error: Invalid JSON: Single unpaired UTF-16 surrogate in unicode escape
+json(unterminated): NULL
+  user error: Invalid JSON: Syntax error
+json(tab, then end): NULL
+  user error: Invalid JSON: Control character error, possibly incorrectly encoded
 json(NUL key): valid
 json(empty key): valid
 json(spaces): valid

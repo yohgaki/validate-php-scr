@@ -1324,7 +1324,11 @@ $basicTypes['header32ku'] = [
 // surrounding character whitelist accepts JSON delimiters ({ } [ ] " \ , : etc.).
 // The decoded value is discarded — only $input (the original string) is stored.
 // Error messages come from $jsonErrors, not json_last_error_msg(), whose text
-// depends on the PHP version (8.6 appends the error location).
+// depends on the PHP version (8.6 appends the error location). PHP < 8.6
+// reports an unterminated string as a control character error (code 3) and
+// PHP 8.6+ as a syntax error (4); on PHP < 8.6 $jsonCheck, which follows the
+// json_decode() rules of PHP 8.6+, tells the two apart, so the message is the
+// same on every PHP version.
 // ---------------------------------------------------------------------------
 $jsonErrors = [ // json_last_error() codes
     1 => 'Maximum stack depth exceeded',                              // JSON_ERROR_DEPTH
@@ -1334,6 +1338,145 @@ $jsonErrors = [ // json_last_error() codes
     5 => 'Malformed UTF-8 characters, possibly incorrectly encoded',  // JSON_ERROR_UTF8
     10 => 'Single unpaired UTF-16 surrogate in unicode escape',       // JSON_ERROR_UTF16
 ];
+// One token of $json at $pos (skips whitespace first): one of '{' '}' '[' ']'
+// ':' ',', 'STR', 'VAL' (number or literal), 'EOI', or an error code (int).
+$jsonToken = function ($json, &$pos) {
+    $pos += strspn($json, " \t\r\n", $pos);
+    if (!isset($json[$pos])) {
+        return 'EOI';
+    }
+    $c = $json[$pos];
+    if (strpos('{}[]:,', $c) !== false) {
+        $pos++;
+        return $c;
+    }
+    if ($c === '"') {
+        $pos++;
+        while (true) {
+            // Run of plain chars: not '"', '\\' or a control char.
+            $pos += strcspn($json, "\"\\\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
+                ."\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f", $pos);
+            if (!isset($json[$pos])) {
+                return 4; // unterminated string
+            }
+            $c = $json[$pos];
+            if ($c === '"') {
+                $pos++;
+                return 'STR';
+            }
+            if ($c !== '\\') {
+                return 3; // control character
+            }
+            $e = substr($json, $pos + 1, 1);
+            if ($e !== false && $e !== '' && strpos('"\\/bfnrt', $e) !== false) {
+                $pos += 2;
+                continue;
+            }
+            if ($e !== 'u' || !preg_match('/\G\\\\u[0-9A-Fa-f]{4}/', $json, $m, 0, $pos)) {
+                return 4; // bad escape
+            }
+            $cp = hexdec(substr($json, $pos + 2, 4));
+            if ($cp >= 0xD800 && $cp <= 0xDBFF
+                && preg_match('/\G\\\\u[dD][c-fC-F][0-9A-Fa-f]{2}/', $json, $m, 0, $pos + 6)) {
+                $pos += 12; // surrogate pair
+                continue;
+            }
+            if ($cp >= 0xD800 && $cp <= 0xDFFF) {
+                return 10; // lone surrogate
+            }
+            $pos += 6;
+        }
+    }
+    if (preg_match('/\G-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/', $json, $m, 0, $pos)) {
+        $pos += strlen($m[0]);
+        return 'VAL';
+    }
+    foreach (['true', 'false', 'null'] as $literal) {
+        if (substr($json, $pos, strlen($literal)) === $literal) {
+            $pos += strlen($literal);
+            return 'VAL';
+        }
+    }
+    return ord($c) < 0x20 ? 3 : 4;
+};
+// json_last_error() code of PHP 8.6+ json_decode($json) (default depth 512);
+// 0 = valid JSON. dev/fuzz_inputs.php compares it with json_decode().
+$jsonCheck = function ($json) use ($jsonToken) {
+    if (!preg_match('//u', $json)) {
+        return 5; // not reached through the json spec: VALIDATE_CALLBACK_MB rejects it first
+    }
+    $pos = 0;
+    $stack = []; // open '[' / '{'
+    $t = $jsonToken($json, $pos);
+    while (true) {
+        // $t starts a value.
+        if (is_int($t)) {
+            return $t;
+        }
+        if ($t === '[' || $t === '{') {
+            if (count($stack) >= 511) {
+                return 1; // checked before the next token is read
+            }
+            $stack[] = $t;
+            $t = $jsonToken($json, $pos);
+            if (is_int($t)) {
+                return $t;
+            }
+            if ($t === ($stack[count($stack) - 1] === '[' ? ']' : '}')) {
+                array_pop($stack);
+            } elseif ($t === ']' || $t === '}') {
+                return 2; // closed by the other bracket
+            } else {
+                if ($stack[count($stack) - 1] === '{') {
+                    if ($t !== 'STR') {
+                        return 4;
+                    }
+                    $t = $jsonToken($json, $pos);
+                    if ($t !== ':') {
+                        return is_int($t) ? $t : 4;
+                    }
+                    $t = $jsonToken($json, $pos);
+                }
+                continue;
+            }
+        } elseif ($t !== 'STR' && $t !== 'VAL') {
+            return 4;
+        }
+        // A value ended: close containers until another value is expected.
+        while (true) {
+            $t = $jsonToken($json, $pos);
+            if (is_int($t)) {
+                return $t;
+            }
+            if (!$stack) {
+                return $t === 'EOI' ? 0 : 4;
+            }
+            $open = $stack[count($stack) - 1];
+            if ($t === ($open === '[' ? ']' : '}')) {
+                array_pop($stack);
+                continue;
+            }
+            if ($t === ']' || $t === '}') {
+                return 2; // closed by the other bracket
+            }
+            if ($t !== ',') {
+                return 4;
+            }
+            $t = $jsonToken($json, $pos);
+            if ($open === '{') {
+                if ($t !== 'STR') {
+                    return is_int($t) ? $t : 4;
+                }
+                $t = $jsonToken($json, $pos);
+                if ($t !== ':') {
+                    return is_int($t) ? $t : 4;
+                }
+                $t = $jsonToken($json, $pos);
+            }
+            break;
+        }
+    }
+};
 $basicTypes['json'] = [
     VALIDATE_CALLBACK,
     // JSON whitespace may be any of SP, HTAB, LF, CR, so line endings are not
@@ -1342,13 +1485,16 @@ $basicTypes['json'] = [
      | VALIDATE_CALLBACK_CRLF_MIXED | VALIDATE_CALLBACK_TAB | VALIDATE_CALLBACK_MB,
     [
         'min' => 2, 'max' => 65535,
-        'callback' => function ($ctx, &$result, $input) use ($jsonErrors) {
+        'callback' => function ($ctx, &$result, $input) use ($jsonErrors, $jsonCheck) {
             if (!is_string($input)) {
                 validate_error($ctx, 'Invalid JSON: input must be a string.');
                 return false;
             }
             json_decode($input, true); // arrays: any key is valid, as in JSON
             $code = json_last_error();
+            if ($code === JSON_ERROR_CTRL_CHAR && PHP_VERSION_ID < 80600) {
+                $code = $jsonCheck($input); // 3 or 4 (unterminated string)
+            }
             if ($code !== JSON_ERROR_NONE) {
                 validate_error($ctx, 'Invalid JSON: ' . ($jsonErrors[$code] ?? 'Unknown error'));
                 return false;
@@ -1770,4 +1916,4 @@ $basicTypes['email_dns'] = [
 
 // Helper closures were captured by the specs above; keep them out of the
 // including scope.
-unset($dnsResolvable, $hostnameOk, $httpUrlHost, $jsonErrors);
+unset($dnsResolvable, $hostnameOk, $httpUrlHost, $jsonErrors, $jsonToken, $jsonCheck);
