@@ -127,6 +127,8 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
   release, 8.6) and `master` (php-src master, 8.7.0-dev) builds; see README
   "Branches". `.gitlab-ci.yml` installs `libgmp-dev` from archive.debian.org
   when the image's Debian release is no longer on the mirrors.
+  `dev/basic_types_corpus.php` prints the results of every `$basicTypes` spec
+  for tricky inputs, to compare a branch with `master`.
 * `VALIDATE_OBJECT` `class` option (instanceof check), as `validate_defs.php`
   already described.
 * `VALIDATE_ARRAY` `undeclared` option: a spec applied to every input key that

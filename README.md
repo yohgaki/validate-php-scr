@@ -57,6 +57,7 @@ Every branch provides the same features with code written for its PHP versions. 
 | [`php-5.x`](https://github.com/yohgaki/validate-php-scr/tree/php-5.x) | 5.3 - 5.6 | 5.3 - 5.6 [![CI](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml/badge.svg?branch=php-5.x)](https://github.com/yohgaki/validate-php-scr/actions/workflows/ci.yml?query=branch%3Aphp-5.x) |
 
 * `master` is the development branch. Changes go to `master` first and are then ported to `php-8.x`, `php-7.x` and `php-5.x`, changing only what their PHP versions require (syntax, test runner, CI settings).
+* [`dev/basic_types_corpus.php`](dev/basic_types_corpus.php) checks a port: it validates tricky inputs with every `$basicTypes` spec. Run it on each branch and PHP version (`php dev/basic_types_corpus.php src > out.txt`) and compare the output with `master`'s.
 * `nightly` and `master` in the CI column are [setup-php](https://github.com/shivammathur/setup-php) builds of the next PHP release and of php-src master (8.6 and 8.7.0-dev as of October 2026).
 * `.gitlab-ci.yml` runs the same tests in the official `php` Docker images for the released versions of each branch.
 
