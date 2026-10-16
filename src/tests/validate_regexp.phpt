@@ -7,6 +7,7 @@ if (!class_exists("Validate")) die("skip");
 ?>
 --INI--
 error_reporting=-1
+pcre.jit=0
 --FILE--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -45,6 +46,17 @@ foreach($opts as $opt) {
 	}
 }
 
+// A PCRE runtime error (here the backtrack limit) is reported with its
+// preg_last_error() message.
+ini_set('pcre.backtrack_limit', '100');
+try {
+	$tmp = 'foobarfoobarfoobar';
+	validate($ctx, $tmp, array(VALIDATE_REGEXP, VALIDATE_REGEXP_ALNUM,
+		array('min'=>0, 'max'=>100, 'regexp'=>'/(?:\D+|<\d+>)*[!?]/')));
+} catch (Exception $e) {
+	var_dump($e->getMessage());
+}
+
 echo "Done\n";
 ?>
 --EXPECTF--
@@ -60,4 +72,5 @@ string(4) "data"
 string(68) "param: 'ROOT' error: 'VALIDATE_REGEXP: Failed to match.' val: 'data'"
 ****TEST OPT: a:3:{s:3:"min";i:0;s:3:"max";i:100;s:6:"regexp";s:4:"/\[/";}
 string(68) "param: 'ROOT' error: 'VALIDATE_REGEXP: Failed to match.' val: 'data'"
+string(104) "param: 'ROOT' error: 'VALIDATE_REGEXP: PCRE error: Backtrack limit exhausted.' val: 'foobarfoobarfoobar'"
 Done

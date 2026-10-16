@@ -4,7 +4,8 @@
 
 Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
 `basic_types.php` format fixes, the `VALIDATE_ARRAY` `undeclared` option,
-example/tool fixes, and remembering checked specs.
+example/tool fixes, and remembering checked specs. Fixes for PHP 8.6 /
+8.7.0-dev (2026-10-17).
 
 ### Changed — behavior changes that can affect existing code
 
@@ -54,9 +55,16 @@ example/tool fixes, and remembering checked specs.
   query absolute names for explicit record types instead of `DNS_ANY`.
 * `basic_types.php`: `base64*`, `base64url*` and `urle*` are `VALIDATE_REGEXP`
   specs (were `VALIDATE_STRING`) so they can check where `=` and `%` appear.
+* `basic_types.php` `json`: the error message is fixed per `json_last_error()`
+  code (e.g. "Invalid JSON: Syntax error") instead of `json_last_error_msg()`,
+  whose text depends on the PHP version (8.6 appends "near location 1:2").
+  Objects are decoded as arrays, so keys a PHP object cannot hold
+  (`{"\u0000a":1}`) are valid JSON.
 
 ### Fixed
 
+* PHP 8.6 deprecated `is_double()`: every float input to `VALIDATE_FLOAT`
+  raised a deprecation notice there; it uses `is_float()`.
 * DEL (0x7F) with `VALIDATE_STRING_MB` triggered "Report this error" (a fatal
   `E_USER_ERROR`); it is now an illegal ASCII control char.
 * A UTF-8 string `"0"` failed the `_MB` encoding check.
@@ -150,7 +158,8 @@ example/tool fixes, and remembering checked specs.
   `src/tools/README.md`); the tools refuse directories other users can write to.
 * `src/tests/validate_regressions.phpt`, `src/tests/basic_types_formats.phpt`,
   `src/tests/validate_array_undeclared.phpt`, `src/tests/validate_spec_cache.phpt`;
-  PHP 8.5 in both CI matrices.
+  JSON error messages (`validate_basic_types_more.phpt`) and PCRE runtime
+  errors (`validate_regexp.phpt`); PHP 8.5 in both CI matrices.
 
 ### Removed / internal
 

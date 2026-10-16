@@ -42,6 +42,31 @@ try_type('email', 'not-an-email');
 echo "\n**** json callback ****\n";
 try_type('json', '{"a":1}');
 try_type('json', '{broken');
+// Fixed messages per json_last_error() code, so they do not depend on the PHP
+// version. Objects decode to arrays: '\u0000' starting a key is valid JSON.
+$jsonCases = [
+    'nesting 511'    => str_repeat('[', 511).str_repeat(']', 511),
+    'nesting 512'    => str_repeat('[', 512).str_repeat(']', 512),
+    'tab in string'  => "[\"a\tb\"]",
+    'lone surrogate' => '["\ud800"]',
+    'NUL key'        => '{"\u0000a":1}',
+    'empty key'      => '{"":1}',
+    'spaces'         => " [1] ",
+    'TRUE'           => 'TRUE',
+    'leading zero'   => '07',
+    'trailing dot'   => '[1.]',
+    'leading dot'    => '-.1',
+];
+foreach ($jsonCases as $label => $json) {
+    $ctx = validate_init();
+    $r = validate($ctx, $json, $basicTypes['json'], $opts);
+    echo "json($label): ", $r === null ? 'NULL' : 'valid', "\n";
+    foreach (validate_get_user_errors($ctx)['error'] as $errs) {
+        foreach ((array)$errs as $msg) {
+            echo "  user error: $msg\n";
+        }
+    }
+}
 
 echo "\n**** header64 (vtrim filter) ****\n";
 try_type('header64', "  text/html  ");
@@ -66,6 +91,24 @@ email('not-an-email'): NULL
 **** json callback ****
 json('{"a":1}'): string(7) "{"a":1}"
 json('{broken'): NULL
+  user error: Invalid JSON: Syntax error
+json(nesting 511): valid
+json(nesting 512): NULL
+  user error: Invalid JSON: Maximum stack depth exceeded
+json(tab in string): NULL
+  user error: Invalid JSON: Control character error, possibly incorrectly encoded
+json(lone surrogate): NULL
+  user error: Invalid JSON: Single unpaired UTF-16 surrogate in unicode escape
+json(NUL key): valid
+json(empty key): valid
+json(spaces): valid
+json(TRUE): NULL
+  user error: Invalid JSON: Syntax error
+json(leading zero): NULL
+  user error: Invalid JSON: Syntax error
+json(trailing dot): NULL
+  user error: Invalid JSON: Syntax error
+json(leading dot): NULL
   user error: Invalid JSON: Syntax error
 
 **** header64 (vtrim filter) ****

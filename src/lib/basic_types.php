@@ -1323,7 +1323,17 @@ $basicTypes['header32ku'] = [
 // input cannot be parsed. VALIDATE_CALLBACK_SYMBOL is required so the
 // surrounding character whitelist accepts JSON delimiters ({ } [ ] " \ , : etc.).
 // The decoded value is discarded — only $input (the original string) is stored.
+// Error messages come from $jsonErrors, not json_last_error_msg(), whose text
+// depends on the PHP version (8.6 appends the error location).
 // ---------------------------------------------------------------------------
+$jsonErrors = [ // json_last_error() codes
+    1 => 'Maximum stack depth exceeded',                              // JSON_ERROR_DEPTH
+    2 => 'State mismatch (invalid or malformed JSON)',                // JSON_ERROR_STATE_MISMATCH
+    3 => 'Control character error, possibly incorrectly encoded',     // JSON_ERROR_CTRL_CHAR
+    4 => 'Syntax error',                                              // JSON_ERROR_SYNTAX
+    5 => 'Malformed UTF-8 characters, possibly incorrectly encoded',  // JSON_ERROR_UTF8
+    10 => 'Single unpaired UTF-16 surrogate in unicode escape',       // JSON_ERROR_UTF16
+];
 $basicTypes['json'] = [
     VALIDATE_CALLBACK,
     // JSON whitespace may be any of SP, HTAB, LF, CR, so line endings are not
@@ -1332,14 +1342,15 @@ $basicTypes['json'] = [
      | VALIDATE_CALLBACK_CRLF_MIXED | VALIDATE_CALLBACK_TAB | VALIDATE_CALLBACK_MB,
     [
         'min' => 2, 'max' => 65535,
-        'callback' => function ($ctx, &$result, $input) {
+        'callback' => function ($ctx, &$result, $input) use ($jsonErrors) {
             if (!is_string($input)) {
                 validate_error($ctx, 'Invalid JSON: input must be a string.');
                 return false;
             }
-            json_decode($input);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                validate_error($ctx, 'Invalid JSON: ' . json_last_error_msg());
+            json_decode($input, true); // arrays: any key is valid, as in JSON
+            $code = json_last_error();
+            if ($code !== JSON_ERROR_NONE) {
+                validate_error($ctx, 'Invalid JSON: ' . ($jsonErrors[$code] ?? 'Unknown error'));
                 return false;
             }
             $result = $input;
@@ -1668,4 +1679,4 @@ $basicTypes['email_dns'] = [
 
 // Helper closures were captured by the specs above; keep them out of the
 // including scope.
-unset($dnsResolvable, $httpUrlOk);
+unset($dnsResolvable, $httpUrlOk, $jsonErrors);

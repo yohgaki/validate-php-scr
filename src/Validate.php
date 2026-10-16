@@ -2225,7 +2225,7 @@ class Validate
             }
             return true;
         }
-        if (is_double($value)) {
+        if (is_float($value)) {
             if ($flags & VALIDATE_FLOAT_AS_STRING) {
                 // AS_STRING accepts numeric strings only (see validate_defs.php);
                 // converting a native double here could also produce scientific
