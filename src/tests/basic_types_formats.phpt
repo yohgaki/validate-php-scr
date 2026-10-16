@@ -1,5 +1,5 @@
 --TEST--
-basicTypes format specs: sessid, base64, base64url, urle, time, datetime, domain, AS_STRING ints
+basicTypes format specs: sessid, base64, base64url, urle, time, datetime, domain, http_host, AS_STRING ints
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -79,6 +79,25 @@ $cases = [
     ['domain', 'example.123', 'fail'],
     ['domain', 'example.c', 'fail'],
     ['domain', 'localhost', 'fail'],
+
+    // http_host: host name or IP address with an optional port.
+    ['http_host', 'example.com', 'pass'],
+    ['http_host', 'example.com:8080', 'pass'],
+    ['http_host', 'localhost', 'pass'],
+    ['http_host', '127.0.0.1:8080', 'pass'],
+    ['http_host', '[::1]', 'pass'],
+    ['http_host', '[2001:db8::1]:443', 'pass'],
+    ['http_host', 'example.com:0', 'fail'],
+    ['http_host', 'example.com:65536', 'fail'],
+    ['http_host', 'example.com:080', 'fail'],
+    ['http_host', 'example.com:', 'fail'],
+    ['http_host', 'example.com.', 'fail'],
+    ['http_host', '999.1.1.1', 'fail'],
+    ['http_host', '010.0.0.1', 'fail'],
+    ['http_host', '[::1', 'fail'],
+    ['http_host', '::1', 'fail'],
+    ['http_host', 'a_b.com', 'fail'],
+    ['http_host', 'user@example.com', 'fail'],
 
     // VALIDATE_INT_AS_STRING returns a string for int input too.
     ['uint64', 5, 'pass'],
@@ -162,6 +181,23 @@ echo "Done.\n";
 [OK] domain('example.123') => fail (expected fail)
 [OK] domain('example.c') => fail (expected fail)
 [OK] domain('localhost') => fail (expected fail)
+[OK] http_host('example.com') => pass (expected pass) string
+[OK] http_host('example.com:8080') => pass (expected pass) string
+[OK] http_host('localhost') => pass (expected pass) string
+[OK] http_host('127.0.0.1:8080') => pass (expected pass) string
+[OK] http_host('[::1]') => pass (expected pass) string
+[OK] http_host('[2001:db8::1]:443') => pass (expected pass) string
+[OK] http_host('example.com:0') => fail (expected fail)
+[OK] http_host('example.com:65536') => fail (expected fail)
+[OK] http_host('example.com:080') => fail (expected fail)
+[OK] http_host('example.com:') => fail (expected fail)
+[OK] http_host('example.com.') => fail (expected fail)
+[OK] http_host('999.1.1.1') => fail (expected fail)
+[OK] http_host('010.0.0.1') => fail (expected fail)
+[OK] http_host('[::1') => fail (expected fail)
+[OK] http_host('::1') => fail (expected fail)
+[OK] http_host('a_b.com') => fail (expected fail)
+[OK] http_host('user@example.com') => fail (expected fail)
 [OK] uint64(5) => pass (expected pass) string
 [OK] uint64(%d) => pass (expected pass) string
 [OK] uint64('18446744073709551615') => pass (expected pass) string

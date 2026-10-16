@@ -9,7 +9,7 @@
  *   - $_POST    (form fields)
  *   - $_COOKIE  (cookies)
  *   - $_FILES   (file uploads)
- *   - HTTP request headers (apache_request_headers() / $_SERVER)
+ *   - HTTP request headers (the HTTP_* entries of $_SERVER)
  *
  * Per OWASP TOP 10 A10:2017, every input must be validated. Nesting per-source
  * specs under a single VALIDATE_ARRAY lets the four superglobals go through
@@ -138,7 +138,7 @@ $headerSpec = [
     VALIDATE_FLAG_ARRAY_KEY_ALNUM,
     ['min' => 1, 'max' => 100, 'undeclared' => $headerCatchSpec], // Host required + up to 99 others
     [
-        'Host'       => $basicTypes['domain'],
+        'Host'       => $basicTypes['http_host'], // name or IP, optional ":port"
         'Cookie'     => $cookieHdr,
         'User-Agent' => $uaHdr,
     ]
@@ -190,26 +190,28 @@ if (PHP_SAPI === 'cli' && empty($_GET) && empty($_POST)) {
     ];
 }
 
-if (function_exists('apache_request_headers')) {
-    $headers = apache_request_headers();
-} else {
-    // Extract headers from $_SERVER (HTTP_*). Empty under CLI.
-    $headers = [];
+// Request headers from $_SERVER: HTTP_* plus CONTENT_TYPE / CONTENT_LENGTH,
+// which PHP stores without the prefix. Names become "Accept-Language" style
+// on every SAPI. (apache_request_headers() keeps the client's spelling —
+// all lower case over HTTP/2 — so 'Host' would not match "host".) The
+// other $_SERVER entries are server/environment variables, not headers.
+// CLI has no request headers (its $_SERVER is the environment): use samples.
+$headers = [];
+if (PHP_SAPI !== 'cli') {
     foreach ($_SERVER as $k => $v) {
-        if (strpos($k, 'HTTP_') === 0) {
-            $name = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($k, 5)))));
-            $headers[$name] = $v;
+        if (strncmp($k, 'HTTP_', 5) === 0 || $k === 'CONTENT_TYPE' || $k === 'CONTENT_LENGTH') {
+            $name = (strncmp($k, 'HTTP_', 5) === 0) ? substr($k, 5) : $k;
+            $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', $name))))] = $v;
         }
     }
-    if (PHP_SAPI === 'cli' && !$headers) {
-        $headers = [
-            'Host'            => 'example.com',
-            'User-Agent'      => 'Mozilla/5.0 (compatible; validate-php-scr/95)',
-            'Cookie'          => 'PHPSESSID='.str_repeat('a', 32),
-            'Accept'          => 'text/html',
-            'Accept-Language' => 'ja, en;q=0.8',
-        ];
-    }
+} else {
+    $headers = [
+        'Host'            => 'example.com:8080',
+        'User-Agent'      => 'Mozilla/5.0 (compatible; validate-php-scr/95)',
+        'Cookie'          => 'PHPSESSID='.str_repeat('a', 32),
+        'Accept'          => 'text/html',
+        'Accept-Language' => 'ja, en;q=0.8',
+    ];
 }
 
 $inputs = [

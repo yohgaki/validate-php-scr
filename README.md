@@ -211,7 +211,9 @@ with a catch-all spec, and VALIDATE_FLAG_ARRAY_KEY_ALNUM restricts their names.
 require_once __DIR__.'/../validate_func.php';
 require_once __DIR__.'/../lib/basic_types.php'; // Defines the $basicTypes array.
 
-// In a real app: $request_headers_orig = apache_request_headers();
+// In a real app, build it from the HTTP_* entries of $_SERVER as
+// 95-example.php does. (apache_request_headers() keeps the client's
+// spelling of names — all lower case over HTTP/2.)
 $request_headers_orig = ['a'=>'abc', 'b'=>'456'];
 
 // Known headers. Cookie is optional; User-Agent is optional with a default

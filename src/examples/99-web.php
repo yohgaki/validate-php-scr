@@ -27,6 +27,17 @@ require_once __DIR__.'/99-web-specs.php';
 // (no UTF-8 multibyte).
 $other_header = $basicTypes['header1024'];
 
+// Request headers: the HTTP_* entries of $_SERVER plus CONTENT_LENGTH /
+// CONTENT_TYPE. The rest of $_SERVER is server and environment variables
+// (never echo $_SERVER to a page: it may hold secrets) and request-line
+// values such as REQUEST_URI; validate those where you use them.
+$headers = [];
+foreach ($_SERVER as $key => $value) {
+    if (strncmp($key, 'HTTP_', 5) === 0 || $key === 'CONTENT_LENGTH' || $key === 'CONTENT_TYPE') {
+        $headers[$key] = $value;
+    }
+}
+
 // Compose the per-field specs (loaded above) into a request-level spec.
 // Each spec array follows the [type, flags, options, sub-specs] layout.
 $spec = [
@@ -63,10 +74,11 @@ $spec = [
                       // through $other_header.
             VALIDATE_ARRAY,
             VALIDATE_FLAG_ARRAY_KEY_ALNUM, // Undeclared header names: alnum, '_' and '-' only.
-            // 2 declared + at least 10 others (realistic browser baseline);
-            // reject obviously bloated header sets.
-            ['min' => 12, 'max' => 50, 'undeclared' => $other_header],
+            // The 3 declared headers every form POST carries; reject
+            // obviously bloated header sets.
+            ['min' => 3, 'max' => 50, 'undeclared' => $other_header],
             [
+                'HTTP_HOST' => $basicTypes['http_host'],
                 // PHP stores these two request headers without the HTTP_ prefix.
                 'CONTENT_LENGTH' => $content_length,
                 'CONTENT_TYPE' => $content_type,
@@ -120,14 +132,10 @@ $spec = [
      <pre>
 <?php
 if (!empty($_POST)):
-    // Strip the noisier $_SERVER entries so the rendered page is safe to share.
-    unset($_SERVER['DOCUMENT_ROOT'], $_SERVER['SERVER_SOFTWARE'], $_SERVER['SCRIPT_FILENAME'], $_SERVER['CONTEXT_DOCUMENT_ROOT']);
-
     // Validate ALL inputs the request brings in — $_POST, $_GET, $_COOKIE,
-    // $_FILES, the $_SERVER HTTP_* entries, apache_request_headers(). This
-    // example covers GET / POST / headers; cookies and files would be added
-    // the same way.
-    $inputs = ['get' => $_GET, 'post' => $_POST, 'header' => $_SERVER];
+    // $_FILES and the request headers. This example covers GET / POST /
+    // headers; cookies and files would be added the same way.
+    $inputs = ['get' => $_GET, 'post' => $_POST, 'header' => $headers];
 
     // One call validates everything. Validated values are removed from
     // $inputs (the engine unsets them by reference). An unknown GET/POST key
@@ -156,7 +164,7 @@ if (!empty($_POST)):
 <hr />
 <br />
 <h1>INPUTS</h1><br />
-<?php echo htmlspecialchars(print_r(['get' => $_GET, 'post' => $_POST, 'header' => $_SERVER], true)); ?>
+<?php echo htmlspecialchars(print_r(['get' => $_GET, 'post' => $_POST, 'header' => $headers], true)); ?>
 <br />
 <h1>UNVALIDATED INPUTS</h1>
 NOTE: validate() removes every value it validated, so whatever is left here

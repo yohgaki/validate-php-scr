@@ -991,6 +991,8 @@ $basicTypes['cidr4'] = [
 // 'fqdn'     : format check + live DNS lookup (rejects unresolvable names).
 // 'hostname' : single label only, no dot, format only.
 // 'domain'   : multi-label, format only (no DNS lookup).
+// 'http_host': HTTP Host header value — host name or IP address with an
+//              optional port, format only.
 // ---------------------------------------------------------------------------
 // Live DNS check shared by 'fqdn' and 'active_url'. The trailing dot makes
 // the name absolute (no resolver search-list expansion), and explicit record
@@ -1048,6 +1050,46 @@ $basicTypes['domain'] = [
     ]
 ];
 
+// HTTP Host header value (RFC 9110 §7.2): host [":" port], format only.
+// host is a name of RFC 1123 labels (one label such as "localhost" is fine;
+// no trailing dot), a dotted-decimal IPv4 address or a bracketed IPv6
+// address ("[::1]"). A name whose last label is all digits must be a valid
+// IPv4 address, so "999.1.1.1" is rejected. port is 1-65535 without leading
+// zeros. Compare the result against the host names your app serves.
+$basicTypes['http_host'] = [
+    VALIDATE_CALLBACK,
+    VALIDATE_CALLBACK_ALNUM,
+    [
+        'min' => 1, 'max' => 259, // 253-char name + ":65535"
+        'ascii' => '.-:[]',
+        'callback' => function ($ctx, &$result, $input) {
+            $label = '[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?';
+            if (!is_string($input)
+                || !preg_match('/\A(?:\[([0-9A-Fa-f:.]+)\]|('.$label.'(?:\.'.$label.')*))'
+                               .'(?::([1-9][0-9]{0,4}))?\z/', $input, $m)
+                || (isset($m[3]) && (int)$m[3] > 65535)) {
+                validate_error($ctx, 'Invalid HTTP host.');
+                return false;
+            }
+            if ($m[1] !== '') {
+                $valid = filter_var($m[1], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false;
+            } elseif (strlen($m[2]) > 253) {
+                $valid = false;
+            } elseif (ctype_digit(substr(strrchr('.'.$m[2], '.'), 1))) {
+                $valid = filter_var($m[2], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
+            } else {
+                $valid = true;
+            }
+            if (!$valid) {
+                validate_error($ctx, 'Invalid HTTP host.');
+                return false;
+            }
+            $result = $input;
+            return true;
+        },
+    ]
+];
+
 // Email address - format validation only (RFC 5321/5322 practical subset)
 // Max 64 chars local-part, max 255 chars domain, max 254 chars total
 $basicTypes['email'] = [
@@ -1095,7 +1137,7 @@ $vtrim = function ($ctx, $input, &$error) {
 // HTTP headers may contain SYMBOL characters by RFC, so the character-set
 // restriction here is intentionally loose. Whenever the header has a tighter
 // grammar (e.g. Content-Length is a uint), prefer a more specific spec —
-// $basicTypes['uint32'] for Content-Length, $basicTypes['domain'] for Host, etc.
+// $basicTypes['uint32'] for Content-Length, $basicTypes['http_host'] for Host, etc.
 // Bare 'header' has min=max=0 placeholders; override before use.
 $basicTypes['header'] = [
     VALIDATE_STRING,

@@ -309,7 +309,7 @@ $spec = [
     VALIDATE_FLAG_ARRAY_KEY_ALNUM, // Names of undeclared keys: alnum, '-' and '_'.
     ['min' => 1, 'max' => 50, 'undeclared' => $basicTypes['header512']],
     [
-        'Host' => $basicTypes['domain'],
+        'Host' => $basicTypes['http_host'],
     ]
 ];
 ```

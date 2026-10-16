@@ -7,7 +7,7 @@
  * Pipeline:
  *   1. analyze_log()      — walk every *-log.php, fold each request into $stat
  *   2. create_stat()      — dump the raw $stat array to stat.php (debug aid)
- *   3. optimize_stat()    — turn observation counters into final flag/range hints
+ *   3. optimize_stat()    — turn observation counters into final flag/range values
  *   4. create_spec()      — translate $stat into spec.php for input_validator.php
  *
  * Usage: php input_analyzer.php [/path/to/log_dir]
@@ -334,96 +334,7 @@ function optimize_stat_recursive(&$stat)
         return;
     }
     foreach ($stat[VALIDATE_PARAMS] as $key => $val) {
-        optimize_stat_hint($stat[VALIDATE_PARAMS][$key], $key);
         optimize_stat_recursive($stat[VALIDATE_PARAMS][$key]);
-    }
-}
-
-
-/**
- * Increment heuristic "hint" counters from the parameter name and observed
- * values. These hints are reported in stat.php as a debugging aid; they do
- * not yet feed back into the generated spec (see README TODO list).
- */
-function optimize_stat_hint(&$stat, $key)
-{
-    if (preg_match('/mail/i', $key)) {
-        $stat['hint']['email'] = $stat['hint']['email'] ?? 0;
-        $stat['hint']['email']++;
-    }
-    if (preg_match('/password|passwd/i', $key)) {
-        $stat['hint']['password'] = $stat['hint']['password'] ?? 0;
-        $stat['hint']['password']++;
-    }
-    if (preg_match('/id\\z/i', $key)) {
-        if (strlen($key) === strspn($key, '1234567890')) {
-            $stat['hint']['int_id'] = $stat['hint']['int_id'] ?? 0;
-            $stat['hint']['int_id']++;
-        } elseif (preg_match('/phpsessid/i', $key)) {
-            $stat['hint']['sessid'] = $stat['hint']['sessid'] ?? 0;
-            $stat['hint']['sessid']++;
-        } else {
-            $stat['hint']['str_id'] = $stat['hint']['str_id'] ?? 0;
-            $stat['hint']['str_id']++;
-        }
-    }
-    if (preg_match('/name/i', $key)) {
-        $stat['hint']['name'] = $stat['hint']['name'] ?? 0;
-        $stat['hint']['name']++;
-    }
-    if (preg_match('/addr/i', $key)) {
-        if (preg_match('/ip/i', $key) && strlen($key) === strspn($key, '1234567890.')) {
-            $stat['hint']['ipv4'] = $stat['hint']['ipv4'] ?? 0;
-            $stat['hint']['ipv4']++;
-        } else {
-            $stat['hint']['address'] = $stat['hint']['address'] ?? 0;
-            $stat['hint']['address']++;
-        }
-    }
-    if (preg_match('/key/i', $key)) {
-        $stat['hint']['key'] = $stat['hint']['key'] ?? 0;
-        $stat['hint']['key']++;
-    }
-    foreach ($stat[VALIDATE_VALUES] as $val => $cnt) {
-        if (strlen($val) < 10) {
-            $stat['hint']['len_10'] = $stat['hint']['len_10'] ?? 0;
-            $stat['hint']['len_10']++;
-        } elseif (strlen($val) < 20) {
-            $stat['hint']['len_20'] = $stat['hint']['len_20'] ?? 0;
-            $stat['hint']['len_20']++;
-        } elseif (strlen($val) < 50) {
-            $stat['hint']['len_50'] = $stat['hint']['len_50'] ?? 0;
-            $stat['hint']['len_50']++;
-        } elseif (strlen($val) < 100) {
-            $stat['hint']['len_100'] = $stat['hint']['len_100'] ?? 0;
-            $stat['hint']['len_100']++;
-        } elseif (strlen($val) < 200) {
-            $stat['hint']['len_200'] = $stat['hint']['len_200'] ?? 0;
-            $stat['hint']['len_200']++;
-        } else {
-            $stat['hint']['len_200+'] = $stat['hint']['len_200+'] ?? 0;
-            $stat['hint']['len_200+']++;
-        }
-        if (preg_match('/\\n|\\r/', $val)) {
-            $stat['hint']['newline'] = $stat['hint']['newline'] ?? 0;
-            $stat['hint']['newline']++;
-        }
-        if (preg_match('/\\A\\d+\\z/', $val)) {
-            $stat['hint']['int'] = $stat['hint']['int'] ?? 0;
-            $stat['hint']['int']++;
-        }
-        if (preg_match('/\\A\\d+\\.\\d+\\z/', $val)) {
-            $stat['hint']['float'] = $stat['hint']['float'] ?? 0;
-            $stat['hint']['float']++;
-        }
-        if (preg_match('/ /', $val)) {
-            $stat['hint']['space'] = $stat['hint']['space'] ?? 0;
-            $stat['hint']['space']++;
-        }
-        if (preg_match('/\\A[0-9a-f]+/i', $key)) {
-            $stat['hint']['hex'] = $stat['hint']['hex'] ?? 0;
-            $stat['hint']['hex']++;
-        }
     }
 }
 

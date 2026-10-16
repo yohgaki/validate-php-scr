@@ -3,7 +3,8 @@
 ## Unreleased
 
 Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
-`basic_types.php` format fixes and the `VALIDATE_ARRAY` `undeclared` option.
+`basic_types.php` format fixes, the `VALIDATE_ARRAY` `undeclared` option, and
+example/tool fixes.
 
 ### Changed — behavior changes that can affect existing code
 
@@ -98,6 +99,13 @@ Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
 * examples: OR-inverted deny-list regexp, `'\t'` in single quotes, email
   callbacks without `@`, `$_FILES` `full_path` (PHP 8.1+), status checks that
   only looked at the last `validate()` call.
+* examples: 95 rejected a `Host` header with a port (`example.com:8080`) or an
+  IP address, and used `apache_request_headers()`, whose names are all lower
+  case over HTTP/2 (`host` did not match the declared `Host`); it now builds
+  the headers from `$_SERVER` on every SAPI, including `Content-Type` /
+  `Content-Length`. 99-web validated the whole `$_SERVER` as headers and
+  printed it — server and environment variables included — to the page; it
+  now takes only the request headers.
 
 ### Added
 
@@ -114,6 +122,9 @@ Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
   zone names (`DateTimeZone::ALL_WITH_BC`, Laravel `timezone:all_with_bc`),
   e.g. `US/Eastern` or `Asia/Calcutta`, which browsers still report.
   `timezone` keeps accepting canonical names only.
+* `basic_types.php`: `http_host` for the HTTP `Host` header — a host name
+  (one label such as `localhost` is fine), IPv4 address or `[IPv6]` address
+  with an optional port 1-65535. Examples 95 and 99-web use it.
 * `ValidateInvalidSpecException::getContext()`,
   `ValidateInvalidValueException::getError()`.
 * `VALIDATE_TOOLS_DIR` environment variable for `src/tools` (see
@@ -129,6 +140,9 @@ Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
   is documented as reserved (no effect).
 * The per-key body of the `VALIDATE_ARRAY` loop is `validateParam()`, shared
   by declared keys and keys validated by `undeclared`.
+* tools: removed the key-name hint heuristics from `input_analyzer.php`; they
+  ran after `stat.php` was written and never reached the generated spec.
+  Honoring key-name hints stays on the `src/tools/README.md` TODO list.
 * String validation skips whitelisted runs with `strspn()` instead of building
   a 128-entry map per value.
 * Removed dead internals (`reportWarning()`, `reportNotice()`,
