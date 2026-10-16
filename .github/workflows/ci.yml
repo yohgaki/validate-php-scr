@@ -12,7 +12,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        # master branch: released PHP 8 versions plus setup-php's builds of the
+        # next PHP release ('nightly') and php-src master ('master').
+        php: ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5', 'nightly', 'master']
 
     steps:
       - uses: actions/checkout@v4
@@ -24,8 +26,8 @@ jobs:
           extensions: bcmath, gmp, mbstring
           coverage: none
 
-      - name: Check extensions
-        run: php -m | grep -E 'bcmath|gmp|mbstring'
+      - name: Check PHP and extensions
+        run: php -v && php -m | grep -E 'bcmath|gmp|mbstring'
 
       - name: Run tests
         run: cd src && php run-tests.php -p $(which php) --show-diff tests

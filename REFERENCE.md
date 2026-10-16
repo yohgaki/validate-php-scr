@@ -685,7 +685,7 @@ $user_agent = [
 
 * "Validate PHP" has OO API, but I recommend procedural API.
 * If you would like to use "Validate PHP" for logic validation that you don't want any error/exception, simply use **VALIDATE_OPT_DISABLE_EXCEPTION** function option.
-* You would like to define central input parameter specifications similar to [this](https://github.com/yohgaki/validate-php-scr/blob/master/src/lib/basic_types.php). The definition file is an example definition for portable integer value handling also.
+* You would like to define central input parameter specifications similar to [this](src/lib/basic_types.php). The definition file is an example definition for portable integer value handling also.
 
 ```php
 <?php

@@ -10,8 +10,17 @@ default:
   stage: test
   before_script:
     - php -v
-    - apt-get update -qq
-    - apt-get install -y -qq libgmp-dev
+    # 古いイメージの Debian は archive.debian.org にしか残っていない
+    - |
+      if ! apt-get update -qq; then
+        codename=$(sed -n 's/^VERSION_CODENAME=//p' /etc/os-release)
+        [ -n "$codename" ] || codename=$(sed -n 's/^VERSION=.*(\(.*\)).*/\1/p' /etc/os-release)
+        echo "deb http://archive.debian.org/debian $codename main" > /etc/apt/sources.list
+        rm -f /etc/apt/sources.list.d/*
+        apt-get -o Acquire::Check-Valid-Until=false update -qq
+      fi
+    - apt-get install -y -qq libgmp-dev || apt-get install -y -qq --allow-unauthenticated libgmp-dev || apt-get install -y -qq --force-yes libgmp-dev
+    - if [ ! -e /usr/include/gmp.h ]; then ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h; fi
     - docker-php-ext-install -j$(nproc) bcmath gmp > /dev/null
     - php -m | grep -E 'bcmath|gmp|mbstring'
   script:

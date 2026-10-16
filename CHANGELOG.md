@@ -4,8 +4,8 @@
 
 Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
 `basic_types.php` format fixes, the `VALIDATE_ARRAY` `undeclared` option,
-example/tool fixes, and remembering checked specs. Fixes for PHP 8.6 /
-8.7.0-dev (2026-10-17).
+example/tool fixes, and remembering checked specs. Branches for older PHP
+versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
 
 ### Changed — behavior changes that can affect existing code
 
@@ -117,6 +117,13 @@ example/tool fixes, and remembering checked specs. Fixes for PHP 8.6 /
 
 ### Added
 
+* Branches `php-8.x` (PHP 8.x), `php-7.x` (PHP 7.0 - 7.4) and `php-5.x` (PHP
+  5.3 - 5.6) with the same features as `master`, which is the development
+  branch: changes go to `master` first and are ported to the other branches.
+  The GitHub Actions matrix of `master` adds setup-php's `nightly` (next PHP
+  release, 8.6) and `master` (php-src master, 8.7.0-dev) builds; see README
+  "Branches". `.gitlab-ci.yml` installs `libgmp-dev` from archive.debian.org
+  when the image's Debian release is no longer on the mirrors.
 * `VALIDATE_OBJECT` `class` option (instanceof check), as `validate_defs.php`
   already described.
 * `VALIDATE_ARRAY` `undeclared` option: a spec applied to every input key that
