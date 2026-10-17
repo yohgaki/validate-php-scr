@@ -2,7 +2,63 @@
 
 ## Unreleased
 
-Nothing yet.
+A review of the code against its documentation (2026-10-17).
+
+### Changed — behavior changes that can affect existing code
+
+* A failed element of a `VALIDATE_FLAG_ARRAY` array is left out of the result
+  (`getValidated()` had `null` for it; with `VALIDATE_FLAG_PASSTHRU` the
+  result had the failed value).
+* `VALIDATE_FLAG_RAW` wins over `VALIDATE_BOOL_AS_STRING`, as it does for
+  `VALIDATE_INT` / `VALIDATE_FLOAT`: `"YES"` stays `"YES"` (was `"yes"`).
+
+### Fixed
+
+* `VALIDATE_FLAG_PASSTHRU` did not do what the docs say. A `validate_error()`
+  from a callback was recorded and threw `ValidateInvalidValueException`, and a
+  value whose callback returned false stayed in the result. Both failures are
+  now dropped and the value is left out of the result.
+* `validate_error()` from a callback that returned true set the status to
+  false, but the value stayed in `getValidated()` and was removed from
+  `$inputs`. It now fails the value like a false return.
+* `VALIDATE_INT` with `values` ignored `VALIDATE_INT_POSITIVE_SIGN`: `"+5"`
+  failed. The sign rules are those of the range check now: `+` with
+  `VALIDATE_INT_POSITIVE_SIGN`, `-` with `VALIDATE_INT_NEGATIVE_SIGN` or when
+  negative values are valid (a negative key in `values`, as a negative `min`
+  allows it).
+* `validate_spec()` dropped a `VALIDATE_ARRAY` node with a broken option or
+  child from `$unvalidated`, which is meant to keep the broken parts.
+* The spec check contradicted the engine:
+  * It warned that `VALIDATE_FLAG_EMPTY_TO_DEFAULT` has no effect on
+    `VALIDATE_ARRAY`, which applied it to array parameters. It is accepted
+    now (a missing `default` is a spec error) and also applies to a top-level
+    `VALIDATE_ARRAY`.
+  * It warned that every `VALIDATE_MULTI` option has no effect, but `filter`
+    is applied. `filter` (which must be callable) and `_` options are
+    accepted now; others are still warned about.
+  * It warned "No value can be accepted" for `VALIDATE_BOOL` without format
+    flags, which accepts bool values (`$basicTypes['bool']`). It is a notice
+    saying so now.
+* Documentation that contradicted the code, in REFERENCE.md, README.md,
+  `src/tools/README.md`, the comments of `validate_defs.php`, `Validate.php`,
+  `validate_func.php` and `basic_types.php`, and example 01. Among others:
+  * `VALIDATE_NULL_AS_STRING`, `VALIDATE_BOOL_AS_STRING`, `VALIDATE_STRING_CRLF`
+    (CR and LF only as pairs), `*_RFC3454_D` (no effect), `VALIDATE_FLAG_EMPTY`
+    with `VALIDATE_FLAG_ARRAY`, the `-` implied by negative values, `values`
+    skipping the char and encoding checks, and `error_message` with
+    `VALIDATE_FLAG_WARNING` / `_NOTICE`.
+  * The `validate_spec()` example in `validate_func.php` was not a valid spec,
+    and the REFERENCE spec template had `$params =>` as an array key.
+  * README Example #5 is `src/examples/95-example.php` again (it had drifted:
+    no headers), and its status is 1.0 instead of "Pre Alpha". The "6 times
+    slower" figure for the RFC 3454 check had no measurement behind it and is
+    gone.
+  * `src/tools/README.md`: the owner check needs the posix extension, and
+    `stat.php` keeps up to 999 sample values per parameter.
+  * `basic_types.php`: the placeholder length of the encoded-form specs, the
+    session id comment (PHP warns about an invalid id instead of stripping
+    characters), the `sqlident127` comment (MySQL allows 64 chars) and the
+    DNS lookups of `fqdn` / `active_url`.
 
 ## 1.0 - 2026-10-17: `v1.0.500` (`php-5.x`), `v1.0.700` (`php-7.x`), `v1.0.800` (`php-8.x`)
 

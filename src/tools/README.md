@@ -22,11 +22,14 @@ The input logs, `stat.php` and `spec.php` live in one directory:
 | `VALIDATE_TOOLS_DIR` (environment variable) | all three scripts | `/var/tmp/validate` | Log / spec directory. `input_analyzer.php` also takes it as its first argument, which wins over the variable. |
 
 The directory is created with mode 0700 and log files with mode 0600. Every
-script refuses to use the directory unless it is owned by the current user
-and is not group/world writable (`*-log.php` and `spec.php` are
-`include()`d, so a directory another user can write to would mean code
-execution). Logs contain every request body (passwords, cookies) in
-cleartext: run the logger only in a controlled environment.
+script refuses to use the directory unless it is not a symlink, is not
+group/world writable and (when the posix extension is loaded) is owned by the
+current user (`*-log.php` and `spec.php` are `include()`d, so a directory
+another user can write to would mean code execution). Logs contain every
+request body (passwords, cookies) in cleartext, and `stat.php` keeps up to 999
+distinct sample values per parameter; `input_analyzer.php` writes `stat.php`
+and `spec.php` with the process umask, so the 0700 directory is what protects
+them. Run the logger only in a controlled environment.
 
 If `auto_prepend_file` is not available (e.g. shared hosting), `require_once`
 the scripts manually from a bootstrap file instead.

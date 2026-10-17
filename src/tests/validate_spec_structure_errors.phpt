@@ -118,7 +118,7 @@ ERROR: VALIDATE_MULTI Flags other than VALIDATE_MULTI_AND and VALIDATE_MULTI_OR 
 
 == MULTI useless options ==
 bool(true)
-WARNING: VALIDATE_MULTI has options that has no effect.
+WARNING: VALIDATE_MULTI has option "x" that has no effect. Only "filter" and "_" prefixed user options are allowed.
 
 == MULTI with VALIDATE_FLAG_ARRAY ==
 bool(false)

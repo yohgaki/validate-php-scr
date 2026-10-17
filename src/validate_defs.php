@@ -26,8 +26,8 @@ define('VALIDATE_CALLBACK', 7);
 define('VALIDATE_REGEXP', 8);
 define('VALIDATE_RESOURCE', 9);
 define('VALIDATE_OBJECT', 10);
-define('VALIDATE_MULTI', 11); /* Validate one scalar against multiple specs (see VALIDATE_MULTI_AND/OR). */
-define('VALIDATE_LAST', VALIDATE_MULTI); // Internal: highest valid type ID, used to bound spec validation loops.
+define('VALIDATE_MULTI', 11); /* Validate one value against multiple specs (see VALIDATE_MULTI_AND/OR). */
+define('VALIDATE_LAST', VALIDATE_MULTI); // Internal: highest valid type ID (range check of spec IDs).
 /* Reserved IDs (kept for the C extension / BC). Not valid spec IDs: validate_spec() rejects them. */
 define('VALIDATE_REJECT', 20); // Reserved. Rejection is the VALIDATE_FLAG_REJECT flag.
 define('VALIDATE_UNDEFINED', 21); // Reserved. Absent input is handled by VALIDATE_FLAG_UNDEFINED*.
@@ -43,7 +43,7 @@ define('VALIDATE_UNVALIDATED', 22); // Reserved. Undeclared input keys are repor
  */
 
 /* VALIDATE_NULL flags */
-define('VALIDATE_NULL_AS_STRING', 1 << 0); /* Treat empty string ('') as null and return it as a string. */
+define('VALIDATE_NULL_AS_STRING', 1 << 0); /* Return '' instead of null. VALIDATE_NULL accepts null and '' either way. */
 define('VALIDATE_NULL_LAST_BIT', 1); /* Used internally — bit count for this type's flags. */
 
 /* VALIDATE_BOOL flags — pick which textual forms are accepted as boolean. */
@@ -67,7 +67,9 @@ define('VALIDATE_INT_NEGATIVE_SIGN', 1 << 5); /* Allow a leading '-' sign (negat
 define('VALIDATE_INT_LAST_BIT', 6); /* Used internally — bit count for this type's flags. */
 
 /* VALIDATE_FLOAT flags */
-define('VALIDATE_FLOAT_AS_STRING', 1 << 0); /* Accept the input only as a numeric string; return it as a canonical numeric string (separators normalized, no type conversion of string input). */
+/* Accept the input only as a numeric string (or an int, not a float); return it as a canonical
+   numeric string (separators normalized, no type conversion of string input). */
+define('VALIDATE_FLOAT_AS_STRING', 1 << 0);
 define('VALIDATE_FLOAT_FRACTION', 1 << 1); /* Require a fractional part in string input — e.g. "1.5" passes, "1" / "1." fail. Native floats always satisfy it. */
 define('VALIDATE_FLOAT_THOUSAND', 1 << 2); /* Allow thousand separators in the integer part. Char comes from the "thousand" option (default ','). */
 define('VALIDATE_FLOAT_SCIENTIFIC', 1 << 3); /* Allow scientific notation (e.g. "1.2e3"). */
@@ -87,7 +89,7 @@ define('VALIDATE_STRING_TAB', 1 << 2); /* Allow tab (0x09). */
 define('VALIDATE_STRING_LF', 1 << 3); /* Allow line feed (0x0A). */
 define('VALIDATE_STRING_CR', 1 << 4); /* Allow carriage return (0x0D). */
 define('VALIDATE_STRING_CRLF_MIXED', 1 << 5); // WARNING: allows lone CR or LF mixed with CRLF — accepts broken line endings.
-define('VALIDATE_STRING_CRLF', (VALIDATE_STRING_LF | VALIDATE_STRING_CR)); /* Shortcut: allow both CR and LF (use for full CRLF support). */
+define('VALIDATE_STRING_CRLF', (VALIDATE_STRING_LF | VALIDATE_STRING_CR)); /* Allow CR and LF only as CRLF pairs (strict); lone CR / LF fail. */
 define('VALIDATE_STRING_LOWER_ALPHA', 1 << 6); /* Allow ASCII a-z. */
 define('VALIDATE_STRING_UPPER_ALPHA', 1 << 7); /* Allow ASCII A-Z. */
 define('VALIDATE_STRING_ALPHA', (VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_UPPER_ALPHA)); /* Shortcut: both alpha cases. */
@@ -124,8 +126,8 @@ define('VALIDATE_CALLBACK_SYMBOL', VALIDATE_STRING_SYMBOL); // WARNING: Dangerou
 define('VALIDATE_CALLBACK_MB', VALIDATE_STRING_MB); // Allow MultiByte chars
 define('VALIDATE_CALLBACK_BINARY', VALIDATE_STRING_BINARY); // WARNING: Dangerous option
 define('VALIDATE_CALLBACK_RFC3454_C', VALIDATE_STRING_RFC3454_C); // Allow Unicode CNTRL char. ASCII code CNTRL is treated by above flags.
-define('VALIDATE_CALLBACK_RFC3454_D', VALIDATE_STRING_RFC3454_D); // Allow Unicode CNTRL char. ASCII code CNTRL is treated by above flags.
-define('VALIDATE_CALLBACK_LAST_BIT', VALIDATE_STRING_LAST_BIT); /* Used internally — bit count for this type's flags. */
+define('VALIDATE_CALLBACK_RFC3454_D', VALIDATE_STRING_RFC3454_D); // Reserved: currently has no effect.
+define('VALIDATE_CALLBACK_LAST_BIT', VALIDATE_STRING_LAST_BIT); /* Bit count for this type's flags (not used by this PHP code). */
 
 /*
  * VALIDATE_REGEXP flags — aliases of the VALIDATE_STRING_* flags.
@@ -147,8 +149,8 @@ define('VALIDATE_REGEXP_SYMBOL', VALIDATE_STRING_SYMBOL); // WARNING: Dangerous 
 define('VALIDATE_REGEXP_MB', VALIDATE_STRING_MB); // Allow MultiByte chars
 define('VALIDATE_REGEXP_BINARY', VALIDATE_STRING_BINARY); // WARNING: Dangerous option
 define('VALIDATE_REGEXP_RFC3454_C', VALIDATE_STRING_RFC3454_C); // Allow Unicode CNTRL char. ASCII code CNTRL is treated by above flags.
-define('VALIDATE_REGEXP_RFC3454_D', VALIDATE_STRING_RFC3454_D); // Allow Unicode CNTRL char. ASCII code CNTRL is treated by above flags.
-define('VALIDATE_REGEXP_LAST_BIT', VALIDATE_STRING_LAST_BIT); /* Used internally — bit count for this type's flags. */
+define('VALIDATE_REGEXP_RFC3454_D', VALIDATE_STRING_RFC3454_D); // Reserved: currently has no effect.
+define('VALIDATE_REGEXP_LAST_BIT', VALIDATE_STRING_LAST_BIT); /* Bit count for this type's flags (not used by this PHP code). */
 
 /* VALIDATE_ARRAY — no per-type flags. Options: 'min'/'max' (element count), 'default', 'error_message',
    'undeclared' (spec for every input key VALIDATE_PARAMS does not declare) and 'key_callback'.
@@ -158,10 +160,10 @@ define('VALIDATE_REGEXP_LAST_BIT', VALIDATE_STRING_LAST_BIT); /* Used internally
 
 /* VALIDATE_OBJECT — no per-type flags; configure via the 'callback' option (method name, required) and the optional 'class' option (instanceof check). */
 
-/* VALIDATE_MULTI flags — combine multiple sub-specs against a single scalar. */
+/* VALIDATE_MULTI flags — combine multiple sub-specs against a single value. Other flags are spec errors. */
 define('VALIDATE_MULTI_AND', 1 << 0); /* All sub-specs must pass. */
 define('VALIDATE_MULTI_OR', 1 << 1); /* At least one sub-spec must pass. */
-define('VALIDATE_MULTI_LAST_BIT', 2); /* Used internally — bit count for this type's flags. */
+define('VALIDATE_MULTI_LAST_BIT', 2); /* Bit count for this type's flags (not used by this PHP code). */
 
 
 /*
@@ -172,12 +174,14 @@ define('VALIDATE_MULTI_LAST_BIT', 2); /* Used internally — bit count for this 
  */
 //TODO: Implement changes in C module
 define('VALIDATE_FLAG_NONE', 0); /* No flags set. */
-define('VALIDATE_FLAG_RAW', 1 << 16);  /* WARNING: Return the raw input without conversion. Debug-only — bypasses type normalization. */
+define('VALIDATE_FLAG_RAW', 1 << 16);  /* WARNING: Return the raw input without conversion (wins over *_AS_STRING). Debug-only — bypasses type normalization. */
 define('VALIDATE_FLAG_REJECT', 1 << 17);  /* Treat the parameter as forbidden — validation fails if it is present. */
 define('VALIDATE_FLAG_UNDEFINED', 1 << 18);  /* Allow absent input (array parameter); the key is left out of the result. */
 define('VALIDATE_FLAG_UNDEFINED_TO_DEFAULT', 1 << 19);  /* When input is absent, validate the 'default' option value instead. */
-define('VALIDATE_FLAG_EMPTY', 1 << 20);  /* Allow empty input: null yields null; '' yields '' (STRING/REGEXP) or null ('' with *_AS_STRING). */
-define('VALIDATE_FLAG_EMPTY_TO_DEFAULT', 1 << 21);  /* When input is '' or null, validate the 'default' option value instead. */
+/* Allow empty input: null yields null; '' yields '' (STRING/REGEXP) or null ('' with *_AS_STRING).
+   With VALIDATE_FLAG_ARRAY, '' in place of the array yields ''. */
+define('VALIDATE_FLAG_EMPTY', 1 << 20);
+define('VALIDATE_FLAG_EMPTY_TO_DEFAULT', 1 << 21);  /* When input is '' or null, validate the 'default' option value instead (also for VALIDATE_ARRAY). */
 /* Accept the actual NULL value (also as an array element / parameter value); yields null.
    VALIDATE_CALLBACK passes it to the callback. */
 define('VALIDATE_FLAG_NULL', 1 << 22);
@@ -189,14 +193,16 @@ define('VALIDATE_FLAG_ARRAY_RECURSIVE', 1 << 24);  /* When combined with VALIDAT
 define('VALIDATE_FLAG_ARRAY_KEY_ALNUM', 1 << 25);
 define('VALIDATE_FLAG_WARNING', 1 << 26);  /* WARNING: Dangerous — record a failure as a system *warning*: no exception, no PHP error. The status is still false. */
 define('VALIDATE_FLAG_NOTICE', 1 << 27);  /* WARNING: Dangerous — record a failure as a system *notice*: no exception, no PHP error. The status is still false. */
-/* WARNING: Dangerous — drop a failure silently (nothing recorded, raised, thrown or logged;
-   status unchanged). The invalid value is left out of the result. */
+/* WARNING: Dangerous — drop a failure silently, also a validate_error() from a callback
+   (nothing recorded, raised, thrown or logged; status unchanged). The invalid value is
+   left out of the result. */
 define('VALIDATE_FLAG_PASSTHRU', 1 << 28);
-define('VALIDATE_FLAG_LAST_BIT', 29); /* Used internally — highest bit position in use. */
+define('VALIDATE_FLAG_LAST_BIT', 29); /* Used internally — one past the highest flag bit (1 << 28). */
 
-// Bit masks used internally to split per-type flags (lower 16 bits) from general flags (upper 16 bits).
-define('VALIDATE_FLAGS_LOWER', 0x0000ffff); /* Internal — mask for per-type flags. */
-define('VALIDATE_FLAGS_UPPER', 0xffff0000); /* Internal — mask for general VALIDATE_FLAG_* flags. */
+// Bit masks splitting per-type flags (lower 16 bits) from general flags (upper 16 bits).
+// Not used by this PHP code.
+define('VALIDATE_FLAGS_LOWER', 0x0000ffff); /* Mask for per-type flags. */
+define('VALIDATE_FLAGS_UPPER', 0xffff0000); /* Mask for general VALIDATE_FLAG_* flags. */
 
 
 /**************************************************************************/
@@ -231,7 +237,7 @@ define('VALIDATE_OPT_LOG_ERROR', 1 << 5); // Call the user-supplied logger (see 
 define('VALIDATE_OPT_ERROR_FULL', 1 << 6);
 define('VALIDATE_OPT_ERROR_PARAM', 1 << 7);
 define('VALIDATE_OPT_ERROR_SQUASH', 1 << 8);
-define('VALIDATE_OPT_LAST_BIT', 9); /* Used internally — highest bit position in use. */
+define('VALIDATE_OPT_LAST_BIT', 9); /* One past the highest option bit (1 << 8); not used by this PHP code. */
 
 // Bit mask covering unused option bits; used internally to detect unknown options.
 define('VALIDATE_OPT_UPPER', 0xfffffe00); /* Internal — reserved bits not exposed to users. */

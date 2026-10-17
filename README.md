@@ -95,9 +95,9 @@ Every string that VALIDATE_STRING, VALIDATE_REGEXP or VALIDATE_CALLBACK accepts 
 
 * Without the `_MB` flag, only ASCII chars allowed by the flags and the 'ascii' option pass. Any byte 0x80 - 0xFF fails.
 * With the `_MB` flag, `mb_check_encoding()` validates the string in the 'encoding' option: any character encoding name mbstring knows, e.g. `UTF-8` (default), `SJIS`, `Shift_JIS`, `CP932`, `EUC-JP`, `ISO-2022-JP`, `UTF-16`, `EUC-KR`, `BIG5`, `ISO-8859-1`. Then the string is converted to UTF-8 and every char is checked: ASCII chars by the flags and 'ascii', other chars against RFC 3454 table C (rejected unless `_RFC3454_C`) and the 'unicode' option. This works for encodings whose multibyte chars contain ASCII bytes (SJIS, BIG5) or that are not ASCII-compatible (ISO-2022-JP, UTF-16).
-* An unknown 'encoding', and mbstring's names that are not character encodings (`BASE64`, `Quoted-Printable`, `HTML-ENTITIES`, `UUENCODE`, `7bit`, `8bit`, `pass`, ...), are spec errors. With the spec check disabled they fail validation.
-* Only `_BINARY` skips the check; it accepts any bytes.
-* The validated value is the input as received, not the converted text.
+* An unknown 'encoding', and mbstring's names that are not character encodings (`BASE64`, `Quoted-Printable`, `HTML-ENTITIES`, `UUENCODE`, `7bit`, `8bit`, `pass`, ...), are spec errors. With the spec check disabled they fail validation of `_MB` strings (without `_MB` the 'encoding' option is not used).
+* Only `_BINARY` (it accepts any bytes) and an exact match of the 'values' option (the spec author's whitelist) skip the check.
+* The validated value is the input as received (after the spec's 'filter', if any), not the converted text.
 
 Transfer-encoded strings are decoded before the check. The 'transfer_encoding' option checks the encoded form strictly, decodes it, and validates the decoded text as above ('encoding', flags, RFC 3454, 'unicode'). 'min' / 'max' apply to the input as received, VALIDATE_REGEXP matches 'regexp' against it, VALIDATE_CALLBACK passes it to the callback, and the validated value is the input as received.
 
@@ -114,7 +114,7 @@ mbstring of each PHP version decides what is valid in each encoding. UTF-8 gives
 * `UTF-16` with a byte order mark (`FE FF 30 42`) is invalid on PHP 8.0 and older, and valid on PHP 8.1 and later.
 * `GB18030` is unknown to mbstring of PHP 5.3 (a spec error there).
 
-Input validation is not output sanitization. "Validate" rejects input that is not valid; it never modifies input to make it valid, and it never uses an output function (escaping or sanitizing, e.g. `htmlspecialchars()`) to decide whether input is valid. Escape or sanitize data where it is output, for that output. Input validation does not replace output sanitization, and output sanitization does not replace input validation.
+Input validation is not output sanitization. "Validate" rejects input that is not valid; it never modifies input to make it valid (only a 'filter' the spec author sets normalizes input before validation), and it never uses an output function (escaping or sanitizing, e.g. `htmlspecialchars()`) to decide whether input is valid. Escape or sanitize data where it is output, for that output. Input validation does not replace output sanitization, and output sanitization does not replace input validation.
 
 ## Example #1: Single value validation with exception
 
@@ -302,28 +302,32 @@ var_dump($request_headers, $request_headers_orig);
 
 [OWASP TOP 10 A10:2017](https://www.owasp.org/index.php/Top_10-2017_A10-Insufficient_Logging%26Monitoring) requires to validate all inputs. Although you are better to do stricter validations against headers, this validation is OWASP TOP 10 A10:2017 compliant HTTP request header validation.
 
-## Example #5: Validate all HTTP inputs ($_GET / $_POST / $_COOKIE / $_FILES) at once
+## Example #5: Validate all HTTP inputs ($_GET / $_POST / $_COOKIE / $_FILES / headers) at once
 
-A realistic user-registration form receives data from multiple superglobals: a CSRF token in `$_GET`, the form fields in `$_POST`, a session identifier in `$_COOKIE`, and an avatar upload in `$_FILES`. All of them are untrusted and must be validated. "Validate" can verify the entire request in a single `validate()` call by nesting per-source specs under one `VALIDATE_ARRAY` spec.
+src/examples/95-example.php
+
+A realistic user-registration form receives data from multiple sources: a CSRF token in `$_GET`, the form fields in `$_POST`, a session identifier in `$_COOKIE`, an avatar upload in `$_FILES`, and the HTTP request headers. All of them are untrusted and must be validated. "Validate" can verify the entire request in a single `validate()` call by nesting per-source specs under one `VALIDATE_ARRAY` spec.
 
 ```php
 <?php
 require_once __DIR__.'/../validate_func.php';
 require_once __DIR__.'/../lib/basic_types.php'; // Defines $basicTypes
 
-// ---- Per-source specs -------------------------------------------------------
+// =============================================================================
+// 1. Per-source specs
+// =============================================================================
 
-// $_GET: only a CSRF token is expected (64-char hex, SHA-256).
+// ---- $_GET: only a CSRF token is expected -----------------------------------
 $getSpec = [
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 1, 'max' => 1], // exactly 1 element
+    ['min' => 1, 'max' => 1],
     [
-        'csrf' => $basicTypes['hex64'],
+        'csrf' => $basicTypes['hex64'], // 64-char hex (SHA-256)
     ]
 ];
 
-// $_POST: a registration form.
+// ---- $_POST: a user-registration form ---------------------------------------
 $postSpec = [
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
@@ -351,23 +355,29 @@ $postSpec = [
     ]
 ];
 
-// $_COOKIE: session id ('sessid' allows the session.sid_length range 22-256; default 32).
+// ---- $_COOKIE: session id + optional UX cookies -----------------------------
+$langSpec  = $basicTypes['alpha_dash32'];
+$langSpec[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED; // optional
+$themeSpec = $basicTypes['alpha_dash32'];
+$themeSpec[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED;
+
 $cookieSpec = [
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 1, 'max' => 4], // session + optional UX cookies
+    ['min' => 1, 'max' => 4],
     [
         'PHPSESSID' => $basicTypes['sessid'],
-        'lang'      => array_replace($basicTypes['alpha_dash32'],
-                                     [VALIDATE_FLAGS => VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED]),
-        'theme'     => array_replace($basicTypes['alpha_dash32'],
-                                     [VALIDATE_FLAGS => VALIDATE_STRING_ALNUM | VALIDATE_FLAG_UNDEFINED]),
+        'lang'      => $langSpec,
+        'theme'     => $themeSpec,
     ]
 ];
 
-// $_FILES: single avatar upload. Each $_FILES[<name>] is itself an array of 5
-// keys: name, type, tmp_name, error, size (plus full_path on PHP 8.1+).
-// Validate every key.
+// ---- $_FILES: single avatar upload (5-6 keys per upload) --------------------
+// Each $_FILES[<field>] is an array: name, type, tmp_name, error, size, and
+// full_path on PHP 8.1+ (the browser-supplied relative path; optional here).
+// Whitelist MIME type by regex; bound size explicitly.
+// NOTE: 'type' is browser-supplied and not trustworthy. Re-check the uploaded
+// file with finfo_file() before storing or serving it.
 $uploadSpec = [
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
@@ -384,7 +394,7 @@ $uploadSpec = [
         'tmp_name' => [VALIDATE_STRING, VALIDATE_STRING_ALNUM,
                        ['min' => 1, 'max' => 4096, 'ascii' => '/_.-']],
         'error'    => [VALIDATE_INT, VALIDATE_FLAG_NONE,
-                       ['min' => 0, 'max' => 8]], // UPLOAD_ERR_OK..UPLOAD_ERR_EXTENSION
+                       ['min' => 0, 'max' => 8]], // UPLOAD_ERR_OK..EXTENSION
         'size'     => [VALIDATE_INT, VALIDATE_FLAG_NONE,
                        ['min' => 1, 'max' => 5 * 1024 * 1024]], // up to 5 MiB
     ]
@@ -399,45 +409,139 @@ $filesSpec = [
     ]
 ];
 
-// ---- Top-level spec: validate every HTTP input source at once ---------------
+// ---- HTTP headers -------------------------------------------------------------
+// Same pattern as Example #4 (94-example.php). Cookie and User-Agent are
+// optional; Host is required. "undeclared" validates every other header with
+// $headerCatchSpec, and VALIDATE_FLAG_ARRAY_KEY_ALNUM restricts their names.
+$cookieHdr = $basicTypes['cookie'];
+$cookieHdr[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED;
+$uaHdr = $basicTypes['user-agent'];
+$uaHdr[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT;
+$uaHdr[VALIDATE_OPTIONS]['default'] = '';
+$uaHdr[VALIDATE_OPTIONS]['min']     = 0;
+
+$headerCatchSpec = $basicTypes['header512'];
+$headerCatchSpec[VALIDATE_OPTIONS]['min'] = 0; // Allow empty header values.
+
+$headerSpec = [
+    VALIDATE_ARRAY,
+    VALIDATE_FLAG_ARRAY_KEY_ALNUM,
+    ['min' => 1, 'max' => 100, 'undeclared' => $headerCatchSpec], // Host required + up to 99 others
+    [
+        'Host'       => $basicTypes['http_host'], // name or IP, optional ":port"
+        'Cookie'     => $cookieHdr,
+        'User-Agent' => $uaHdr,
+    ]
+];
+
+// =============================================================================
+// 2. Top-level spec: validate every superglobal + all headers in one call
+// =============================================================================
 
 $spec = [
     VALIDATE_ARRAY,
     VALIDATE_FLAG_NONE,
-    ['min' => 4, 'max' => 4],
+    ['min' => 5, 'max' => 5],
     [
         'get'    => $getSpec,
         'post'   => $postSpec,
         'cookie' => $cookieSpec,
         'files'  => $filesSpec,
+        'header' => $headerSpec,
     ]
 ];
 
-// Bundle the four superglobals under matching keys.
+// =============================================================================
+// 3. Collect inputs (with CLI-friendly fallback so this script is runnable)
+// =============================================================================
+
+if (PHP_SAPI === 'cli' && empty($_GET) && empty($_POST)) {
+    $_GET = ['csrf' => str_repeat('a', 64)];
+    $_POST = [
+        'username'     => 'yohgaki',
+        'email'        => 'yohgaki@ohgaki.net',
+        'age'          => 42,
+        'country'      => 'JP',
+        'accepted_tos' => 'yes',
+    ];
+    $_COOKIE = [
+        'PHPSESSID' => str_repeat('a', 32),
+        'lang'      => 'ja',
+        'theme'     => 'dark',
+    ];
+    $_FILES = [
+        'avatar' => [
+            'name'     => 'photo.jpg',
+            'type'     => 'image/jpeg',
+            'tmp_name' => '/tmp/phpAbCdEf',
+            'error'    => 0,
+            'size'     => 102400,
+        ],
+    ];
+}
+
+// Request headers from $_SERVER: HTTP_* plus CONTENT_TYPE / CONTENT_LENGTH,
+// which PHP stores without the prefix. Names become "Accept-Language" style
+// on every SAPI. (apache_request_headers() keeps the client's spelling —
+// all lower case over HTTP/2 — so 'Host' would not match "host".) The
+// other $_SERVER entries are server/environment variables, not headers.
+// CLI has no request headers (its $_SERVER is the environment): use samples.
+$headers = [];
+if (PHP_SAPI !== 'cli') {
+    foreach ($_SERVER as $k => $v) {
+        if (strncmp($k, 'HTTP_', 5) === 0 || $k === 'CONTENT_TYPE' || $k === 'CONTENT_LENGTH') {
+            $name = (strncmp($k, 'HTTP_', 5) === 0) ? substr($k, 5) : $k;
+            $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', $name))))] = $v;
+        }
+    }
+} else {
+    $headers = [
+        'Host'            => 'example.com:8080',
+        'User-Agent'      => 'Mozilla/5.0 (compatible; validate-php-scr/95)',
+        'Cookie'          => 'PHPSESSID='.str_repeat('a', 32),
+        'Accept'          => 'text/html',
+        'Accept-Language' => 'ja, en;q=0.8',
+    ];
+}
+
 $inputs = [
     'get'    => $_GET,
     'post'   => $_POST,
     'cookie' => $_COOKIE,
     'files'  => $_FILES,
+    'header' => $headers,
 ];
 
-$func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // interactive form: collect errors
-$result = validate($ctx, $inputs, $spec, $func_opts);
+// =============================================================================
+// 4. Validate
+// =============================================================================
 
-if (!validate_get_status($ctx)) {
-    // One or more inputs are invalid. Show user-facing errors back to the form.
-    $errors = validate_get_user_errors($ctx);
-    // $inputs now contains only the values that did NOT validate.
-    // Re-render the form with $errors.
-    // FAIL FAST for APPLICATION INPUT validation errors that no honest client
-    // would ever produce (broken types, oversized strings, etc.).
-    var_dump($errors);
-    exit;
+$func_opts = VALIDATE_OPT_DISABLE_EXCEPTION; // interactive form: collect errors
+
+// One call validates everything. An undeclared key in get/post/cookie/files is
+// an error; every header goes through its own spec or $headerCatchSpec —
+// nothing bypasses the trust boundary.
+$result = validate($ctx, $inputs, $spec, $func_opts);
+$ok = validate_get_status($ctx);
+
+// =============================================================================
+// 5. Report
+// =============================================================================
+
+echo 'Status: ', var_export($ok, true), PHP_EOL;
+if (!$ok) {
+    // APPLICATION INPUT failures (broken types, oversized strings) should be
+    // rejected fast without user-facing detail. BUSINESS LOGIC failures (using
+    // the 'error_message' option) can be shown back to the form.
+    echo 'User errors:', PHP_EOL;
+    print_r(validate_get_user_errors($ctx));
+    echo 'System errors:', PHP_EOL;
+    print_r(validate_get_system_errors($ctx));
+    exit(1);
 }
 
-// $result is a fully-typed, fully-validated nested array. Hand it to the
-// business-logic layer (model) without further input-shape checks.
-var_dump($result);
+echo 'Validated:', PHP_EOL;
+print_r($result);
 ```
 
 Key points:
@@ -504,12 +608,12 @@ Codes.
 
 ## Status
 
-* **Pre Alpha**
+* 1.0 (2026-10-17); see [Releases](#releases) and [CHANGELOG.md](CHANGELOG.md).
 * Please test drive and report bugs.
 
 ## TODO
 
-* Add Unicode validations. e.g. [RFC 3454](https://www.ietf.org/rfc/rfc3454.txt), [.NET like UnicodeCategory](https://en.wikipedia.org/wiki/Unicode_character_property) (RFC 3454 C check is implemented. Whitelist may be implemented in C module from Unicode standard char definition XML. RFC 3454 C check makes string validation 6 times slower already.)
+* Add Unicode validations. e.g. [RFC 3454](https://www.ietf.org/rfc/rfc3454.txt), [.NET like UnicodeCategory](https://en.wikipedia.org/wiki/Unicode_character_property) (RFC 3454 C check is implemented. Whitelist may be implemented in C module from Unicode standard char definition XML. The RFC 3454 C check already makes string validation slower.)
 * More tests. (Most features are tested.)
 * Back port this to C module - When API is fixed. (TODO: Cleanup, Optimize, Reorganize PHP code for C implementation.)
 * Spec builder app(?).

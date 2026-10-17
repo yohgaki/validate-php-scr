@@ -49,7 +49,8 @@
  *       $ctx   - validation context.
  *       $input - the input value (read-only here; return the modified value).
  *       $error - assign a string to flag a filter failure; leave null otherwise.
- *     Returns the (possibly modified) value. Available on every validator.
+ *     Returns the (possibly modified) value. Available on every validator
+ *     but VALIDATE_ARRAY; VALIDATE_MULTI applies it before its sub-specs.
  *
  *
  *   "key_callback" option
@@ -247,6 +248,15 @@ class Validate
      */
     private $silent = 0;
     private $silentFailed = false;
+
+    /**
+     * Number of validate_error() calls. validateCallback() compares it
+     * before and after the callback: a call fails the value even when the
+     * callback returns true.
+     *
+     * @var int
+     */
+    private $userErrorCount = 0;
 
     /**
      * Optional user logger callback, registered via setLoggerFunction().
@@ -560,7 +570,8 @@ class Validate
      * for explicit pre-flight checks during development.
      *
      * @param array    $spec        Spec array to verify.
-     * @param mixed    $unvalidated Output. Receives sub-specs that could not be checked.
+     * @param mixed    $unvalidated Output. A copy of $spec without the sub-specs that
+     *                              checked clean: what remains are the broken parts.
      * @param Validate $ctx         Optional context that receives the spec
      *                              errors (fresh one created when null).
      *
@@ -697,6 +708,7 @@ class Validate
     public function error($message)
     {
         assert(is_string($message));
+        $this->userErrorCount++;
         $this->dispatchError($message, E_USER_ERROR);
     }
 
@@ -1078,6 +1090,17 @@ class Validate
                 $func_opts
             );
             return false;
+        }
+        if (($flags & VALIDATE_FLAG_EMPTY_TO_DEFAULT) && ($inputs === '' || $inputs === null)) {
+            // Empty input: validate the "default" array instead, as for an
+            // array parameter (validateParam()). The caller's input is kept.
+            $default = $options['default'] ?? null;
+            return $this->runValidation(
+                $validated,
+                $default,
+                [$id, $flags & ~VALIDATE_FLAG_EMPTY_TO_DEFAULT, $options, $params],
+                $func_opts
+            );
         }
         if (!(is_array($inputs) || ($inputs instanceof ArrayAccess && $inputs instanceof Countable))) {
             $this->reportError(
@@ -1530,6 +1553,7 @@ class Validate
                     unset($inputs[$key]);
                 }
             } else {
+                unset($validated[$key]); // A failed element is left out of the result.
                 $status = false;
             }
         }
@@ -1706,8 +1730,8 @@ class Validate
      * Supported Options:
      * "min" - Minimum elements.
      * "max" - Maximum elements.
-     * "filter" - Optional. Filter callback before validation. Use this for normalization.
      * "default" - Default value. Default value is subject to be validated also.
+     * No "filter": VALIDATE_ARRAY does not run one.
      *
      * @return bool
      */
@@ -1733,6 +1757,9 @@ class Validate
     /** Resource validator
      *
      * Supported Flags: See validate_defs.php
+     * Supported Options:
+     * "resource" - Required resource type name (get_resource_type()).
+     * "filter" - Optional. Filter callback before validation.
      */
     private function validateResource(&$validated, $value, $flags, $options, $func_opts)
     {
@@ -1811,7 +1838,7 @@ class Validate
                 [VALIDATE_NULL, $flags, $options],
                 $func_opts
             );
-            return false; // This return value is exception. Other validators returns "null" for error.
+            return false;
         }
 
         if ($flags & VALIDATE_NULL_AS_STRING) {
@@ -1831,8 +1858,9 @@ class Validate
      * Int validator
      *
      * Accepted string grammar (both modes): an optional sign (only when
-     * permitted by VALIDATE_INT_POSITIVE_SIGN / VALIDATE_INT_NEGATIVE_SIGN or
-     * a negative "min"), then "0" or a digit string without leading zeros.
+     * permitted by VALIDATE_INT_POSITIVE_SIGN / VALIDATE_INT_NEGATIVE_SIGN, or
+     * '-' when negative values are valid: a negative "min" or a negative key
+     * in "values"), then "0" or a digit string without leading zeros.
      * "-0", a lone sign and leading zeros are rejected.
      *
      * Supported Flags: See validate_defs.php
@@ -1869,9 +1897,25 @@ class Validate
         }
 
         $values = $options['values'] ?? null;
+        // Sign of an int string: '+' with VALIDATE_INT_POSITIVE_SIGN, '-' with
+        // VALIDATE_INT_NEGATIVE_SIGN or when negative values are valid (a
+        // negative "min", or a negative key in "values").
+        $sign = '';
+        if ($flags & VALIDATE_INT_POSITIVE_SIGN) {
+            $sign .= '+';
+        }
+        if (($flags & VALIDATE_INT_NEGATIVE_SIGN)
+            || ($values ? min(array_keys($values)) < 0 : substr((string)($options['min'] ?? 0), 0, 1) === '-')) {
+            $sign .= '\\-';
+        }
+        $sign = ($sign === '') ? '' : '['.$sign.']?';
+
         // Exact values match
         if ($values) {
-            if (!is_int($value) && !(is_string($value) && preg_match('/\A-?(?:0|[1-9][0-9]*)\z/', $value))) {
+            $raw = $value;
+            if (is_string($value) && preg_match('/\A'.$sign.'(?:0|[1-9][0-9]*)\z/', $value) && $value !== '-0') {
+                $value = ltrim($value, '+'); // "+5" is the value 5.
+            } elseif (!is_int($value)) {
                 $this->reportError(
                     [
                         'message' => 'VALIDATE_INT: Failed option "values" match. Value is not integer.',
@@ -1894,7 +1938,7 @@ class Validate
                 return false;
             }
             if ($flags & VALIDATE_FLAG_RAW) {
-                $validated = $value;
+                $validated = $raw;
             } elseif ($flags & VALIDATE_INT_AS_STRING) {
                 $validated = (string)$value;
             } else {
@@ -1932,14 +1976,6 @@ class Validate
         }
 
         $ret = (string)$value;
-        $sign = '';
-        if ($flags & VALIDATE_INT_POSITIVE_SIGN) {
-            $sign .= '+';
-        }
-        if ($flags & VALIDATE_INT_NEGATIVE_SIGN || substr((string)$min, 0, 1) === '-') {
-            $sign .= '\\-';
-        }
-        $sign = ($sign === '') ? '' : '['.$sign.']?';
         if (!preg_match('/\A'.$sign.'(?:0|[1-9][0-9]*)\z/', $ret) || $ret === '-0') {
             $this->reportError(
                 [
@@ -2129,13 +2165,10 @@ class Validate
             return false;
         }
         assert(is_bool($ret) || is_null($ret));
-        if ($flags & VALIDATE_BOOL_AS_STRING) {
-            $validated = $str;
-            return true;
-        }
-
         if ($flags & VALIDATE_FLAG_RAW) {
-            $validated = $value;
+            $validated = $value; // RAW wins, as for VALIDATE_INT / VALIDATE_FLOAT.
+        } elseif ($flags & VALIDATE_BOOL_AS_STRING) {
+            $validated = $str;   // The lowercase word: "yes", "on", "t", "true", "1", ...
         } else {
             $validated = $ret;
         }
@@ -3029,6 +3062,8 @@ class Validate
      *
      * Supported Flags: See validate_defs.php
      * Supported Options:
+     * "regexp" - Required. PCRE pattern matched against the input as
+     *            received, after the string checks of validateString().
      * "min" - Minimum length.
      * "max" - Maximum length.
      * "filter" - Optional. Filter callback before validation. Use this for normalization.
@@ -3121,6 +3156,7 @@ class Validate
             }
         }
 
+        $userErrors = $this->userErrorCount;
         $tmp = $options['callback']($this->context, $validated, $value);
 
         if (!$tmp) {
@@ -3133,6 +3169,12 @@ class Validate
                 [VALIDATE_CALLBACK, $flags, $options],
                 $func_opts
             );
+            $validated = null; // A failed value is left out of the result.
+            return false;
+        }
+        if ($this->userErrorCount !== $userErrors) {
+            // validate_error() was called (and recorded): the value fails.
+            $validated = null;
             return false;
         }
         if ($flags & VALIDATE_FLAG_RAW) {
@@ -3249,6 +3291,11 @@ class Validate
         assert(is_int($this->context_vars['func_opts']) && !($this->context_vars['func_opts'] & VALIDATE_OPT_UPPER));
 
         $failure = ($type !== E_USER_WARNING && $type !== E_USER_NOTICE);
+        $spec_flags = $this->context_vars['spec'][VALIDATE_FLAGS] ?? 0;
+        if ($failure && ($spec_flags & VALIDATE_FLAG_PASSTHRU)) {
+            // Dropped like in reportError(), also for validate_error().
+            return;
+        }
         if ($this->silent) {
             if ($failure) {
                 $this->silentFailed = true;
@@ -3285,7 +3332,6 @@ class Validate
 
         // VALIDATE_FLAG_WARNING / VALIDATE_FLAG_NOTICE turn the failure into
         // a recorded message only: no ERROR, no EXCEPTION.
-        $spec_flags = $this->context_vars['spec'][VALIDATE_FLAGS] ?? 0;
         $fatal = ($type === E_ERROR || $type === E_USER_ERROR)
                  && !($spec_flags & (VALIDATE_FLAG_WARNING | VALIDATE_FLAG_NOTICE));
         $user_error_msg = $this->context_vars['spec'][VALIDATE_OPTIONS]['error_message'] ?? null;
@@ -3629,14 +3675,29 @@ class Validate
                 );
                 $multi_spec_ret =  false;
             }
-            if (count($spec[VALIDATE_OPTIONS])) {
-                $this->specWarning(
-                    [
-                        'message' => 'VALIDATE_MULTI has options that has no effect.',
-                        'spec'    => $spec,
-                        'flags'   => 'String flags are not available for VALIDATE_MULTI',
-                    ]
-                );
+            // Only "filter" applies (before the sub-specs see the value).
+            foreach ($spec[VALIDATE_OPTIONS] as $key => $opt) {
+                if ($key === 'filter') {
+                    if (!is_callable($opt)) {
+                        $this->specError(
+                            [
+                                'message' => 'VALIDATE_MULTI "filter" option is not callable.',
+                                'spec'    => $spec,
+                                'flags'   => '',
+                            ]
+                        );
+                        $multi_spec_ret = false;
+                    }
+                } elseif (!(is_string($key) && $key !== '' && $key[0] === '_')) {
+                    $this->specWarning(
+                        [
+                            'message' => 'VALIDATE_MULTI has option "'.$key.'" that has no effect. Only "filter" '
+                                        .'and "_" prefixed user options are allowed.',
+                            'spec'    => $spec,
+                            'flags'   => '',
+                        ]
+                    );
+                }
             }
             if ($spec[VALIDATE_FLAGS] & VALIDATE_FLAG_ARRAY) {
                 $this->specError(
@@ -3690,6 +3751,7 @@ class Validate
         }
 
         $options = $spec[VALIDATE_OPTIONS];
+        $array_ret = true;
         if (count($spec) > 4) {
             $this->specWarning(
                 [
@@ -3699,10 +3761,12 @@ class Validate
                 ]
             );
         }
-        // Only presence / reporting flags mean something for VALIDATE_ARRAY;
-        // VALIDATE_FLAG_ARRAY_KEY_ALNUM checks the keys "undeclared" validates.
+        // Only presence / default / reporting flags mean something for
+        // VALIDATE_ARRAY; VALIDATE_FLAG_ARRAY_KEY_ALNUM checks the keys
+        // "undeclared" validates.
         $array_flags = VALIDATE_FLAG_REJECT | VALIDATE_FLAG_UNDEFINED | VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
-                       | VALIDATE_FLAG_WARNING | VALIDATE_FLAG_NOTICE | VALIDATE_FLAG_PASSTHRU;
+                       | VALIDATE_FLAG_EMPTY_TO_DEFAULT | VALIDATE_FLAG_WARNING | VALIDATE_FLAG_NOTICE
+                       | VALIDATE_FLAG_PASSTHRU;
         if (isset($options['undeclared'])) {
             $array_flags |= VALIDATE_FLAG_ARRAY_KEY_ALNUM;
         }
@@ -3710,7 +3774,8 @@ class Validate
             $this->specWarning(
                 [
                     'message' => 'VALIDATE_ARRAY has flags that have no effect. Only VALIDATE_FLAG_REJECT, '
-                                .'VALIDATE_FLAG_UNDEFINED, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, VALIDATE_FLAG_WARNING, '
+                                .'VALIDATE_FLAG_UNDEFINED, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, '
+                                .'VALIDATE_FLAG_EMPTY_TO_DEFAULT, VALIDATE_FLAG_WARNING, '
                                 .'VALIDATE_FLAG_NOTICE, VALIDATE_FLAG_PASSTHRU and, with "undeclared" option, '
                                 .'VALIDATE_FLAG_ARRAY_KEY_ALNUM apply.',
                     'spec'    => $spec,
@@ -3740,6 +3805,7 @@ class Validate
                         'flags'   => '',
                     ]
                 );
+                $array_ret = false;
             } elseif (!isset($options['undeclared'])) {
                 $this->specWarning(
                     [
@@ -3764,17 +3830,23 @@ class Validate
             // VALIDATE_PARAMS entries it is not stripped from $unvalidated.
             $undeclaredSpec = $options['undeclared'];
             array_push($this->currentElem, '(undeclared)');
-            $this->checkSpecEntry($undeclaredSpec);
+            if (!$this->checkSpecEntry($undeclaredSpec)) {
+                $array_ret = false;
+            }
             array_pop($this->currentElem);
         }
-        if (($spec[VALIDATE_FLAGS] & VALIDATE_FLAG_UNDEFINED_TO_DEFAULT) && !isset($options['default'])) {
-            $this->specError(
-                [
-                    'message' => 'VALIDATE_ARRAY has VALIDATE_FLAG_UNDEFINED_TO_DEFAULT but "default" option is missing.',
-                    'spec'    => $spec,
-                    'flags'   => '',
-                ]
-            );
+        foreach (['VALIDATE_FLAG_UNDEFINED_TO_DEFAULT' => VALIDATE_FLAG_UNDEFINED_TO_DEFAULT,
+                  'VALIDATE_FLAG_EMPTY_TO_DEFAULT' => VALIDATE_FLAG_EMPTY_TO_DEFAULT] as $name => $flag) {
+            if (($spec[VALIDATE_FLAGS] & $flag) && !isset($options['default'])) {
+                $this->specError(
+                    [
+                        'message' => 'VALIDATE_ARRAY has '.$name.' but "default" option is missing.',
+                        'spec'    => $spec,
+                        'flags'   => '',
+                    ]
+                );
+                $array_ret = false;
+            }
         }
         if (!isset($options['min']) || !isset($options['max'])) {
             $this->specError(
@@ -3810,11 +3882,13 @@ class Validate
             array_push($this->currentElem, $key);
             if ($this->checkSpecEntry($params[$key])) {
                 unset($params[$key]);
+            } else {
+                $array_ret = false;
             }
             array_pop($this->currentElem);
         }
 
-        return true;
+        return $array_ret;
     }
 
 
@@ -4016,9 +4090,9 @@ class Validate
                 $ret = $this->validateScalarSpecFlags($f, $flags, VALIDATE_BOOL_LAST_BIT, $max_bit);
                 if (!($flags & (VALIDATE_BOOL_01 | VALIDATE_BOOL_TF | VALIDATE_BOOL_TRUE_FALSE
                                | VALIDATE_BOOL_ON_OFF | VALIDATE_BOOL_YES_NO))) {
-                    $this->specWarning(
+                    $this->specNotice(
                         [
-                            'message' => 'VALIDATE_BOOL has no boolean format flags. No value can be accepted.',
+                            'message' => 'VALIDATE_BOOL has no boolean format flags. Only bool values are accepted, no strings.',
                             'spec'    => $spec,
                             'flags'   => join(' | ', $f),
                         ]
@@ -4164,7 +4238,7 @@ class Validate
                 }
             }
         }
-        // Count user custom options by '_' prefix or integer key.
+        // Count user custom options ('_' prefixed keys).
         foreach ($options as $key => $uv) {
             if (is_string($key) && $key[0] === '_') {
                 $cnt++;
