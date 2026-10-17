@@ -53,7 +53,8 @@ function validate_init($root_name = 'ROOT')
  * after the call $inputs holds only the leftover (unvalidated) input. This
  * lets a caller validate a request in multiple stages or detect unexpected
  * extra parameters. Pass VALIDATE_OPT_KEEP_INPUTS to keep $inputs untouched.
- * Input keys a VALIDATE_ARRAY spec does not declare are validation errors
+ * Input keys a VALIDATE_ARRAY spec does not declare are validated by its
+ * 'undeclared' option spec if it has one; otherwise they are validation errors
  * unless VALIDATE_OPT_UNVALIDATED is set (needed for multi-stage validation).
  *
  * @param Validate|null $ctx       Validate context. If null, a fresh one is created and assigned back.
@@ -226,30 +227,29 @@ function validate_set_logger_function($ctx, $logger_func)
  * struct in the future C extension:
  *
  *   $specs = [
- *       'POST' => [
- *           VALIDATE_ARRAY,                  // [0] validator type
- *           VALIDATE_FLAG_NONE,              // [1] bitmask of flags
- *           ['amin' => 0, 'amax' => 20],     // [2] options (string keys)
- *           [                                // [3] sub-specs for ARRAY/MULTI
- *               'scalar_param' => [
- *                   VALIDATE_STRING,
- *                   VALIDATE_STRING_ALNUM | VALIDATE_STRING_LF,
- *                   ['min' => 0, 'max' => 125],
- *               ],
- *               'array_param' => [           // Nested arrays are allowed.
- *                   VALIDATE_ARRAY,
- *                   VALIDATE_FLAG_NONE,
- *                   [],
- *                   [
- *                       'flag' => [VALIDATE_BOOL, VALIDATE_BOOL_01, []],
- *                   ],
+ *       VALIDATE_ARRAY,                      // [0] validator type
+ *       VALIDATE_FLAG_NONE,                  // [1] bitmask of flags
+ *       ['min' => 0, 'max' => 2],            // [2] options (string keys)
+ *       [                                    // [3] sub-specs for ARRAY/MULTI
+ *           'scalar_param' => [
+ *               VALIDATE_STRING,
+ *               VALIDATE_STRING_ALNUM | VALIDATE_STRING_LF,
+ *               ['min' => 0, 'max' => 125],
+ *           ],
+ *           'array_param' => [               // Nested arrays are allowed.
+ *               VALIDATE_ARRAY,
+ *               VALIDATE_FLAG_NONE,
+ *               ['min' => 0, 'max' => 1],    // element count
+ *               [
+ *                   'flag' => [VALIDATE_BOOL, VALIDATE_BOOL_01, []],
  *               ],
  *           ],
  *       ],
  *   ];
  *
  * @param array         $specs       Validation spec array to check.
- * @param array|null    $unvalidated Output. Receives entries from $specs that could not be checked.
+ * @param array|null    $unvalidated Output. A copy of $specs without the sub-specs that checked
+ *                                   clean: what remains are the broken parts.
  * @param Validate|null $ctx         Optional context. A fresh one is created if null. Spec
  *                                   errors are read with validate_get_system_errors($ctx).
  *
