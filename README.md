@@ -78,6 +78,7 @@ Install with Composer: `composer require yohgaki/validate-php-scr:^1.0`. The sam
 * `src/run-tests.php` is the one of PHP 7.4.33. It has no `--show-diff`; a failed test leaves `src/tests/*.diff`.
 * The internal class constants of `Validate` are public (PHP 7.0 has no class constant visibility). Do not use them.
 * `preg_last_error_msg()` (PHP 8.0+) is replaced by an internal function returning the same messages.
+* `mbstring.func_overload` with its string functions bit (2) makes `new Validate` throw `RuntimeException` (see Requirements); PHP 8.0 removed the setting. An `encoding` name mbstring does not know is detected by mbstring's warning instead of PHP 8's `ValueError`.
 * Some tests set INI values or syntax for PHP 7: `assert.exception=1` (the PHP 8 default), `serialize_precision=14` (PHP 7.0 prints 17 digits), `list()` instead of `[...]` in `foreach`.
 
 ## Basic Behaviors
