@@ -38,7 +38,7 @@ Validate for PHP is designed to help ["Standard Input Validation"](https://cwe.m
 ## Requirements
 
 * PHP 8.0 - 8.x (this is the `php-8.x` branch; see [Branches](#branches)).
-* No extension is required.
+* mbstring module - character encodings are validated with `mb_check_encoding()` (see [Character Encoding Validation](#character-encoding-validation)). `new Validate` (and so `validate()`) throws `RuntimeException` without it. The official `php:8.6-rc-cli` Docker image (8.6.0RC3, October 2026) has no mbstring; add it with `docker-php-ext-install mbstring` (needs `libonig-dev`).
 
 ### Recommended
 
@@ -79,6 +79,33 @@ Tip:
 * Define your own 'filter' for normalization.
 * Define your own 'key_callback' for custom array key validations.
 * Use VALIDATE_CALLBACK and 'callback' for complex validations.
+
+## Character Encoding Validation
+
+Every string that VALIDATE_STRING, VALIDATE_REGEXP or VALIDATE_CALLBACK accepts has its character encoding validated:
+
+* Without the `_MB` flag, only ASCII chars allowed by the flags and the 'ascii' option pass. Any byte 0x80 - 0xFF fails.
+* With the `_MB` flag, `mb_check_encoding()` validates the string in the 'encoding' option: any character encoding name mbstring knows, e.g. `UTF-8` (default), `SJIS`, `Shift_JIS`, `CP932`, `EUC-JP`, `ISO-2022-JP`, `UTF-16`, `EUC-KR`, `BIG5`, `ISO-8859-1`. Then the string is converted to UTF-8 and every char is checked: ASCII chars by the flags and 'ascii', other chars against RFC 3454 table C (rejected unless `_RFC3454_C`) and the 'unicode' option. This works for encodings whose multibyte chars contain ASCII bytes (SJIS, BIG5) or that are not ASCII-compatible (ISO-2022-JP, UTF-16).
+* An unknown 'encoding', and mbstring's names that are not character encodings (`BASE64`, `Quoted-Printable`, `HTML-ENTITIES`, `UUENCODE`, `7bit`, `8bit`, `pass`, ...), are spec errors. With the spec check disabled they fail validation.
+* Only `_BINARY` skips the check; it accepts any bytes.
+* The validated value is the input as received, not the converted text.
+
+Transfer-encoded strings are decoded before the check. The 'transfer_encoding' option checks the encoded form strictly, decodes it, and validates the decoded text as above ('encoding', flags, RFC 3454, 'unicode'). 'min' / 'max' apply to the input as received, VALIDATE_REGEXP matches 'regexp' against it, VALIDATE_CALLBACK passes it to the callback, and the validated value is the input as received.
+
+| 'transfer_encoding' | Encoded form |
+|---|---|
+| `quoted-printable` | RFC 2045 6.7: lines of at most 76 chars separated by CRLF; printable ASCII, SPACE and TAB, but no SPACE / TAB at the end of a line; `=` only in `=XX` (uppercase hex digits) or as a soft line break at the end of a line other than the last. A hard line break is CRLF in the decoded text. |
+| `percent` | The output of `urlencode()` / `rawurlencode()`: RFC 3986 unreserved chars, `%XX` and `+` (a space). |
+| `base64` / `base64url` | RFC 4648 4 / 5. `=` padding is optional but must complete the last group; the unused bits of the last char must be zero. |
+| `html` | The output of `htmlspecialchars($s, ENT_QUOTES)`: no raw `<` `>` `"` `'`; `&` only in `&amp;` `&lt;` `&gt;` `&quot;` `&apos;` or a numeric reference to U+0001 - U+10FFFF other than a surrogate. References are decoded after the conversion to UTF-8. |
+
+mbstring of each PHP version decides what is valid in each encoding. UTF-8 gives the same results on every supported PHP version: [`dev/mb_check.php`](dev/mb_check.php) compares `mb_check_encoding()` with the RFC 3629 grammar on 300,000 byte strings of 1 - 6 bytes, and they agreed on every PHP version from 5.4 to 8.7.0-dev; on PHP 5.3, mbstring also accepted 41 of them, all UTF-8 forms of values beyond U+10FFFF, which "Validate" itself rejects. Other encodings can differ between PHP versions. Measured with the same script on PHP 5.3 - 8.7.0-dev (October 2026):
+
+* `Windows-1252` bytes with no assigned char: 0x81, 0x8D, 0x8F and 0x90 are invalid on PHP 8.0 and older, 0x9D on PHP 7.0 and older; on later versions they are valid C1 controls, which "Validate" then rejects unless `_RFC3454_C` is set.
+* `UTF-16` with a byte order mark (`FE FF 30 42`) is invalid on PHP 8.0 and older, and valid on PHP 8.1 and later.
+* `GB18030` is unknown to mbstring of PHP 5.3 (a spec error there).
+
+Input validation is not output sanitization. "Validate" rejects input that is not valid; it never modifies input to make it valid, and it never uses an output function (escaping or sanitizing, e.g. `htmlspecialchars()`) to decide whether input is valid. Escape or sanitize data where it is output, for that output. Input validation does not replace output sanitization, and output sanitization does not replace input validation.
 
 ## Example #1: Single value validation with exception
 

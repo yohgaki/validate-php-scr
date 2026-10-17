@@ -160,7 +160,7 @@ $comment_by_string_validator = [
         'min' => $comment_min,
         'max' => $comment_max,
         'ascii' => "\t", // Double quotes: a real TAB. (VALIDATE_STRING_TAB would do the same; shown here for the 'ascii' syntax.)
-        'encoding' => 'UTF-8', // Informational — only UTF-8 is supported and the option may be omitted.
+        'encoding' => 'UTF-8', // Validated with mb_check_encoding(). UTF-8 is the default and may be omitted.
         'error_message' => 'Comment should be between {{min}} and {{max}} bytes.',
     ]
 ];

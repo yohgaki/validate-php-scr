@@ -5,7 +5,40 @@
 Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
 `basic_types.php` format fixes, the `VALIDATE_ARRAY` `undeclared` option,
 example/tool fixes, and remembering checked specs. Branches for older PHP
-versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
+versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17). Character encoding
+validation with mbstring (2026-10-17).
+
+### Security
+
+* **Character encodings were validated with an output function, and only in
+  the encodings it knows.** Since the first version, the `_MB` encoding check
+  called `htmlspecialchars()` — an output escaping function — and treated an
+  empty result as invalid. README recommended mbstring for "more supported
+  encodings and better encoding checks", but no code used it (the
+  recommendation was removed from README in d622eb4 instead of being
+  implemented). As a result:
+  * An `encoding` that `htmlspecialchars()` does not know (`ISO-2022-JP`,
+    `UTF-16`, `EUC-KR`, `GB18030`, a misspelling, or `UTF8`, which the code
+    treated as UTF-8) raised a PHP warning on every validation and was checked
+    as UTF-8; on PHP 5.3 as ISO-8859-1, so any bytes passed.
+  * Single-byte encodings (`ISO-8859-1`, ...) and every encoding other than
+    UTF-8 skipped the RFC 3454 table C check and the `unicode` option: C1
+    controls such as ISO-8859-1 0x85 (U+0085) passed.
+  * Shift_JIS / BIG5 chars whose second byte is in the ASCII range were
+    checked byte by byte against the ASCII whitelist (SJIS 0x835C U+30BD was
+    rejected unless `\` was allowed).
+  * `urle*` / `htmle*` of `basic_types.php` checked only the encoded form:
+    `%FF%FE` (invalid UTF-8), `%E2%80%AE` (U+202E) and `%00` passed.
+
+  Now mbstring is required, and `mb_check_encoding()` validates the string in
+  its `encoding`: any character encoding mbstring knows, default UTF-8. The
+  string is then converted to UTF-8 and every char is checked (flags,
+  `ascii`, RFC 3454 table C, `unicode`). Unknown names and mbstring's names
+  that are not character encodings (`BASE64`, `Quoted-Printable`,
+  `HTML-ENTITIES`, `8bit`, ...) are spec errors and fail validation when the
+  spec check is off. UTF-8 forms of values beyond U+10FFFF, which mbstring of
+  PHP 5.3 accepts, are rejected on every PHP version. See README "Character
+  Encoding Validation".
 
 ### Branch `php-8.x`
 
@@ -14,6 +47,21 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
   `composer.json` requires `php` `^8.0`.
 
 ### Changed — behavior changes that can affect existing code
+
+* **mbstring is required.** `new Validate`, `validate_init()`, `validate()`
+  and `validate_spec()` throw `RuntimeException` without it; `composer.json`
+  requires `ext-mbstring`.
+* **`encoding` takes mbstring's names.** Names only `htmlspecialchars()` knew
+  are spec errors now: `MacRoman`, `BIG5-HKSCS` and the code page numbers
+  `866`, `932`, `936`, `950`, `1251`, `1252` (use `CP866`, `CP932`, `CP936`,
+  `CP950`, `Windows-1251`, `Windows-1252`). Strings in an encoding other than
+  UTF-8 are checked after conversion to UTF-8, so RFC 3454 table C and the
+  `unicode` option apply to them too.
+* `basic_types.php` `urle*` / `htmle*` validate the decoded text (the new
+  `transfer_encoding` option): it must be valid UTF-8 without control chars
+  (`htmle*` allows TAB and LF) or RFC 3454 table C code points. `htmle*`
+  requires the form `htmlspecialchars($s, ENT_QUOTES)` produces: a raw `&`
+  outside `&amp;` `&lt;` `&gt;` `&quot;` `&apos;` or a numeric reference fails.
 
 * **Undeclared input keys are errors.** Every `VALIDATE_ARRAY` level now reports
   input keys that its spec does not declare ("Validate: Unvalidated value
@@ -59,8 +107,10 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
   `filter_var(FILTER_FLAG_IPV6)` (accepts `::` and IPv4-embedded forms);
   `hostname` is one RFC 1123 label; header specs trim only SP/HTAB; DNS checks
   query absolute names for explicit record types instead of `DNS_ANY`.
-* `basic_types.php`: `base64*`, `base64url*` and `urle*` are `VALIDATE_REGEXP`
-  specs (were `VALIDATE_STRING`) so they can check where `=` and `%` appear.
+* `basic_types.php`: `base64*` and `base64url*` are `VALIDATE_REGEXP` specs
+  (were `VALIDATE_STRING`) so they can check where `=` appears. `urle*` are
+  `VALIDATE_STRING` specs with `transfer_encoding` `percent`, which checks
+  where `%` appears.
 * `basic_types.php` `url` / `active_url` accept the same URLs on every PHP
   version. `FILTER_VALIDATE_URL` changed in PHP 7.0, 7.3 and 8.2; on PHP 8.0 /
   8.1 it accepted host names ending with `-` (`http://example-/`) and invalid
@@ -86,9 +136,12 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
 * `VALIDATE_REGEXP` cast the input to a string before checking its type: an
   array raised "Array to string conversion" and an object a fatal `Error`.
   Both are now reported as "Array or object parameter is passed for scalar."
-* `composer.json` required `ext-bcmath`, while README says no extension is
-  required: without BCMath and GMP, big integers are compared in pure PHP
-  (tested by the CI). `ext-bcmath` moved to `suggest`.
+* `composer.json` required `ext-bcmath`, though without BCMath and GMP big
+  integers are compared in pure PHP (tested by the CI). `ext-bcmath` moved to
+  `suggest`.
+* The error record of an invalid `VALIDATE_INT` string held the value escaped
+  by `addslashes()`; it holds the input as received, like every other
+  validator. Escaping belongs to the code that outputs the record.
 * PHP 8.6 deprecated `is_double()`: every float input to `VALIDATE_FLOAT`
   raised a deprecation notice there; it uses `is_float()`.
 * DEL (0x7F) with `VALIDATE_STRING_MB` triggered "Report this error" (a fatal
@@ -143,6 +196,17 @@ versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17).
 
 ### Added
 
+* `transfer_encoding` option of the string validators: `quoted-printable`
+  (RFC 2045), `percent` (`urlencode()` / `rawurlencode()` output), `base64` /
+  `base64url` (RFC 4648) and `html` (`htmlspecialchars($s, ENT_QUOTES)`
+  output). The encoded form is checked strictly, then the decoded text is
+  validated (`encoding`, flags, RFC 3454 table C, `unicode`). mbstring cannot
+  do this: `mb_check_encoding($s, 'Quoted-Printable')` is false even for valid
+  input on PHP 8.0 and older and true even for `=ZZ` on PHP 8.1 and later
+  (deprecated since 8.2), and `quoted_printable_decode()` passes `=ZZ` through.
+* `dev/mb_check.php` measures what mbstring of a PHP version accepts (UTF-8
+  against the RFC 3629 grammar, and the encodings known to differ between
+  versions); README "Character Encoding Validation" lists the results.
 * Branches `php-8.x` (PHP 8.x), `php-7.x` (PHP 7.0 - 7.4) and `php-5.x` (PHP
   5.3 - 5.6) with the same features as `master`, which is the development
   branch: changes go to `master` first and are ported to the other branches.

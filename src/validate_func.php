@@ -29,6 +29,8 @@ require_once __DIR__.'/Validate.php';
  * @param string $root_name Root variable name shown in error reports.
  *
  * @return Validate Fresh Validate context object.
+ *
+ * @throws RuntimeException The mbstring extension is not loaded.
  */
 function validate_init($root_name = 'ROOT')
 {
@@ -62,6 +64,7 @@ function validate_init($root_name = 'ROOT')
  * @return mixed Validated value(s), or null on failure when exceptions are disabled.
  *
  * @throws InvalidArgumentException      Bad argument ($ctx, $specs, $func_opts).
+ * @throws RuntimeException              The mbstring extension is not loaded.
  * @throws ValidateInvalidSpecException  VALIDATE_OPT_CHECK_SPEC found spec errors.
  * @throws ValidateInvalidValueException Validation failed (unless VALIDATE_OPT_DISABLE_EXCEPTION).
  */
@@ -253,6 +256,7 @@ function validate_set_logger_function($ctx, $logger_func)
  * @return bool true if the spec is well-formed, false otherwise.
  *
  * @throws InvalidArgumentException $specs is not an array or $ctx is not a Validate.
+ * @throws RuntimeException         The mbstring extension is not loaded.
  */
 function validate_spec($specs, &$unvalidated = null, &$ctx = null)
 {

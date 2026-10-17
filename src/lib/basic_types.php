@@ -647,65 +647,72 @@ $basicTypes['base64url_256'] = [
 
 // ---------------------------------------------------------------------------
 // URL-encoded string (the output of rawurlencode()/urlencode()).
-// Alnum + the symbols left unreserved by RFC 3986 ('-_.~') plus '+' used by
-// application/x-www-form-urlencoded; '%' only as a "%HH" escape (two hex digits).
+// The encoded form: alnum + the symbols left unreserved by RFC 3986 ('-_.~')
+// plus '+' (a space) used by application/x-www-form-urlencoded; '%' only as a
+// "%HH" escape (two hex digits). The decoded text must be valid UTF-8 on one
+// line: alnum, SPACE, ASCII symbols and multibyte chars, no control chars
+// (no RFC 3454 table C code points either). min/max apply to the encoded form.
 // 'urle' has min=max=1 placeholders; override before use.
 // ---------------------------------------------------------------------------
 $basicTypes['urle'] = [
-    VALIDATE_REGEXP,
-    VALIDATE_REGEXP_ALNUM,
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 1,
-        'ascii' => '%-_.~+',
-        'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
+        'transfer_encoding' => 'percent',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 
 $basicTypes['urle32'] = [
-    VALIDATE_REGEXP,
-    VALIDATE_REGEXP_ALNUM,
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 32,
-        'ascii' => '%-_.~+',
-        'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
+        'transfer_encoding' => 'percent',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 
 $basicTypes['urle64'] = [
-    VALIDATE_REGEXP,
-    VALIDATE_REGEXP_ALNUM,
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 64,
-        'ascii' => '%-_.~+',
-        'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
+        'transfer_encoding' => 'percent',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 
 $basicTypes['urle128'] = [
-    VALIDATE_REGEXP,
-    VALIDATE_REGEXP_ALNUM,
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 128,
-        'ascii' => '%-_.~+',
-        'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
+        'transfer_encoding' => 'percent',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 
 $basicTypes['urle256'] = [
-    VALIDATE_REGEXP,
-    VALIDATE_REGEXP_ALNUM,
+    VALIDATE_STRING,
+    VALIDATE_STRING_ALNUM | VALIDATE_STRING_SPACE | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 256,
-        'ascii' => '%-_.~+',
-        'regexp' => '/\A(?:[A-Za-z0-9_.~+-]|%[0-9A-Fa-f]{2})*\z/',
+        'transfer_encoding' => 'percent',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 
 
 // ---------------------------------------------------------------------------
-// HTML-encoded string. Useful as an "assertion" that a value has already
-// been HTML-escaped (e.g. via htmlspecialchars with ENT_QUOTES) before
-// reaching the validator. Assumes LF for newlines.
+// HTML-encoded string: text in the form htmlspecialchars($s, ENT_QUOTES)
+// produces. Useful as an "assertion" that a value has already been
+// HTML-escaped before reaching the validator. The encoded form has no raw
+// '<', '>', '"' or "'", and '&' only in &amp; &lt; &gt; &quot; &apos; or a
+// numeric reference. The decoded text must be valid UTF-8: alnum, TAB,
+// SPACE, LF, ASCII symbols and multibyte chars, no other control chars (no
+// RFC 3454 table C code points either). min/max apply to the encoded form.
 // 'htmle' has min=max=1 placeholders; override before use.
 // ---------------------------------------------------------------------------
 $basicTypes['htmle'] = [
@@ -713,7 +720,8 @@ $basicTypes['htmle'] = [
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 1,
-        'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
+        'transfer_encoding' => 'html',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 
@@ -722,7 +730,8 @@ $basicTypes['htmle32'] = [
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 32,
-        'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
+        'transfer_encoding' => 'html',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 
@@ -731,7 +740,8 @@ $basicTypes['htmle64'] = [
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 64,
-        'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
+        'transfer_encoding' => 'html',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 
@@ -740,7 +750,8 @@ $basicTypes['htmle128'] = [
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 128,
-        'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
+        'transfer_encoding' => 'html',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 
@@ -749,7 +760,8 @@ $basicTypes['htmle256'] = [
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 256,
-        'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
+        'transfer_encoding' => 'html',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 
@@ -758,7 +770,8 @@ $basicTypes['htmle512'] = [
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 512,
-        'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
+        'transfer_encoding' => 'html',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 
@@ -767,7 +780,8 @@ $basicTypes['htmle1024'] = [
     VALIDATE_STRING_ALNUM | VALIDATE_STRING_TAB | VALIDATE_STRING_SPACE | VALIDATE_STRING_LF | VALIDATE_STRING_MB,
     [
         'min' => 1, 'max' => 1024,
-        'ascii' => '[]{}!#$%&()-=^~\\|@`*+:;_/?.,',
+        'transfer_encoding' => 'html',
+        'ascii' => '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
     ]
 ];
 

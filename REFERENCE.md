@@ -101,6 +101,8 @@ Exceptions (all extend InvalidArgumentException, so existing handlers keep worki
  * ValidateInvalidSpecException - VALIDATE_OPT_CHECK_SPEC found spec errors. getContext() returns the Validate object holding every spec error (validate_get_system_errors()).
  * ValidateInvalidValueException - An input failed validation (unless VALIDATE_OPT_DISABLE_EXCEPTION). getError() returns the structured error record.
 
+RuntimeException (not an InvalidArgumentException) - the mbstring extension is not loaded: `new Validate`, validate_init() and validate() throw it. Character encodings are validated with mb_check_encoding().
+
 
 ### validate_get_status()
 
@@ -466,7 +468,7 @@ String validator reject all chars by default. Allowed chars must be specified ex
  * VALIDATE_STRING_ALPHA - Same as (VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_UPPER_ALPHA)
  * VALIDATE_STRING_ALNUM - Same as (VALIDATE_STRING_ALPHA | VALIDATE_STRING_DIGIT)
  * VALIDATE_STRING_SYMBOL - Allow symbol chars, but not control chars. WARNING: Dangerous option
- * VALIDATE_STRING_MB - Allow MultiByte chars. The encoding is checked ("encoding" option, default UTF-8); for UTF-8 the RFC 3454 table C code points (non-ASCII spaces/controls, private use, non-characters, ...) are rejected unless allowed.
+ * VALIDATE_STRING_MB - Allow MultiByte chars. mb_check_encoding() validates the "encoding" option (default UTF-8); the string is then converted to UTF-8, and the RFC 3454 table C code points (non-ASCII spaces/controls, private use, non-characters, ...) are rejected unless allowed. Without it, only ASCII chars pass. See README "Character Encoding Validation".
  * VALIDATE_STRING_BINARY - Allow anything. WARNING: Dangerous option
  * VALIDATE_STRING_RFC3454_C - Allow the RFC 3454 table C code points. ASCII code CNTRL is handled by above flags. e.g. VALIDATE_STRING_LF. The "unicode" option still applies.
  * VALIDATE_STRING_RFC3454_D - Reserved. Currently has no effect.
@@ -545,9 +547,10 @@ Validator options are specified like
  * 'decimal' - Float decimal separator (single char). Default `.`. Must not be a digit, `+`, `-`, `e` or `E` (those would corrupt parsing); such specs are rejected.
  * 'thousand' - Float thousand separator (single char). Default `,`. Only consulted when `VALIDATE_FLOAT_THOUSAND` flag is set; must differ from `decimal` and has the same character restrictions as 'decimal'.
  * 'length' - Maximum chars(bytes) for float value strings. Float string could be extremely long. 'max' is used for Maximum value. Default to 32 bytes. Note: due to a bug, this limit was not enforced before the float fraction/decimal implementation — specs that accept float strings longer than 32 bytes must now set 'length' explicitly.
- * 'encoding' - Char encoding for strings with the _MB flag (htmlspecialchars() encodings). Default UTF-8. The RFC 3454 checks and the 'unicode' option apply to UTF-8 only.
+ * 'encoding' - Char encoding for strings with the _MB flag: any character encoding name mbstring knows (UTF-8, SJIS, Shift_JIS, EUC-JP, ISO-2022-JP, UTF-16, ...), validated with mb_check_encoding(). Default UTF-8. The chars are checked after conversion to UTF-8, so the RFC 3454 checks and the 'unicode' option apply to every encoding. Unknown names and mbstring's non-character names (BASE64, Quoted-Printable, HTML-ENTITIES, 8bit, ...) are spec errors.
+ * 'transfer_encoding' - "quoted-printable", "percent", "base64", "base64url" or "html" for string validators. The encoded form is checked strictly and decoded, and the decoded text is validated ('encoding', flags, RFC 3454, 'unicode'). 'min' / 'max', 'regexp', the callback's $input and the validated value are the input as received. A spec error with _BINARY. See README "Character Encoding Validation" for each form.
  * 'ascii' - Char list for additionally allowed chars in strings (7-bit ASCII only).
- * 'unicode' - [code point => bool] overrides for UTF-8 strings with the _MB flag: true allows, false rejects a code point (0x80-0x10FFFF).
+ * 'unicode' - [code point => bool] overrides for strings with the _MB flag (code points after conversion to UTF-8): true allows, false rejects a code point (0x80-0x10FFFF).
  * 'values' - Set of valid values for string and integer. i.e. If an integer must be 1 or 2, 'values' should be [1=>true,2=>true]; Replaces 'min'/'max'. Integer strings ("1") are accepted for integer values.
  * 'regexp' - Regular expression for VALIDATE_REGEXP validator.
  * 'resource' - Required resource type name for VALIDATE_RESOURCE (get_resource_type()).
