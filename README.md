@@ -620,7 +620,7 @@ Codes.
 
 ## Status
 
-* 1.0 (2026-10-17); see [Releases](#releases) and [CHANGELOG.md](CHANGELOG.md).
+* Released: 1.0 (2026-10-17) and its fix releases; see [Releases](#releases) and [CHANGELOG.md](CHANGELOG.md).
 * Please test drive and report bugs.
 
 ## TODO
