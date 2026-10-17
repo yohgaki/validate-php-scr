@@ -73,8 +73,9 @@ $float = [
     // negative infinity). NAN is always rejected.
 ];
 
-// VALIDATE_STRING_MB opens up UTF-8 multibyte characters. The 'encoding'
-// option is informational — only UTF-8 is supported, so it can be omitted.
+// VALIDATE_STRING_MB opens up multibyte characters. mb_check_encoding()
+// validates the 'encoding' option (any encoding mbstring knows, e.g. 'SJIS',
+// 'ISO-2022-JP'); 'UTF-8' is the default and may be omitted.
 $utf8 = [
     VALIDATE_STRING,
     VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_SPACE | VALIDATE_STRING_MB,
