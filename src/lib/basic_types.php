@@ -8,7 +8,8 @@
  * or copy it and tweak the third element (options) for per-call adjustments.
  *
  * Naming convention:
- *   - Bare names (e.g. 'alpha', 'header', 'text') leave 'min'/'max' set to 0,
+ *   - Bare names (e.g. 'alpha', 'header', 'text') leave 'min'/'max' set to 0
+ *     (1 for the encoded forms 'base64', 'base64url', 'urle' and 'htmle'),
  *     which is a placeholder meaning "you must override before use". Doing so
  *     forces every caller to pick a concrete length budget for their context.
  *   - Suffixes like 'alpha32', 'header4096' embed the max length in bytes.
@@ -16,6 +17,7 @@
  *     SYMBOL chars (more permissive — use with care).
  *   - The `u` suffix loosens a base spec by also accepting UTF-8 multibyte chars.
  *   - The `_dns` suffix performs an extra DNS lookup at validation time.
+ *     'fqdn' and 'active_url' look up DNS by definition.
  *
  * Many specs assume the client (HTML/JS) has already done a sanity check on
  * length and character set; these specs are the server-side safety net.
@@ -489,7 +491,8 @@ $basicTypes['text8192_s'] =  array(
 // SQL identifiers — alnum + underscore, first char must be a letter or '_'.
 // Two length caps are provided:
 //   sqlident63  : PostgreSQL default NAMEDATALEN limit (63 bytes).
-//   sqlident127 : SQL-92 standard limit (127 bytes); also matches MySQL.
+//   sqlident127 : a longer cap (127 bytes). MySQL allows 64 chars; use the
+//                 limit of your DBMS.
 // ---------------------------------------------------------------------------
 $basicTypes['sqlident63'] = array(
     VALIDATE_REGEXP,
@@ -514,9 +517,9 @@ $basicTypes['sqlident127'] = array(
 
 // ---------------------------------------------------------------------------
 // PHP session ID.
-// NOTE: The PHP session module silently strips invalid characters from the
-// incoming session id, so an extra sanity check at the application boundary
-// is still valuable. The length range is the one session.sid_length accepts
+// NOTE: The PHP session module only warns about an invalid incoming session
+// id (session_start() then fails on PHP 7.4 / 8.5 but starts the session on
+// PHP 5.6), so an explicit check at the application boundary is valuable. The length range is the one session.sid_length accepts
 // (22-256, default 32; the setting is deprecated as of PHP 8.4). Narrow
 // 'min'/'max' to your configured length for a tighter check.
 // ---------------------------------------------------------------------------
@@ -1591,7 +1594,9 @@ $basicTypes['hex_color'] = array(
 //
 // _php_filter_validate_domain() with FILTER_FLAG_HOSTNAME: labels of 1-63
 // alphanumerics and '-' that start and end alphanumeric, at most 253 chars;
-// one trailing dot is ignored.
+// one trailing dot is ignored. As in php-src, the last label may end with
+// '-' when the trailing dot follows ('http://a-./' passes, 'http://a-/' and
+// 'http://a-.b/' fail).
 $hostnameOk = function ($host) {
     $len = strlen($host);
     $end = ($len > 0 && $host[$len - 1] === '.') ? $len - 1 : $len;

@@ -151,7 +151,7 @@ good: true
 typo: true
   warning: VALIDATE_ARRAY has unknown option "undeclard". Known options: "min", "max", "default", "error_message", "undeclared", "key_callback" and "_" prefixed user options.
 KEY_ALNUM without undeclared: true
-  warning: VALIDATE_ARRAY has flags that have no effect. Only VALIDATE_FLAG_REJECT, VALIDATE_FLAG_UNDEFINED, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, VALIDATE_FLAG_WARNING, VALIDATE_FLAG_NOTICE, VALIDATE_FLAG_PASSTHRU and, with "undeclared" option, VALIDATE_FLAG_ARRAY_KEY_ALNUM apply.
+  warning: VALIDATE_ARRAY has flags that have no effect. Only VALIDATE_FLAG_REJECT, VALIDATE_FLAG_UNDEFINED, VALIDATE_FLAG_UNDEFINED_TO_DEFAULT, VALIDATE_FLAG_EMPTY_TO_DEFAULT, VALIDATE_FLAG_WARNING, VALIDATE_FLAG_NOTICE, VALIDATE_FLAG_PASSTHRU and, with "undeclared" option, VALIDATE_FLAG_ARRAY_KEY_ALNUM apply.
 key_callback without undeclared: true
   warning: VALIDATE_ARRAY has "key_callback" option that has no effect without "undeclared" option.
 KEY_ALNUM with key_callback: true

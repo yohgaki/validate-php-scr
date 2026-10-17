@@ -124,7 +124,6 @@ filter not callable: FAIL
 key_callback not callable: FAIL
   error: VALIDATE_STRING "key_callback" option is not callable.
 BOOL no format flags: OK
-  warning: VALIDATE_BOOL has no boolean format flags. No value can be accepted.
 ascii non-ASCII: FAIL
   error: VALIDATE_STRING "ascii" option must contain ASCII characters only.
 INF on INT: OK

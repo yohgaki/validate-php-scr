@@ -183,7 +183,7 @@ bool(true)
 
 == BOOL without format flags ==
 bool(true)
-WARNING: VALIDATE_BOOL has no boolean format flags. No value can be accepted. [VALIDATE_BOOL_AS_STRING]
+NOTICE: VALIDATE_BOOL has no boolean format flags. Only bool values are accepted, no strings. [VALIDATE_BOOL_AS_STRING]
 
 == default: FLAG_ARRAY needs array default ==
 bool(false)

@@ -541,11 +541,7 @@ bool(false)
 **** test #1 *****
 
 ** $result **
-array(4) {
-  [0]=>
-  NULL
-  [1]=>
-  NULL
+array(2) {
   [2]=>
   bool(true)
   [3]=>
@@ -556,7 +552,7 @@ array(4) {
 bool(false)
 
 ** Validate object **
-object(Validate)#2 (15) {
+object(Validate)#2 (16) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -1043,11 +1039,7 @@ object(Validate)#2 (15) {
   array(0) {
   }
   ["validated":"Validate":private]=>
-  array(4) {
-    [0]=>
-    NULL
-    [1]=>
-    NULL
+  array(2) {
     [2]=>
     bool(true)
     [3]=>
@@ -1059,6 +1051,8 @@ object(Validate)#2 (15) {
   int(0)
   ["silentFailed":"Validate":private]=>
   bool(false)
+  ["userErrorCount":"Validate":private]=>
+  int(0)
   ["loggerFunction":"Validate":private]=>
   NULL
 }
@@ -1076,7 +1070,7 @@ array(2) {
 bool(true)
 
 ** Validate object **
-object(Validate)#2 (15) {
+object(Validate)#2 (16) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -1576,6 +1570,8 @@ object(Validate)#2 (15) {
   int(0)
   ["silentFailed":"Validate":private]=>
   bool(false)
+  ["userErrorCount":"Validate":private]=>
+  int(0)
   ["loggerFunction":"Validate":private]=>
   NULL
 }
@@ -1599,7 +1595,7 @@ array(4) {
 bool(true)
 
 ** Validate object **
-object(Validate)#2 (15) {
+object(Validate)#2 (16) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -2111,6 +2107,8 @@ object(Validate)#2 (15) {
   int(0)
   ["silentFailed":"Validate":private]=>
   bool(false)
+  ["userErrorCount":"Validate":private]=>
+  int(0)
   ["loggerFunction":"Validate":private]=>
   NULL
 }
@@ -2132,7 +2130,7 @@ array(4) {
 bool(true)
 
 ** Validate context **
-object(Validate)#2 (15) {
+object(Validate)#2 (16) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -2644,6 +2642,8 @@ object(Validate)#2 (15) {
   int(0)
   ["silentFailed":"Validate":private]=>
   bool(false)
+  ["userErrorCount":"Validate":private]=>
+  int(0)
   ["loggerFunction":"Validate":private]=>
   NULL
 }
@@ -2665,7 +2665,7 @@ array(4) {
 bool(true)
 
 ** Validate object **
-object(Validate)#2 (15) {
+object(Validate)#2 (16) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -3177,6 +3177,8 @@ object(Validate)#2 (15) {
   int(0)
   ["silentFailed":"Validate":private]=>
   bool(false)
+  ["userErrorCount":"Validate":private]=>
+  int(0)
   ["loggerFunction":"Validate":private]=>
   NULL
 }

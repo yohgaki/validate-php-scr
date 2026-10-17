@@ -2,8 +2,8 @@
 /**
  * Multiple-input validation example.
  *
- * A realistic shape: a request with $_POST, $_GET and HTTP headers, all
- * validated in a single validate() call. Shows how to:
+ * A realistic shape: a request with $_POST, $_GET and HTTP headers, validated
+ * in two validate() calls (multi-stage validation). Shows how to:
  *   - compose reusable per-field specs into an array spec,
  *   - validate top-level + nested arrays in one pass,
  *   - apply a "default" pass to catch extra/optional parameters,
@@ -202,7 +202,8 @@ $specs = array(
 // Real-world web apps often see extra (optional, unforeseen) parameters.
 // Build a second pass with a loose array spec to validate whatever remains.
 // VALIDATE_FLAG_ARRAY makes every element validated under the same spec;
-// VALIDATE_FLAG_ARRAY_KEY_ALNUM restricts the allowed key names to alnum+'_'.
+// VALIDATE_FLAG_ARRAY_KEY_ALNUM restricts the allowed key names to alnum, '_'
+// and '-' (at most 64 chars).
 $post_default = $basicTypes['text128']; // UTF-8 text, up to 128 bytes.
 $post_default[VALIDATE_FLAGS] |= VALIDATE_FLAG_UNDEFINED_TO_DEFAULT
                                  | VALIDATE_FLAG_ARRAY
@@ -245,8 +246,8 @@ $default_specs = array(
 // fields your business logic happens to read this minute.
 $my_inputs = array('post' => $POST, 'get' => $GET, 'header' => $HEADER);
 
-// Validate the full request in a single call. Input keys a spec does not
-// declare are errors unless VALIDATE_OPT_UNVALIDATED is set; this first pass
+// First pass: validate the declared request fields in one call. Input keys a
+// spec does not declare are errors unless VALIDATE_OPT_UNVALIDATED is set; this first pass
 // sets it because the second pass below validates the leftovers.
 // Equivalent OO one-liner on PHP 5.4+ (no need to keep a $ctx):
 //   $result = (new Validate)->validate($my_inputs, $specs, VALIDATE_OPT_UNVALIDATED);
