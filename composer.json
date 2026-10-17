@@ -14,11 +14,11 @@
         }
     ],
     "require": {
-        "php": ">=8.0"
+        "php": ">=8.0",
+        "ext-mbstring": "*"
     },
     "suggest": {
         "ext-bcmath": "Big-integer range checks (VALIDATE_INT_AS_STRING); a pure PHP fallback is used otherwise",
-        "ext-mbstring": "Better multibyte char handling",
         "ext-gmp": "Better integer handling"
     }
 }
