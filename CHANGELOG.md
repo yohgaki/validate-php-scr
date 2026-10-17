@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-A review of the code against its documentation (2026-10-17).
+Nothing yet.
+
+## 1.0.x01 - 2026-10-18: `v1.0.501` (`php-5.x`), `v1.0.701` (`php-7.x`), `v1.0.801` (`php-8.x`)
+
+Fix release of 1.0. A review of the code against its documentation (2026-10-17).
 
 ### Changed — behavior changes that can affect existing code
 
