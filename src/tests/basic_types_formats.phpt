@@ -1,5 +1,5 @@
 --TEST--
-basicTypes format specs: sessid, base64, base64url, urle, time, datetime, domain, http_host, AS_STRING ints
+basicTypes format specs: sessid, base64, base64url, urle, htmle, time, datetime, domain, http_host, AS_STRING ints
 --SKIPIF--
 <?php
 require_once __DIR__.'/bootstrap.php';
@@ -48,6 +48,27 @@ $cases = array(
     array('urle32', '%', 'fail'),
     array('urle32', '%2', 'fail'),
     array('urle32', 'a b', 'fail'),
+    // urle: the decoded text must be valid UTF-8 on one line, no control chars.
+    array('urle32', '%E3%81%82', 'pass'),
+    array('urle32', '%FF%FE', 'fail'), // invalid UTF-8
+    array('urle32', '%E2%80%AE', 'fail'), // U+202E RIGHT-TO-LEFT OVERRIDE
+    array('urle32', 'a%1Fb', 'fail'), // US (EXPECTF reads "%0" as NUL)
+    array('urle32', 'a%7Fb', 'fail'), // DEL
+
+    // htmle: the form htmlspecialchars($s, ENT_QUOTES) produces; the decoded
+    // text is validated.
+    array('htmle32', '&lt;b&gt; &amp; &quot;&#039;', 'pass'),
+    array('htmle32', '&#12354;&#x3042;', 'pass'),
+    array('htmle32', 'a & b', 'fail'),
+    array('htmle32', '<b>', 'fail'),
+    array('htmle32', "it's", 'fail'),
+    array('htmle32', '&nbsp;', 'fail'), // only the references htmlspecialchars() makes
+    array('htmle32', '&#0;', 'fail'),
+    array('htmle32', '&#xD800;', 'fail'), // surrogate
+    array('htmle32', '&#x110000;', 'fail'),
+    array('htmle32', '&#x202E;', 'fail'), // U+202E RIGHT-TO-LEFT OVERRIDE
+    array('htmle32', 'a&#10;b', 'pass'), // LF
+    array('htmle32', 'a&#13;b', 'fail'), // CR
 
     // time: optional seconds, optional 1-9 digit fraction after seconds.
     array('time', '12:34', 'pass'),
@@ -170,6 +191,23 @@ echo "Done.\n";
 [OK] urle32('%') => fail (expected fail)
 [OK] urle32('%2') => fail (expected fail)
 [OK] urle32('a b') => fail (expected fail)
+[OK] urle32('%E3%81%82') => pass (expected pass) string
+[OK] urle32('%FF%FE') => fail (expected fail)
+[OK] urle32('%E2%80%AE') => fail (expected fail)
+[OK] urle32('a%1Fb') => fail (expected fail)
+[OK] urle32('a%7Fb') => fail (expected fail)
+[OK] htmle32('&lt;b&gt; &amp; &quot;&#039;') => pass (expected pass) string
+[OK] htmle32('&#12354;&#x3042;') => pass (expected pass) string
+[OK] htmle32('a & b') => fail (expected fail)
+[OK] htmle32('<b>') => fail (expected fail)
+[OK] htmle32('it\'s') => fail (expected fail)
+[OK] htmle32('&nbsp;') => fail (expected fail)
+[OK] htmle32('&#0;') => fail (expected fail)
+[OK] htmle32('&#xD800;') => fail (expected fail)
+[OK] htmle32('&#x110000;') => fail (expected fail)
+[OK] htmle32('&#x202E;') => fail (expected fail)
+[OK] htmle32('a&#10;b') => pass (expected pass) string
+[OK] htmle32('a&#13;b') => fail (expected fail)
 [OK] time('12:34') => pass (expected pass) string
 [OK] time('12:34:56') => pass (expected pass) string
 [OK] time('12:34:56.789') => pass (expected pass) string

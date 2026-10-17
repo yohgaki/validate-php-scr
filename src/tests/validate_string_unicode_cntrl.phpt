@@ -93,11 +93,11 @@ $ctx = validate_init();
 $copy = 'a'.cp2utf8(0x3042).'b';
 var_dump(validate($ctx, $copy, $spec_u, $func_opts), $ctx->getStatus());
 
-echo "\n**** non-UTF-8 encoding skips the unicode cntrl check ****\n";
+echo "\n**** non-UTF-8 encodings are checked after conversion to UTF-8 ****\n";
 $spec_e = array(VALIDATE_STRING, VALIDATE_STRING_ALPHA | VALIDATE_STRING_MB,
            array('min'=>0, 'max'=>10, 'encoding'=>'ISO-8859-1'));
 $ctx = validate_init();
-$copy = "caf\xE9"; // latin-1 e-acute; would be a broken byte in UTF-8
+$copy = "caf\xE9"; // latin-1 e-acute (U+00E9); would be a broken byte in UTF-8
 var_dump(validate($ctx, $copy, $spec_e, $func_opts) === $copy, $ctx->getStatus());
 
 echo "\n**** UTF-8 surrogate / out-of-range sequences fail encoding check ****\n";
@@ -127,7 +127,7 @@ bool(true)
 NULL
 bool(false)
 
-**** non-UTF-8 encoding skips the unicode cntrl check ****
+**** non-UTF-8 encodings are checked after conversion to UTF-8 ****
 bool(true)
 bool(true)
 

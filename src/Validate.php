@@ -268,10 +268,23 @@ class Validate
      *
      * @param string $root_name Label shown for the top-level value in error
      *                          reports (e.g. "ROOT", "POST", "request").
+     *
+     * @throws RuntimeException The mbstring extension is not loaded, or
+     *                          mbstring.func_overload overloads string functions.
      */
     public function __construct($root_name = 'ROOT')
     {
         assert(is_string($root_name));
+
+        // Character encodings are validated with mbstring.
+        if (!function_exists('mb_check_encoding')) {
+            throw new RuntimeException('Validate requires the mbstring extension.');
+        }
+        // With overloaded string functions strlen() counts chars, not bytes:
+        // byte lengths and the char checks would be wrong.
+        if (((int)ini_get('mbstring.func_overload')) & 2) {
+            throw new RuntimeException('Validate does not work with mbstring.func_overload string functions (2).');
+        }
 
         $this->status = null;
         $this->validated = null;
@@ -1942,7 +1955,7 @@ class Validate
             $this->reportError(
                 array(
                     'message' => 'VALIDATE_INT: Invalid int string.',
-                    'value' => addslashes($ret),
+                    'value' => $ret,
                 ),
                 array(VALIDATE_INT, $flags, $options),
                 $func_opts
@@ -2430,11 +2443,15 @@ class Validate
      * "max" - Maximum length.
      * "filter"   - Optional. Filter callback before validation. Use this for normalization.
      * "ascii"    - Optional. Chars allowed like strspn().
-     * "encoding" - Optional. htmlspecialchars() supported encoding string.
-     *              No multibyte chars are allowed by default. You also need
-     *              VALIDATE_STRING_MB flag to enable multibyte chars.
-     *              If "encoding" is omitted, "UTF-8" is used by default.
-     * "unicode"  - Optional. [code point => bool] overrides for UTF-8 input:
+     * "encoding" - Optional. Character encoding of the input, any name
+     *              mbstring knows ("UTF-8", "SJIS", "ISO-2022-JP", "UTF-16",
+     *              ...); default "UTF-8". mb_check_encoding() validates it.
+     *              Without VALIDATE_STRING_MB only ASCII chars are allowed.
+     * "transfer_encoding" - Optional. "quoted-printable", "percent",
+     *              "base64", "base64url" or "html": the encoded form is
+     *              checked strictly and decoded, and the decoded text is
+     *              validated (encoding, chars). See decodeTransferEncoding().
+     * "unicode"  - Optional. [code point => bool] overrides for _MB input:
      *              true allows a code point, false rejects it. Consulted
      *              before (and also with) VALIDATE_STRING_RFC3454_C.
      * "values"   - Optional. [string => true, ...] exact-match whitelist; replaces min/max and char checks.
@@ -2509,16 +2526,65 @@ class Validate
             return true;
         }
 
+        // The chars are checked on $text: the input as received, decoded
+        // from its "transfer_encoding" and converted to UTF-8 from its
+        // "encoding". The validated value stays the input as received.
+        $text = $ret;
+        $transfer = isset($options['transfer_encoding']) ? $options['transfer_encoding'] : null;
+        if ($transfer !== null && $transfer !== 'html') {
+            $text = self::decodeTransferEncoding($ret, $transfer);
+            if ($text === null) {
+                $this->reportError(
+                    array(
+                        'message' => $vname .': Invalid '.$transfer.' encoding.',
+                        'value' => $ret,
+                    ),
+                    array($id, $flags, $options),
+                    $func_opts
+                );
+                return false;
+            }
+        }
+
         $multibyte = ($flags & VALIDATE_STRING_MB);
         $encoding = isset($options['encoding']) ? $options['encoding'] : 'UTF-8';
         if ($multibyte) {
-            // Use htmlspecialchars() validation to avoid mbstring dependency.
-            // It returns '' for an invalid byte sequence (and rejects UTF-8
-            // overlongs, surrogates and code points beyond U+10FFFF).
-            if (htmlspecialchars($ret, ENT_QUOTES, $encoding) === '') {
+            // Character encoding validation (mbstring). An unknown name fails
+            // closed even when the spec check is disabled.
+            if (!self::isCharEncoding($encoding)) {
+                $this->reportError(
+                    array(
+                        'message' => $vname .': Unsupported encoding "'.$encoding.'".',
+                        'value' => $ret,
+                    ),
+                    array($id, $flags, $options),
+                    $func_opts
+                );
+                return false;
+            }
+            if (!mb_check_encoding($text, $encoding)) {
                 $this->reportError(
                     array(
                         'message' => $vname .': Invalid '.$encoding.' encoding.',
+                        'value' => $ret,
+                    ),
+                    array($id, $flags, $options),
+                    $func_opts
+                );
+                return false;
+            }
+            if (strcasecmp($encoding, 'UTF-8') !== 0 && strcasecmp($encoding, 'UTF8') !== 0) {
+                $text = mb_convert_encoding($text, 'UTF-8', $encoding);
+            }
+        }
+        if ($transfer === 'html') {
+            // HTML character references are decoded after the conversion:
+            // they name Unicode code points, not bytes of "encoding".
+            $text = self::decodeHtmlReferences($text);
+            if ($text === null) {
+                $this->reportError(
+                    array(
+                        'message' => $vname .': Invalid html encoding.',
                         'value' => $ret,
                     ),
                     array($id, $flags, $options),
@@ -2540,14 +2606,14 @@ class Validate
         // Custom unicode validation char map array. [unicode_value => true/false, ...]; true: allowed, false: disallowed.
         assert(!isset($options['unicode']) || is_array($options['unicode']));
         $unimap = isset($options['unicode']) ? $options['unicode'] : array();
-        $utf8 = (strcasecmp($encoding, 'UTF-8') === 0 || strcasecmp($encoding, 'UTF8') === 0);
-        $checkUnicode = $multibyte && $utf8 && (!($flags & VALIDATE_STRING_RFC3454_C) || $unimap);
+        $checkUnicode = $multibyte && (!($flags & VALIDATE_STRING_RFC3454_C) || $unimap);
 
         // Skip runs of whitelisted ASCII with strspn(); inspect only the
-        // bytes it stops at.
+        // bytes it stops at. With _MB, $text is valid UTF-8 at this point.
+        $len = strlen($text);
         $i = 0;
-        while (($i += strspn($ret, $allowed, $i)) < $len) {
-            $c = $ret[$i];
+        while (($i += strspn($text, $allowed, $i)) < $len) {
+            $c = $text[$i];
             if (ord($c) >= 0x80) {
                 if (!$multibyte) {
                     $this->reportError(
@@ -2560,12 +2626,24 @@ class Validate
                     );
                     return false;
                 }
+                // mbstring of PHP 5.3 accepts UTF-8 forms of values beyond
+                // U+10FFFF; reject them on every version.
+                $cp = self::utf8CodePointAt($text, $i, $clen);
+                if ($cp < 0) {
+                    $this->reportError(
+                        array(
+                            'message' => $vname .': Invalid '.$encoding.' encoding.',
+                            'value' => $ret,
+                        ),
+                        array($id, $flags, $options),
+                        $func_opts
+                    );
+                    return false;
+                }
                 if (!$checkUnicode) {
-                    $i++;
+                    $i += $clen;
                     continue;
                 }
-                // UTF-8 is valid at this point (checked above).
-                $cp = self::utf8CodePointAt($ret, $i, $clen);
                 if (isset($unimap[$cp])) {
                     $allowedCp = ($unimap[$cp] === true);
                     $why = 'Detected invalid unicode defined by $option["unicode"].';
@@ -2588,7 +2666,7 @@ class Validate
                 continue;
             }
             if ($crlf) {
-                if ($c === "\r" && (isset($ret[$i + 1]) ? $ret[$i + 1] : '') === "\n") {
+                if ($c === "\r" && (isset($text[$i + 1]) ? $text[$i + 1] : '') === "\n") {
                     $i += 2;
                     continue;
                 }
@@ -2684,22 +2762,30 @@ class Validate
 
 
     /**
-     * Decode the UTF-8 character starting at byte $idx of an already
-     * validated UTF-8 string.
+     * Decode the UTF-8 character starting at byte $idx of a string
+     * mb_check_encoding() accepted as UTF-8.
      *
      * @param string $str  UTF-8 string.
      * @param int    $idx  Byte offset of a lead byte (>= 0x80).
-     * @param int    $clen Output. Byte length of the character (2-4).
+     * @param int    $clen Output. Byte length of the character (2-4; 1 for
+     *                     a lead byte 0xF5 - 0xFD).
      *
-     * @return int Code point.
+     * @return int Code point, or -1 for a value beyond U+10FFFF (a lead byte
+     *             0xF5 - 0xFD, or 0xF4 followed by 0x90 - 0xBF), which
+     *             mbstring of PHP 5.3 accepts.
      */
     private static function utf8CodePointAt($str, $idx, &$clen)
     {
         $b0 = ord($str[$idx]);
+        if ($b0 >= 0xF5) {
+            $clen = 1;
+            return -1;
+        }
         if ($b0 >= 0xF0) {
             $clen = 4;
-            return (($b0 & 0x07) << 18) | ((ord($str[$idx + 1]) & 0x3F) << 12)
-                   | ((ord($str[$idx + 2]) & 0x3F) << 6) | (ord($str[$idx + 3]) & 0x3F);
+            $cp = (($b0 & 0x07) << 18) | ((ord($str[$idx + 1]) & 0x3F) << 12)
+                  | ((ord($str[$idx + 2]) & 0x3F) << 6) | (ord($str[$idx + 3]) & 0x3F);
+            return $cp > 0x10FFFF ? -1 : $cp;
         }
         if ($b0 >= 0xE0) {
             $clen = 3;
@@ -2707,6 +2793,177 @@ class Validate
         }
         $clen = 2;
         return (($b0 & 0x1F) << 6) | (ord($str[$idx + 1]) & 0x3F);
+    }
+
+
+    /**
+     * Encode a Unicode scalar value (U+0000 - U+10FFFF, no surrogates) as
+     * UTF-8.
+     *
+     * @param int $cp Code point.
+     *
+     * @return string
+     */
+    private static function utf8Chr($cp)
+    {
+        if ($cp < 0x80) {
+            return chr($cp);
+        }
+        if ($cp < 0x800) {
+            return chr(0xC0 | ($cp >> 6)) . chr(0x80 | ($cp & 0x3F));
+        }
+        if ($cp < 0x10000) {
+            return chr(0xE0 | ($cp >> 12)) . chr(0x80 | (($cp >> 6) & 0x3F)) . chr(0x80 | ($cp & 0x3F));
+        }
+        return chr(0xF0 | ($cp >> 18)) . chr(0x80 | (($cp >> 12) & 0x3F))
+               . chr(0x80 | (($cp >> 6) & 0x3F)) . chr(0x80 | ($cp & 0x3F));
+    }
+
+
+    /**
+     * Whether $name is a character encoding mbstring knows (a name, MIME
+     * name or alias; mbstring resolves it). mbstring also lists transfer
+     * encodings and internal names - BASE64, UUENCODE, HTML-ENTITIES,
+     * Quoted-Printable, 7bit, 8bit, pass, auto, wchar, byte2be, ... - which
+     * are not character encodings and are rejected (decode a transfer
+     * encoding with the "transfer_encoding" option).
+     *
+     * @param mixed $name "encoding" option.
+     *
+     * @return bool
+     */
+    private static function isCharEncoding($name)
+    {
+        static $known = array();
+
+        if (!is_string($name) || $name === '') {
+            return false;
+        }
+        $key = strtolower($name);
+        if (!isset($known[$key])) {
+            // Names, MIME names and aliases of the non-character
+            // "encodings" of mbstring in PHP 5.3 - 8.6.
+            $excluded = array(
+                'pass', 'none', 'auto', 'unknown', 'wchar', 'byte2be', 'byte2le', 'byte4be', 'byte4le',
+                'base64', 'uuencode', 'x-uuencode', 'html-entities', 'html', 'quoted-printable', 'qprint',
+                '7bit', '8bit', 'binary',
+            );
+            $known[$key] = false;
+            if (!in_array($key, $excluded, true)) {
+                // mbstring warns about an unknown name (PHP 8 throws ValueError).
+                $unknown = false;
+                set_error_handler(function () use (&$unknown) {
+                    $unknown = true;
+                    return true;
+                });
+                mb_check_encoding('', $name);
+                restore_error_handler();
+                $known[$key] = !$unknown;
+            }
+        }
+        return $known[$key];
+    }
+
+
+    /**
+     * Check the syntax of a transfer-encoded string strictly and decode it
+     * ("transfer_encoding" option; "html" is decodeHtmlReferences()).
+     *
+     * "quoted-printable" - RFC 2045 6.7: lines of at most 76 chars separated
+     *                      by CRLF; printable ASCII, SPACE and TAB, but no
+     *                      SPACE / TAB at the end of a line; '=' only in
+     *                      "=XX" (uppercase hex digits) or as a soft line
+     *                      break at the end of a line other than the last.
+     * "percent"          - The output of urlencode() / rawurlencode(): RFC
+     *                      3986 unreserved chars, "%XX" and '+' (a space).
+     * "base64"           - RFC 4648 4. "base64url" - RFC 4648 5. '='
+     *                      padding is optional but must complete the last
+     *                      group; its unused bits must be zero.
+     *
+     * @param string $str  Encoded string.
+     * @param string $type "transfer_encoding" option.
+     *
+     * @return string|null Decoded bytes, or null for invalid syntax.
+     */
+    private static function decodeTransferEncoding($str, $type)
+    {
+        switch ($type) {
+            case 'quoted-printable':
+                $lines = explode("\r\n", $str);
+                $last = count($lines) - 1;
+                foreach ($lines as $n => $line) {
+                    if (strlen($line) > 76
+                        || !preg_match('/\A(?:[\x21-\x3C\x3E-\x7E]|[\t ](?!\z)|=[0-9A-F]{2})*+(=?)\z/', $line, $m)
+                        || ($m[1] === '=' && $n === $last)) {
+                        return null;
+                    }
+                }
+                return quoted_printable_decode($str);
+            case 'percent':
+                if (!preg_match('/\A(?:[A-Za-z0-9._~+-]|%[0-9A-Fa-f]{2})*+\z/', $str)) {
+                    return null;
+                }
+                return urldecode($str);
+            case 'base64':
+            case 'base64url':
+                $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+                            .($type === 'base64' ? '+/' : '-_');
+                $c = ($type === 'base64') ? 'A-Za-z0-9+\/' : 'A-Za-z0-9_-';
+                if (!preg_match('/\A(?:['.$c.']{4})*+(?:['.$c.']{2}(?:==)?|['.$c.']{3}=?)?\z/', $str)) {
+                    return null;
+                }
+                $data = rtrim($str, '=');
+                $rest = strlen($data) % 4; // 0, 2 or 3
+                if ($rest > 0
+                    && (strpos($alphabet, $data[strlen($data) - 1]) & ($rest === 2 ? 0x0F : 0x03)) !== 0) {
+                    return null; // non-zero unused bits
+                }
+                if ($type === 'base64url') {
+                    $data = strtr($data, '-_', '+/');
+                }
+                $decoded = base64_decode($data.str_repeat('=', (4 - $rest) % 4), true);
+                return ($decoded === false) ? null : $decoded;
+            default:
+                return null;
+        }
+    }
+
+
+    /**
+     * Check and decode HTML character references ("transfer_encoding" =>
+     * "html"): the output of htmlspecialchars($s, ENT_QUOTES). No raw '<',
+     * '>', '"' or "'"; '&' only in &amp; &lt; &gt; &quot; &apos; or a
+     * numeric reference (&#DDD; / &#xHHH;) to U+0001 - U+10FFFF other than
+     * a surrogate.
+     *
+     * @param string $text Text (UTF-8 with the _MB flag).
+     *
+     * @return string|null Decoded UTF-8 text, or null for invalid syntax.
+     */
+    private static function decodeHtmlReferences($text)
+    {
+        if (!preg_match('/\A(?:[^&<>"\']++|&(?:amp|lt|gt|quot|apos|#[0-9]{1,7}|#[xX][0-9A-Fa-f]{1,6});)*+\z/', $text)) {
+            return null;
+        }
+        $named = array('amp' => '&', 'lt' => '<', 'gt' => '>', 'quot' => '"', 'apos' => "'");
+        // Every '&' starts a reference ending at the next ';' (checked above).
+        $parts = explode('&', $text);
+        $decoded = array_shift($parts);
+        foreach ($parts as $part) {
+            $end = strpos($part, ';');
+            $name = substr($part, 0, $end);
+            if (isset($named[$name])) {
+                $decoded .= $named[$name];
+            } else {
+                $cp = ($name[1] === 'x' || $name[1] === 'X') ? hexdec(substr($name, 2)) : (int)substr($name, 1);
+                if ($cp === 0 || ($cp >= 0xD800 && $cp <= 0xDFFF) || $cp > 0x10FFFF) {
+                    return null;
+                }
+                $decoded .= self::utf8Chr($cp);
+            }
+            $decoded .= substr($part, $end + 1);
+        }
+        return $decoded;
     }
 
 
@@ -3902,7 +4159,7 @@ class Validate
             'key_callback', // Array key validation callback for VALIDATE_FLAG_ARRAY.
             'INF', '-INF', 'length', // FLOAT option.
             'decimal', 'thousand', // FLOAT separator chars (paired with VALIDATE_FLOAT_THOUSAND).
-            'encoding', 'ascii', 'unicode', // STRING / REGEXP / CALLBACK option.
+            'encoding', 'transfer_encoding', 'ascii', 'unicode', // STRING / REGEXP / CALLBACK option.
             'values', // INT / STRING option. (REGEXP / CALLBACK may use, but not use with them)
             'regexp', // REGEXP option.
             'resource', // RESOURCE option. Required resource type name.
@@ -4136,6 +4393,17 @@ class Validate
                             'flags'   => $str_flags
                         )
                     );
+                }
+                if (isset($options['encoding']) && !self::isCharEncoding($options['encoding'])) {
+                    $this->specError(
+                        array(
+                            'message' => $vname.' "encoding" option must be a character encoding mbstring knows '
+                                        .'(use "transfer_encoding" for quoted-printable, base64, ...).',
+                            'spec'    => $spec,
+                            'flags'   => $str_flags
+                        )
+                    );
+                    $ret = false;
                 }
                 /*
                 if (!isset($options['encoding']) && ($flags & VALIDATE_STRING_MB)) {
@@ -4771,6 +5039,38 @@ class Validate
                         'flags'   => $str_flags
                     )
                 );
+            }
+        }
+
+        // "transfer_encoding"
+        if (isset($options['transfer_encoding'])) {
+            if (!in_array($options['transfer_encoding'], array('quoted-printable', 'percent', 'base64', 'base64url', 'html'), true)) {
+                $this->specError(
+                    array(
+                        'message' => $vname.' "transfer_encoding" option must be "quoted-printable", "percent", '
+                                    .'"base64", "base64url" or "html".',
+                        'spec'    => $spec,
+                        'flags'   => $str_flags
+                    )
+                );
+                $ret = false;
+            } elseif (!in_array($spec[VALIDATE_ID], array(VALIDATE_STRING, VALIDATE_REGEXP, VALIDATE_CALLBACK), true)) {
+                $this->specWarning(
+                    array(
+                        'message' => $vname.' has "transfer_encoding" option that has no effect. It needs a string validator.',
+                        'spec'    => $spec,
+                        'flags'   => $str_flags
+                    )
+                );
+            } elseif ($flags & VALIDATE_STRING_BINARY) {
+                $this->specError(
+                    array(
+                        'message' => $vname.' has "transfer_encoding" option, but the '.$vname.'_BINARY flag skips every check.',
+                        'spec'    => $spec,
+                        'flags'   => $str_flags
+                    )
+                );
+                $ret = false;
             }
         }
 

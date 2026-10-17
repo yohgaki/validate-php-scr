@@ -93,9 +93,12 @@ define('VALIDATE_STRING_UPPER_ALPHA', 1 << 7); /* Allow ASCII A-Z. */
 define('VALIDATE_STRING_ALPHA', (VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_UPPER_ALPHA)); /* Shortcut: both alpha cases. */
 define('VALIDATE_STRING_ALNUM', (VALIDATE_STRING_ALPHA | VALIDATE_STRING_DIGIT)); /* Shortcut: letters + digits. */
 define('VALIDATE_STRING_SYMBOL', 1 << 8); // WARNING: Dangerous — opens up all printable ASCII symbols. Prefer the 'ascii' option to whitelist a few.
-define('VALIDATE_STRING_MB', 1 << 9); // Allow multibyte (UTF-8) characters.
+// Allow multibyte characters. mb_check_encoding() validates the "encoding" option
+// (default UTF-8); the chars are then checked on the string converted to UTF-8.
+// Without it, only ASCII chars are allowed.
+define('VALIDATE_STRING_MB', 1 << 9);
 define('VALIDATE_STRING_BINARY', 1 << 10); // WARNING: Dangerous — allows arbitrary binary bytes including NUL.
-// With _MB + UTF-8: allow the RFC 3454 table C code points (rejected by default).
+// With _MB: allow the RFC 3454 table C code points (rejected by default), in any encoding.
 // ASCII control chars are still gated by the flags above; the "unicode" option still applies.
 define('VALIDATE_STRING_RFC3454_C', 1 << 11);
 define('VALIDATE_STRING_RFC3454_D', 1 << 12); // Reserved: currently has no effect (no RFC 3454 table D check is performed).
