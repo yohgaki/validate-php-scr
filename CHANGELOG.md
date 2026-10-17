@@ -28,6 +28,10 @@ A review of the code against its documentation (2026-10-17).
   allows it).
 * `validate_spec()` dropped a `VALIDATE_ARRAY` node with a broken option or
   child from `$unvalidated`, which is meant to keep the broken parts.
+* `php-7.x` / `php-5.x`: README, `src/README.md`, the CI files and the 1.0
+  entry said the `src/run-tests.php` of these branches has no `--show-diff`.
+  It has (`--show-[all|php|skip|clean|exp|diff|out]`); the CI uses it now
+  instead of printing `tests/*.diff` itself.
 * The spec check contradicted the engine:
   * It warned that `VALIDATE_FLAG_EMPTY_TO_DEFAULT` has no effect on
     `VALIDATE_ARRAY`, which applied it to array parameters. It is accepted

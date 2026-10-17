@@ -80,7 +80,7 @@ Install with Composer: `composer require yohgaki/validate-php-scr:^1.0`. The sam
 * `VALIDATE_INT` also accepts the GMP resources of PHP 5.3 - 5.5 (GMP objects from PHP 5.6).
 * The internal class constants of `Validate` are public (no class constant visibility before PHP 7.1). Do not use them. `preg_last_error_msg()` (PHP 8.0+) is replaced by an internal function returning the same messages.
 * `mbstring.func_overload` with its string functions bit (2) makes `new Validate` throw `RuntimeException` (see Requirements); PHP 8.0 removed the setting. An `encoding` name mbstring does not know is detected by mbstring's warning instead of PHP 8's `ValueError`.
-* `src/run-tests.php` is the one of PHP 5.5.38. It has no `--show-diff` (a failed test leaves `src/tests/*.diff`) and exits with a failure status only when `REPORT_EXIT_STATUS=1` is set.
+* `src/run-tests.php` is the one of PHP 5.5.38. Add `-q` (no questions); `--show-diff` works as on `master`. It exits with a failure status only when `REPORT_EXIT_STATUS=1` is set.
 * Tests differ where PHP 5 prints differently: `assert()` warns instead of throwing `AssertionError`, uncaught exceptions read "Uncaught exception 'X' with message ...", `var_export(1.0)` prints `1` (the float tests use a helper that prints `1.0`).
 * Tools: `random_bytes()` (PHP 7.0+) falls back to `mt_rand()` for log file names; `PHP_INT_MIN` is defined when missing.
 

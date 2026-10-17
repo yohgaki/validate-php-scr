@@ -44,8 +44,7 @@ default:
     EXTENSIONS: "bcmath, gmp, mbstring"
     REPORT_EXIT_STATUS: "1"   # PHP 5.5 の run-tests.php は、これがないと失敗時も 0 で終了する
   script:
-    # PHP 5.5 の run-tests.php には --show-diff がないので、失敗時に diff を表示する
-    - cd src && php run-tests.php -p $(which php) -q tests || { for f in tests/*.diff; do echo "=== $f"; cat "$f"; done; exit 1; }
+    - cd src && php run-tests.php -p $(which php) -q --show-diff tests
   artifacts:
     when: on_failure
     expire_in: 1 week
