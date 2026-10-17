@@ -43,8 +43,7 @@ default:
     - *install_bcmath_gmp
     - *check_extensions
   script:
-    # PHP 7.4 の run-tests.php には --show-diff がないので、失敗時に diff を表示する
-    - cd src && php run-tests.php -p $(which php) -q tests || { for f in tests/*.diff; do echo "=== $f"; cat "$f"; done; exit 1; }
+    - cd src && php run-tests.php -p $(which php) -q --show-diff tests
   artifacts:
     when: on_failure
     expire_in: 1 week

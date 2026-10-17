@@ -47,11 +47,8 @@ jobs:
             fi
           done
 
-      # run-tests.php of PHP 7.4 has no --show-diff; print the diffs on failure.
       - name: Run tests
-        run: |
-          cd src
-          php run-tests.php -p $(which php) -q tests || { for f in tests/*.diff; do echo "=== $f"; cat "$f"; done; exit 1; }
+        run: cd src && php run-tests.php -p $(which php) -q --show-diff tests
 
   lint:
     name: phpcs
