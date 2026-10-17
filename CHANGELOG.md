@@ -2,11 +2,15 @@
 
 ## Unreleased
 
-Design review (2026-10-16, commit d622eb4) and its follow-ups (2026-10-16):
-`basic_types.php` format fixes, the `VALIDATE_ARRAY` `undeclared` option,
-example/tool fixes, and remembering checked specs. Branches for older PHP
-versions and fixes for PHP 8.6 / 8.7.0-dev (2026-10-17). Character encoding
-validation with mbstring (2026-10-17).
+Nothing yet.
+
+## 1.0 - 2026-10-17: `v1.0.500` (`php-5.x`), `v1.0.700` (`php-7.x`), `v1.0.800` (`php-8.x`)
+
+Changes since `v0.8.0`. Design review (2026-10-16, commit d622eb4) and its
+follow-ups (2026-10-16): `basic_types.php` format fixes, the `VALIDATE_ARRAY`
+`undeclared` option, example/tool fixes, and remembering checked specs.
+Branches for older PHP versions and fixes for PHP 8.6 / 8.7.0-dev
+(2026-10-17). Character encoding validation with mbstring (2026-10-17).
 
 ### Security
 
@@ -235,6 +239,10 @@ validation with mbstring (2026-10-17).
 
 ### Added
 
+* Release tags per branch with one version line: `vMAJOR.MINOR.PATCH`, the
+  hundreds digit of PATCH naming the branch (`5xx` `php-5.x`, `7xx`
+  `php-7.x`, `8xx` `php-8.x`), so `^1.0` installs the right branch on every
+  PHP version (README "Releases").
 * `transfer_encoding` option of the string validators: `quoted-printable`
   (RFC 2045), `percent` (`urlencode()` / `rawurlencode()` output), `base64` /
   `base64url` (RFC 4648) and `html` (`htmlspecialchars($s, ENT_QUOTES)`

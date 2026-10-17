@@ -64,6 +64,15 @@ Every branch provides the same features with code written for its PHP versions. 
 * The CI runs the tests with BCMath, GMP and mbstring, and once more without BCMath and GMP on the newest PHP version of the branch (8.5 on `master` / `php-8.x`, 7.4, 5.6), where big integers are compared in pure PHP. A job fails if an extension is missing, or loaded where it should not be.
 * `.gitlab-ci.yml` runs the same jobs in the official `php` Docker images for the released PHP versions of each branch, except PHP 5.3 / 5.4, whose images current Docker cannot pull (manifest schema 1).
 
+### Releases
+
+Install with Composer: `composer require yohgaki/validate-php-scr:^1.0`. The same constraint works on every supported PHP version: each branch has its own release tags, and Composer installs the newest release whose `php` requirement your PHP meets.
+
+* Tags are `vMAJOR.MINOR.PATCH`. The hundreds digit of PATCH names the branch - `5xx` `php-5.x` (PHP 5.3 - 5.6), `7xx` `php-7.x` (PHP 7.0 - 7.4), `8xx` `php-8.x` (PHP 8.x) - and the last two digits count its fix releases: `v1.0.800`, `v1.0.801`, ...
+* Every branch has the same features in the same MAJOR.MINOR. A fix is released as the next PATCH of the branches it affects, new features as the next MINOR of every branch (`v1.1.500`, `v1.1.700`, `v1.1.800`), incompatible changes as the next MAJOR.
+* Moving to another PHP version needs no constraint change: after a move from PHP 7.4 to 8.x, `composer update` replaces e.g. `v1.0.701` with `v1.0.800`.
+* `master` is not tagged; require `dev-master` for the development version. `v0.8.0` (2022) predates the branches.
+
 ### Differences of `php-5.x` from `master`
 
 * PHP 5.3 syntax: `array()` instead of `[]`, `isset($a) ? $a : $b` instead of `??`, no `(new Validate)->validate()` one-liner (PHP 5.4+). Callbacks are called with `call_user_func()` / `call_user_func_array()`, since PHP 5.3 cannot call `array($class, $method)` as `$f()`.
