@@ -117,7 +117,9 @@ class ValidateInvalidSpecException extends InvalidArgumentException
  * InvalidArgumentException so existing handlers continue to work.
  *
  * getError() returns the structured error record (the same shape as the
- * entries of validate_get_system_errors()).
+ * entries of validate_get_system_errors()), with the input value. The message
+ * names the parameter path and the error only: the value may be a secret, and
+ * would reach logs as received.
  */
 class ValidateInvalidValueException extends InvalidArgumentException
 {
@@ -414,7 +416,8 @@ class Validate
      * unset by the engine, so on return $inputs contains only the leftover
      * (unvalidated) input. Pass VALIDATE_OPT_KEEP_INPUTS to keep it intact
      * (the engine then works on a private copy, so neither unset(), "filter"
-     * results nor substituted "default" values reach the caller's array).
+     * results nor substituted "default" values reach the caller's array, also
+     * not through a sub-array the caller holds by PHP reference).
      *
      * Input keys that a VALIDATE_ARRAY spec does not declare are validated by
      * its "undeclared" option spec when it has one; otherwise they are
@@ -622,6 +625,7 @@ class Validate
      * @param array    $spec        Spec array to verify.
      * @param mixed    $unvalidated Output. A copy of $spec without the sub-specs that
      *                              checked clean: what remains are the broken parts.
+     *                              $spec itself is never modified (see detachParams()).
      * @param Validate $ctx         Optional context that receives the spec
      *                              errors (fresh one created when null).
      *
@@ -2591,6 +2595,9 @@ class Validate
      *              true allows a code point, false rejects it. Consulted
      *              before (and also with) VALIDATE_STRING_RFC3454_C.
      * "values"   - Optional. [string => true, ...] exact-match whitelist; replaces min/max and char checks.
+     *              The result is a string (int input 5 yields "5").
+     * Int input is validated as its string. Float input only when (string)
+     * gives the same float back (precision INI setting); otherwise it fails.
      * "default" - Default value. Default value is subject to be validated also.
      *
      * @return bool

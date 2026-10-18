@@ -56,6 +56,12 @@ function validate_init($root_name = 'ROOT')
  * Input keys a VALIDATE_ARRAY spec does not declare are validated by its
  * 'undeclared' option spec if it has one; otherwise they are validation errors
  * unless VALIDATE_OPT_UNVALIDATED is set (needed for multi-stage validation).
+ * The input of a VALIDATE_ARRAY spec must be a PHP array (objects are rejected).
+ *
+ * A callback (or a filter, key_callback, ...) may call validate() with the
+ * same $ctx: the nested call validates on its own, restores the outer call's
+ * state when it returns, and when it fails, the value whose callback made the
+ * call fails too.
  *
  * @param Validate|null $ctx       Validate context. If null, a fresh one is created and assigned back.
  * @param mixed         $inputs    Scalar or array of inputs. Validated elements are removed by reference.
@@ -68,6 +74,7 @@ function validate_init($root_name = 'ROOT')
  * @throws RuntimeException              The mbstring extension is not loaded.
  * @throws ValidateInvalidSpecException  VALIDATE_OPT_CHECK_SPEC found spec errors.
  * @throws ValidateInvalidValueException Validation failed (unless VALIDATE_OPT_DISABLE_EXCEPTION).
+ *                                       The message leaves the input value out; getError() has it.
  */
 function validate(&$ctx, &$inputs, $specs, $func_opts = VALIDATE_OPT_CHECK_SPEC)
 {
@@ -249,7 +256,8 @@ function validate_set_logger_function($ctx, $logger_func)
  *
  * @param array         $specs       Validation spec array to check.
  * @param array|null    $unvalidated Output. A copy of $specs without the sub-specs that checked
- *                                   clean: what remains are the broken parts.
+ *                                   clean: what remains are the broken parts. $specs itself is
+ *                                   never modified, also not through PHP references.
  * @param Validate|null $ctx         Optional context. A fresh one is created if null. Spec
  *                                   errors are read with validate_get_system_errors($ctx).
  *
