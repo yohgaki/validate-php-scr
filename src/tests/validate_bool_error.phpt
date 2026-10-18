@@ -44,16 +44,15 @@ foreach($booleans as $val=>$exp) {
 echo "Ok.";
 ?>
 --EXPECTF--
-string(58) "param: 'ROOT' error: 'VALIDATE_BOOL: Empty input.' val: ''"
-string(60) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: '2'"
-string(62) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: 'on '"
-string(62) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: ' On'"
-string(62) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: 'oN '"
-string(66) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid input.' val: ' False'"
-string(64) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: 'TrUe '"
-string(62) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: ' oN'"
-string(60) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: '	'"
-string(60) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: ' '"
-string(60) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: '
-'"
+string(50) "param: 'ROOT' error: 'VALIDATE_BOOL: Empty input.'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
+string(52) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid input.'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
 Ok.

@@ -123,9 +123,9 @@ array(4) {
 
 ** Failure case**
 
-Warning: param: 'ROOT=>baz' error: 'VALIDATE_INT: Invalid int string.' val: '-1' in %s/src/Validate.php on line %d
+Warning: param: 'ROOT=>baz' error: 'VALIDATE_INT: Invalid int string.' in %s/src/Validate.php on line %d
 
-Warning: param: 'ROOT=>hoge' error: 'VALIDATE_STRING: Illegal char detected. ord: "116" chr: "t"' val: 'text' in %s/src/Validate.php on line %d
+Warning: param: 'ROOT=>hoge' error: 'VALIDATE_STRING: Illegal char detected. ord: "116" chr: "t"' in %s/src/Validate.php on line %d
 NULL
 bool(false)
 array(1) {

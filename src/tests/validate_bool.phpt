@@ -73,5 +73,5 @@ bool(false)
 bool(true)
 bool(false)
 bool(true)
-string(58) "param: 'ROOT' error: 'VALIDATE_BOOL: Empty input.' val: ''"
+string(50) "param: 'ROOT' error: 'VALIDATE_BOOL: Empty input.'"
 Ok.

@@ -82,15 +82,32 @@ test:php7.4-without-bcmath-gmp:
     - php -v
     - *check_extensions
 
+# 32 ビット PHP。公式イメージの linux/386 版 (mbstring はあるが BCMath と GMP はない)
+test:php7.4-i386:
+  extends: .test
+  image: i386/php:7.4-cli
+  variables:
+    EXTENSIONS: "mbstring, :bcmath, :gmp"
+  before_script:
+    - php -v
+    - php -r 'exit(PHP_INT_SIZE === 4 ? 0 : 1);'
+    - *check_extensions
+
 # ── lint ─────────────────────────────────────────────────────────────────────
 lint:phpcs:
   stage: lint
   image: php:8.3-cli
   needs:
     - test:php7.4
+  # PHP_CodeSniffer は PHPCSStandards が保守している (squizlabs.github.io は放棄された
+  # 3.7.2 のまま)。版を固定し、GitHub が公開している SHA-256 で照合する
+  variables:
+    PHPCS_VERSION: "3.13.6"
+    PHPCS_SHA256: "aed4148cee26285a73e694a98d4675b84f81ef86b2581f811d3c402c0d3d7d23"
   before_script:
-    - curl -sSfL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar -o /usr/local/bin/phpcs
-    - chmod +x /usr/local/bin/phpcs
+    - curl -sSfL "https://github.com/PHPCSStandards/PHP_CodeSniffer/releases/download/$PHPCS_VERSION/phpcs.phar" -o /tmp/phpcs.phar
+    - echo "$PHPCS_SHA256  /tmp/phpcs.phar" | sha256sum -c -
+    - install -m 0755 /tmp/phpcs.phar /usr/local/bin/phpcs
     - phpcs --version
   script:
     - phpcs --standard=src/phpcs.xml src/

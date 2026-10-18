@@ -17,6 +17,9 @@
         "php": "^7.0",
         "ext-mbstring": "*"
     },
+    "autoload": {
+        "files": ["src/validate_func.php"]
+    },
     "suggest": {
         "ext-bcmath": "Big-integer range checks (VALIDATE_INT_AS_STRING); a pure PHP fallback is used otherwise",
         "ext-gmp": "Better integer handling"
