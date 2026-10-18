@@ -67,7 +67,7 @@ bool(true)
 bool(true)
 bool(false)
 bool(true)
-string(64) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: 'maybe'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
 bool(false)
 
 **** on/off, true/false, t/f as string ****
@@ -91,7 +91,7 @@ string(0) ""
 bool(true)
 
 **** invalid inputs ****
-string(67) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid input.' val: 'toolong'"
+string(52) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid input.'"
 bool(false)
-string(107) "param: 'ROOT' error: 'VALIDATE_BOOL: Array or object parameter is passed for scalar.' val: 'a:1:{i:0;i:1;}'"
+string(85) "param: 'ROOT' error: 'VALIDATE_BOOL: Array or object parameter is passed for scalar.'"
 bool(false)

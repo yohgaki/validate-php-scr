@@ -158,14 +158,15 @@ $result = $_v->validate($bool, $bool_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
 
 
 echo "\n**** VALIDATE_FLOAT ****\n";
-// Input under test — outside the [1, PHP_INT_MAX] range.
+// Input under test — outside the [1, 2147483647] range (PHP_INT_MAX of 32-bit PHP:
+// the var_dump() output below is the same on 32-bit and 64-bit PHP).
 $float = -123;
 
 // Example 1 — failure: -123 < min.
 $float_spec = array(
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
-    array('min' => 1, 'max' => PHP_INT_MAX)
+    array('min' => 1, 'max' => 2147483647)
 );
 
 $result =validate($ctx, $float, $float_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
@@ -191,7 +192,7 @@ $int = '-1234';
 $int_spec = array(
     VALIDATE_INT,
     VALIDATE_FLAG_NONE,
-    array('min' => 1, 'max' => PHP_INT_MAX)
+    array('min' => 1, 'max' => 2147483647)
 );
 
 $result = validate($ctx, $int, $int_spec, VALIDATE_OPT_DISABLE_EXCEPTION);
@@ -252,7 +253,7 @@ $inputs = array(
 $float = array(
     VALIDATE_FLOAT,
     VALIDATE_FLAG_NONE,
-    array('min' => 1, 'max' => PHP_INT_MAX)
+    array('min' => 1, 'max' => 2147483647)
 );
 
 // Per-field spec — 'debug'. Promoted to a rejected parameter by reject() below.
@@ -552,7 +553,7 @@ array(2) {
 bool(false)
 
 ** Validate object **
-object(Validate)#2 (16) {
+object(Validate)#2 (18) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -734,7 +735,7 @@ object(Validate)#2 (16) {
             ["min"]=>
             int(1)
             ["max"]=>
-            int(9223372036854775807)
+            int(2147483647)
           }
         }
         ["func_opts"]=>
@@ -768,7 +769,7 @@ object(Validate)#2 (16) {
             ["min"]=>
             int(1)
             ["max"]=>
-            int(9223372036854775807)
+            int(2147483647)
           }
         }
         ["func_opts"]=>
@@ -1053,6 +1054,10 @@ object(Validate)#2 (16) {
   bool(false)
   ["userErrorCount":"Validate":private]=>
   int(0)
+  ["depth":"Validate":private]=>
+  int(0)
+  ["nestedFailures":"Validate":private]=>
+  int(0)
   ["loggerFunction":"Validate":private]=>
   NULL
 }
@@ -1070,7 +1075,7 @@ array(2) {
 bool(true)
 
 ** Validate object **
-object(Validate)#2 (16) {
+object(Validate)#2 (18) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -1253,7 +1258,7 @@ object(Validate)#2 (16) {
             ["min"]=>
             int(1)
             ["max"]=>
-            int(9223372036854775807)
+            int(2147483647)
           }
         }
         ["func_opts"]=>
@@ -1287,7 +1292,7 @@ object(Validate)#2 (16) {
             ["min"]=>
             int(1)
             ["max"]=>
-            int(9223372036854775807)
+            int(2147483647)
           }
         }
         ["func_opts"]=>
@@ -1571,6 +1576,10 @@ object(Validate)#2 (16) {
   ["silentFailed":"Validate":private]=>
   bool(false)
   ["userErrorCount":"Validate":private]=>
+  int(0)
+  ["depth":"Validate":private]=>
+  int(0)
+  ["nestedFailures":"Validate":private]=>
   int(0)
   ["loggerFunction":"Validate":private]=>
   NULL
@@ -1595,7 +1604,7 @@ array(4) {
 bool(true)
 
 ** Validate object **
-object(Validate)#2 (16) {
+object(Validate)#2 (18) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -1786,7 +1795,7 @@ object(Validate)#2 (16) {
             ["min"]=>
             int(1)
             ["max"]=>
-            int(9223372036854775807)
+            int(2147483647)
           }
         }
         ["func_opts"]=>
@@ -1820,7 +1829,7 @@ object(Validate)#2 (16) {
             ["min"]=>
             int(1)
             ["max"]=>
-            int(9223372036854775807)
+            int(2147483647)
           }
         }
         ["func_opts"]=>
@@ -2109,6 +2118,10 @@ object(Validate)#2 (16) {
   bool(false)
   ["userErrorCount":"Validate":private]=>
   int(0)
+  ["depth":"Validate":private]=>
+  int(0)
+  ["nestedFailures":"Validate":private]=>
+  int(0)
   ["loggerFunction":"Validate":private]=>
   NULL
 }
@@ -2130,7 +2143,7 @@ array(4) {
 bool(true)
 
 ** Validate context **
-object(Validate)#2 (16) {
+object(Validate)#2 (18) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -2321,7 +2334,7 @@ object(Validate)#2 (16) {
             ["min"]=>
             int(1)
             ["max"]=>
-            int(9223372036854775807)
+            int(2147483647)
           }
         }
         ["func_opts"]=>
@@ -2355,7 +2368,7 @@ object(Validate)#2 (16) {
             ["min"]=>
             int(1)
             ["max"]=>
-            int(9223372036854775807)
+            int(2147483647)
           }
         }
         ["func_opts"]=>
@@ -2644,6 +2657,10 @@ object(Validate)#2 (16) {
   bool(false)
   ["userErrorCount":"Validate":private]=>
   int(0)
+  ["depth":"Validate":private]=>
+  int(0)
+  ["nestedFailures":"Validate":private]=>
+  int(0)
   ["loggerFunction":"Validate":private]=>
   NULL
 }
@@ -2665,7 +2682,7 @@ array(4) {
 bool(true)
 
 ** Validate object **
-object(Validate)#2 (16) {
+object(Validate)#2 (18) {
   ["currentElem":"Validate":private]=>
   array(1) {
     [0]=>
@@ -2856,7 +2873,7 @@ object(Validate)#2 (16) {
             ["min"]=>
             int(1)
             ["max"]=>
-            int(9223372036854775807)
+            int(2147483647)
           }
         }
         ["func_opts"]=>
@@ -2890,7 +2907,7 @@ object(Validate)#2 (16) {
             ["min"]=>
             int(1)
             ["max"]=>
-            int(9223372036854775807)
+            int(2147483647)
           }
         }
         ["func_opts"]=>
@@ -3178,6 +3195,10 @@ object(Validate)#2 (16) {
   ["silentFailed":"Validate":private]=>
   bool(false)
   ["userErrorCount":"Validate":private]=>
+  int(0)
+  ["depth":"Validate":private]=>
+  int(0)
+  ["nestedFailures":"Validate":private]=>
   int(0)
   ["loggerFunction":"Validate":private]=>
   NULL

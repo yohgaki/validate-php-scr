@@ -77,7 +77,8 @@ foreach (array('9223372036854775808', 1.5) as $var) {
         $copy = $var;
         var_dump(validate($ctx, $copy, $spec, $func_opts));
     } catch (Exception $e) {
-        var_dump($e->getMessage(), $ctx->getStatus());
+        // The same output on 32-bit and 64-bit PHP.
+        var_dump(str_replace((string)PHP_INT_MAX, 'PHP_INT_MAX', $e->getMessage()), $ctx->getStatus());
     }
 }
 
@@ -100,15 +101,15 @@ var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 **** values option (int keys, no GMP required) ****
 int(1)
 bool(true)
-string(86) "param: 'ROOT' error: 'VALIDATE_INT: Failed to match defined option "values".' val: '2'"
+string(77) "param: 'ROOT' error: 'VALIDATE_INT: Failed to match defined option "values".'"
 bool(false)
 int(1)
 bool(true)
-string(99) "param: 'ROOT' error: 'VALIDATE_INT: Failed option "values" match. Value is not integer.' val: 'abc'"
+string(88) "param: 'ROOT' error: 'VALIDATE_INT: Failed option "values" match. Value is not integer.'"
 bool(false)
 
 **** bool / null inputs ****
-string(109) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.' val: '1'"
+string(100) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
 NULL
 
@@ -125,7 +126,7 @@ bool(true)
 **** AS_STRING: big int range ****
 string(23) "12345678901234567890123"
 bool(true)
-string(136) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "0" max: "99999999999999999999999999"' val: '199999999999999999999999999'"
+string(101) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "0" max: "99999999999999999999999999"'"
 bool(false)
 
 **** AS_STRING + RAW ****
@@ -133,13 +134,13 @@ string(2) "42"
 bool(true)
 
 **** int overflow / float input ****
-string(128) "param: 'ROOT' error: 'VALIDATE_INT: Overflow or malformed input. min: "0" max: "9223372036854775807"' val: '9223372036854775808'"
+string(93) "param: 'ROOT' error: 'VALIDATE_INT: Overflow or malformed input. min: "0" max: "PHP_INT_MAX"'"
 bool(false)
-string(67) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '1.5'"
+string(67) "param: 'ROOT' error: 'VALIDATE_INT: Float value is not an integer.'"
 bool(false)
 
 **** out of range ****
-string(89) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "0" max: "100"' val: '500'"
+string(78) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "0" max: "100"'"
 bool(false)
 
 **** RAW returns original string ****

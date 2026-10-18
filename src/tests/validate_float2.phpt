@@ -38,7 +38,7 @@ float(-1000)
 bool(true)
 float(1000)
 bool(true)
-string(101) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"' val: '-1000.1'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"'"
 bool(false)
-string(100) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"' val: '1000.1'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"'"
 bool(false)

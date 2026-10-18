@@ -41,7 +41,7 @@ string(3) "150"
 bool(true)
 string(4) "-150"
 bool(true)
-string(125) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-150" max: "150"' val: '999999999999999999999999999999999999'"
+string(81) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-150" max: "150"'"
 bool(false)
-string(126) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-150" max: "150"' val: '-999999999999999999999999999999999999'"
+string(81) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-150" max: "150"'"
 bool(false)

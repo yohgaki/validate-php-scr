@@ -108,10 +108,10 @@ array(1) {
 bool(true)
 
 Scalar to array
-string(104) "param: 'ROOT' error: 'VALIDATE_INT: Array of scalars validation. Scalar value is not allowed.' val: '12'"
+string(94) "param: 'ROOT' error: 'VALIDATE_INT: Array of scalars validation. Scalar value is not allowed.'"
 
 Nested array
-string(129) "param: 'ROOT' error: 'VALIDATE_INT: Array validation. Nested array is not allowed by VALIDATE_FLAG_ARRAY_RECURSIVE.' val: 'key:0'"
+string(116) "param: 'ROOT' error: 'VALIDATE_INT: Array validation. Nested array is not allowed by VALIDATE_FLAG_ARRAY_RECURSIVE.'"
 
 Nested array (should pass)
 array(1) {

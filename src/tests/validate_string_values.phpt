@@ -46,21 +46,21 @@ try {
 
 ?>
 --EXPECT--
-int(1)
+string(1) "1"
 bool(true)
-int(2)
+string(1) "2"
 bool(true)
-string(90) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined option "values".' val: '10'"
+string(80) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined option "values".'"
 bool(false)
-string(90) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined option "values".' val: '11'"
+string(80) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined option "values".'"
 bool(false)
 string(3) "abc"
 bool(true)
-string(89) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined option "values".' val: 'X'"
+string(80) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined option "values".'"
 bool(false)
-string(89) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined option "values".' val: 'Z'"
+string(80) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined option "values".'"
 bool(false)
 string(0) ""
 bool(true)
-string(118) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'a:1:{i:0;s:6:"scalar";}'"
+string(87) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.'"
 bool(false)

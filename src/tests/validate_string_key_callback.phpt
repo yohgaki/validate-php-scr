@@ -54,7 +54,7 @@ var_dump('**** User errors ****', validate_get_user_errors($ctx));
 var_dump('**** System errors ****', validate_get_system_errors($ctx));
 ?>
 --EXPECTF--
-string(194) "param: 'ROOT' error: 'VALIDATE_STRING: Array validation. Array parameter has invalid key format. Hint: you may want VALIDATE_FLAG_ARRAY_KEY_ALNUM flag or "key_callback" option.' val: 'key:abcde'"
+string(177) "param: 'ROOT' error: 'VALIDATE_STRING: Array validation. Array parameter has invalid key format. Hint: you may want VALIDATE_FLAG_ARRAY_KEY_ALNUM flag or "key_callback" option.'"
 string(21) "**** User errors ****"
 array(3) {
   ["error"]=>

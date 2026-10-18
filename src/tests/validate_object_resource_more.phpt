@@ -78,17 +78,17 @@ var_dump(is_resource(validate($ctx, $copy, $spec, $func_opts)), $ctx->getStatus(
 **** VALIDATE_OBJECT ****
 string(5) "ObjOk"
 bool(true)
-string(89) "param: 'ROOT' error: 'VALIDATE_OBJECT: Object validation failed.' val: 'O:5:"ObjNg":0:{}'"
+string(65) "param: 'ROOT' error: 'VALIDATE_OBJECT: Object validation failed.'"
 bool(false)
-string(89) "param: 'ROOT' error: 'VALIDATE_OBJECT: Value is not an object. Type: 'integer'' val: '42'"
+string(79) "param: 'ROOT' error: 'VALIDATE_OBJECT: Value is not an object. Type: 'integer''"
 bool(false)
-string(159) "param: 'ROOT' error: 'VALIDATE_OBJECT: "ObjOk" class validation callback is not callable or does not exist. Callback: 'no_such_method'' val: 'O:5:"ObjOk":0:{}'"
+string(135) "param: 'ROOT' error: 'VALIDATE_OBJECT: "ObjOk" class validation callback is not callable or does not exist. Callback: 'no_such_method''"
 bool(false)
 
 **** VALIDATE_RESOURCE ****
-string(82) "param: 'ROOT' error: 'VALIDATE_RESOURCE: Not a resource. Type: integer ' val: '42'"
+string(72) "param: 'ROOT' error: 'VALIDATE_RESOURCE: Not a resource. Type: integer '"
 bool(false)
-string(131) "param: 'ROOT' error: 'VALIDATE_RESOURCE: Resource type does not match. Returned: 'stream' Expected: 'curl'' val: 'resource(stream)'"
+string(107) "param: 'ROOT' error: 'VALIDATE_RESOURCE: Resource type does not match. Returned: 'stream' Expected: 'curl''"
 bool(false)
 bool(true)
 bool(true)

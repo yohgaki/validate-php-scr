@@ -39,11 +39,10 @@ foreach ($vals as $var) {
 
 ?>
 --EXPECT--
-string(68) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: ' 123'"
-string(72) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: ' 123.01 '"
-string(69) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '	
-   '"
-string(65) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: ' '"
-string(69) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '1234 '"
-string(93) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-100" max: "150"' val: '1234'"
-string(86) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '       1234           '"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
+string(81) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-100" max: "150"'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"

@@ -2,7 +2,113 @@
 
 ## Unreleased
 
-Nothing yet.
+A second review of the design and the code (2026-10-18). Every finding was
+reproduced on every branch, on PHP 5.3, 5.6, 7.0, 7.4, 8.0 and 8.7-dev.
+
+### Security
+
+* The spec check (on by default) deleted sub-specs from the caller's spec
+  through PHP references: a sub-spec array held by a reference, e.g. after
+  `foreach ($spec[VALIDATE_PARAMS] as &$s)`, lost its checked entries. Valid
+  input then failed, and with `VALIDATE_OPT_UNVALIDATED` the input of the
+  deleted specs passed unvalidated (the broken spec was then remembered as
+  checked). `validate_spec()` with `$unvalidated` did the same. The check now
+  strips sub-specs from its own copy only.
+* `validate()` called by a callback with the same context, as the docs allow,
+  reset the outer call: its status, result, path and MULTI_OR silent mode.
+  An invalid value of the outer call then passed, and inside a
+  `VALIDATE_MULTI_OR` alternative every later error of the call was silenced
+  (`'id' => 'DROP TABLE'` passed with exceptions on). The nested call now
+  saves the outer call's state and restores it, also when an exception
+  leaves; a failed nested call fails the value whose callback (filter,
+  key_callback, ...) made it ("Validate: validate() called by a callback with
+  this context failed.").
+* The "All of specs are failed." error of `VALIDATE_MULTI_OR` was handled with
+  the last alternative's spec: `VALIDATE_FLAG_PASSTHRU` on it dropped the
+  failure (status true, no exception), `VALIDATE_FLAG_WARNING` / `_NOTICE`
+  suppressed the exception, and its `error_message` was recorded. The error is
+  the MULTI spec's own now.
+* `VALIDATE_ARRAY` accepted objects implementing `ArrayAccess` and `Countable`
+  (`ArrayObject`, ...), which was neither documented nor tested, and skipped
+  the undeclared-key check for them: an undeclared key passed with exceptions
+  on. Only PHP arrays are accepted now.
+* Exception messages and the PHP errors of `VALIDATE_OPT_RAISE_ERROR` held up
+  to 2048 bytes of the input value as received (passwords into logs, CR / LF
+  into log lines). They name the parameter path and the error only; the error
+  record (`getError()`, `validate_get_system_errors()`) keeps the value. The
+  "Unvalidated value remains." message gives the number of undeclared keys;
+  their names are the record's `value`.
+* `src/tools/input_validator.php` let a request through unvalidated when its
+  `METHOD:PATH` had no spec, so another spelling of a known path
+  (`/index.php/x`, `//index.php`) bypassed it. That is a failure now, logged
+  and stored in `$GLOBALS['_validate_errors_']`, or thrown with `$exception`
+  on. The logged key is escaped.
+
+### Changed — behavior changes that can affect existing code
+
+* Exception messages: no `val: '...'` part, see Security.
+* `VALIDATE_INT` accepts a float only when it equals an integer exactly, and
+  validates its exact digits. It accepted non-integer floats rounded by the
+  `precision` INI setting (`2.9999999999999996` became `3`) and rejected them
+  with `precision=17`. `INF` / `NAN` and non-integer floats fail with
+  "VALIDATE_INT: Float value is not an integer."; `-0.0` is `0`.
+* `VALIDATE_STRING` / `VALIDATE_REGEXP` reject a float whose string form
+  (`precision` INI setting) is not the same float: `0.30000000000000004` was
+  validated as `"0.3"`, a value never input.
+* `VALIDATE_INT_AS_STRING` returns the integer string without a `+` sign
+  (`"+5"` yields `"5"`), as for int input and with `values`.
+  `VALIDATE_FLAG_RAW` still returns `"+5"`.
+* A string validator's `values` match returns a string for int input (`1`
+  yields `"1"`), as without `values`.
+* `VALIDATE_OPT_ERROR_FULL`: when a node has its own errors and an int-keyed
+  child with errors, the child takes its key and the node's error moves to
+  the next int key. It was a fatal error ("[] operator not supported for
+  strings") or wrote the child's errors into the node's error record, e.g.
+  after two calls on one context.
+* The spec check reports more:
+  * `VALIDATE_MULTI` sub-specs that are not a non-empty array (error; it
+    warned "foreach() argument must be of type array|object" or passed).
+  * An empty `values` (error; `VALIDATE_STRING` then accepted `''` with PHP
+    warnings).
+  * `values` of `VALIDATE_REGEXP` must be `[string => bool]` like
+    `VALIDATE_STRING`'s; `VALIDATE_CALLBACK`'s are no longer required to have
+    int keys.
+  * Options a validator does not use: `values`, `ascii`, `regexp`,
+    `resource`, `class`, and `INF` / `-INF` / `length` / `decimal` /
+    `thousand` on string validators (warnings).
+  * Flag bits 32 - 63 on 64-bit PHP (warning; they were not checked).
+* The RFC 3454 error names the table: "Unicode char prohibited by RFC 3454
+  table C.1.2 (non-ASCII space) detected. code point: U+3000" instead of
+  "Unicode CNTRL char detected.", which was wrong for spaces such as U+3000
+  (ideographic space) and U+00A0. The rejected code points are the same.
+
+### Fixed
+
+* `VALIDATE_OPT_UPPER` (`0xfffffe00`) and `VALIDATE_FLAGS_UPPER`
+  (`0xffff0000`) were floats on 32-bit PHP: on PHP 8.1+ every `validate()`
+  call raised E_DEPRECATED (9 times for one int, 23 for an array of two
+  values, measured on PHP 8.3 i386) and 61 of 71 tests failed. They are
+  `~` masks of every bit above the used ones now, ints on every platform; on
+  64-bit PHP option bits 32 - 63 are rejected too.
+* `VALIDATE_INT_AS_STRING` with int input compared a string bound beyond
+  `PHP_INT_MAX` as a float: `PHP_INT_MAX` passed `min` `"9223372036854775808"`.
+* `VALIDATE_OPT_KEEP_INPUTS` did not protect a sub-array the caller shared
+  through a PHP reference: the `filter` result was written to it.
+* `validate_spec()` raised a PHP warning for the option key `''`.
+* A `validate()` that left by an exception left its path on the context, so
+  later calls on it reported wrong parameter paths.
+
+### Added
+
+* `composer.json` autoloads `src/validate_func.php` (the procedural API,
+  `Validate` and the constants). `$basicTypes` is a variable:
+  `require` `src/lib/basic_types.php` where it is used.
+* CI: a 32-bit PHP job (the official `php` image for `linux/386`) on GitHub
+  Actions and GitLab CI. Two tests no longer depend on the integer width.
+* CI: PHP_CodeSniffer 3.13.6 from PHPCSStandards, checked against its SHA-256
+  digest, instead of the unpinned, abandoned 3.7.2 phar of squizlabs.github.io.
+* Tests: `validate_regressions2.phpt` (this review) and
+  `tools_input_validator.phpt`.
 
 ## 1.0.x01 - 2026-10-18: `v1.0.501` (`php-5.x`), `v1.0.701` (`php-7.x`), `v1.0.801` (`php-8.x`)
 

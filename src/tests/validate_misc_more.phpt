@@ -141,7 +141,7 @@ array(1) {
   ["extra"]=>
   string(1) "x"
 }
-string(61) "Validate: Unvalidated value remains. Undeclared keys: 'extra'"
+string(56) "Validate: Unvalidated value remains. Undeclared keys: 1."
 array(1) {
   ["a"]=>
   int(5)

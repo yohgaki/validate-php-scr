@@ -153,7 +153,7 @@ SJIS: pass
 Shift_JIS (MIME name): pass
 SJIS truncated: fail - VALIDATE_STRING: Invalid SJIS encoding.
 SJIS + disallowed ASCII: fail - VALIDATE_STRING: Illegal char detected. ord: "60" chr: "<"
-SJIS U+3000 (RFC 3454 C.1.2): fail - VALIDATE_STRING: Unicode CNTRL char detected. code point: U+3000
+SJIS U+3000 (RFC 3454 C.1.2): fail - VALIDATE_STRING: Unicode char prohibited by RFC 3454 table C.1.2 (non-ASCII space) detected. code point: U+3000
 SJIS "unicode" option: fail - VALIDATE_STRING: Detected invalid unicode defined by $option["unicode"]. code point: U+3042
 EUC-JP: pass
 EUC-JP bad second byte: fail - VALIDATE_STRING: Invalid EUC-JP encoding.
@@ -165,7 +165,7 @@ UTF-16BE odd length: fail - VALIDATE_STRING: Invalid UTF-16BE encoding.
 EUC-KR: pass
 BIG5: pass
 ISO-8859-1: pass
-ISO-8859-1 C1 control 0x85: fail - VALIDATE_STRING: Unicode CNTRL char detected. code point: U+0085
+ISO-8859-1 C1 control 0x85: fail - VALIDATE_STRING: Unicode char prohibited by RFC 3454 table C.2.2 (non-ASCII control) detected. code point: U+0085
 unknown encoding (no spec check): fail - VALIDATE_STRING: Unsupported encoding "FOO".
 transfer encoding as "encoding": fail - VALIDATE_STRING: Unsupported encoding "Quoted-Printable".
 
@@ -194,7 +194,7 @@ valid: pass
 raw SPACE: fail - VALIDATE_STRING: Invalid percent encoding.
 bad escape: fail - VALIDATE_STRING: Invalid percent encoding.
 decoded invalid UTF-8: fail - VALIDATE_STRING: Invalid UTF-8 encoding.
-decoded U+202E: fail - VALIDATE_STRING: Unicode CNTRL char detected. code point: U+202E
+decoded U+202E: fail - VALIDATE_STRING: Unicode char prohibited by RFC 3454 table C.8 (change display properties or deprecated) detected. code point: U+202E
 
 **** transfer_encoding: base64 / base64url ****
 valid: pass

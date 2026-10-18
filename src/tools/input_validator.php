@@ -11,6 +11,10 @@
  * Flip the $exception flag below to throw ValidateInvalidValueException instead
  * (useful once you trust the spec enough to fail closed).
  *
+ * A request whose "METHOD:PATH" has no spec (an endpoint the logger never saw,
+ * or another spelling of a known path such as /index.php/x or //index.php) is
+ * a failure too, reported the same way.
+ *
  * Usage: register as auto_prepend_file in php.ini:
  *   auto_prepend_file="/path/to/input_validator.php"
  *
@@ -45,12 +49,24 @@ call_user_func(function () {
         return;
     }
 
-    // Specs are keyed by "METHOD:PATH". If logger never saw this endpoint
-    // there is nothing meaningful to validate against — silently bail.
+    // Specs are keyed by "METHOD:PATH". No spec means nothing validated
+    // this request: a failure, never a pass.
     $uri = parse_url(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '', PHP_URL_PATH);
     $method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '';
     $key = $method. ':' .$uri;
+    // The key is request input: escape it for the log line.
+    $log_key = addcslashes($key, "\0..\37\177..\377\\");
     if (empty($spec[$key])) {
+        $message = 'No spec for this METHOD:PATH.';
+        error_log('Validate: '.$log_key.' '.$message);
+        $error = array('type' => E_ERROR, 'param' => array('ROOT'), 'message' => $message, 'value' => $key);
+        $GLOBALS['_validate_errors_'] = array(
+            array('error' => array('ROOT' => array($error)), 'warning' => array(), 'notice' => array()),
+            array('error' => array(), 'warning' => array(), 'notice' => array()),
+        );
+        if ($exception) {
+            throw new ValidateInvalidValueException('Validate: '.$message, $error);
+        }
         return;
     }
     $input = array("_GET"=>$_GET, "_POST"=>$_POST, "_COOKIE"=>$_COOKIE, "_SERVER"=>$_SERVER);
@@ -70,7 +86,7 @@ call_user_func(function () {
                 $summary[] = $param.': '.$error['message'];
             }
         }
-        error_log('Validate: '.$key.' '.json_encode($summary));
+        error_log('Validate: '.$log_key.' '.json_encode($summary));
         $GLOBALS['_validate_errors_'] = array($system_err, $user_err);
     }
 });

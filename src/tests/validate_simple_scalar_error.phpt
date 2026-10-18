@@ -108,126 +108,125 @@ foreach ($values as $val) {
 ?>
 --EXPECT--
 **** validate() NULL ****
-string(62) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.' val: '1'"
+string(53) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.'"
 bool(false)
-string(62) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.' val: '0'"
+string(53) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.'"
 bool(false)
-string(62) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.' val: '1'"
+string(53) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.'"
 bool(false)
-string(61) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.' val: ''"
+string(53) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.'"
 bool(false)
-string(62) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.' val: 'a'"
+string(53) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.'"
 bool(false)
-string(65) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.' val: 'null'"
+string(53) "param: 'ROOT' error: 'VALIDATE_NULL: Non null value.'"
 bool(false)
-string(112) "param: 'ROOT' error: 'VALIDATE_NULL: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
+string(85) "param: 'ROOT' error: 'VALIDATE_NULL: Array or object parameter is passed for scalar.'"
 bool(false)
 
 **** validate() BOOL ****
-string(82) "param: 'ROOT' error: 'VALIDATE_BOOL: NULL input is rejected by default.' val: 'N;'"
+string(72) "param: 'ROOT' error: 'VALIDATE_BOOL: NULL input is rejected by default.'"
 bool(false)
-string(112) "param: 'ROOT' error: 'VALIDATE_BOOL: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
+string(85) "param: 'ROOT' error: 'VALIDATE_BOOL: Array or object parameter is passed for scalar.'"
 bool(false)
-string(58) "param: 'ROOT' error: 'VALIDATE_BOOL: Empty input.' val: ''"
+string(50) "param: 'ROOT' error: 'VALIDATE_BOOL: Empty input.'"
 bool(false)
-string(61) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: 't '"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
 bool(false)
-string(61) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: ' T'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
 bool(false)
-string(62) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: ' on'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
 bool(false)
-string(62) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: 'oN '"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
 bool(false)
-string(64) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: ' true'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
 bool(false)
-string(64) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: 'tRue '"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
 bool(false)
-string(60) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: '2'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
 bool(false)
-string(60) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: '2'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
 bool(false)
-string(61) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.' val: '-1'"
+string(51) "param: 'ROOT' error: 'VALIDATE_BOOL: Invalid bool.'"
 bool(false)
 
 **** validate() INT ****
-string(66) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '-1'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
-string(64) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: ''"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
-string(81) "param: 'ROOT' error: 'VALIDATE_INT: NULL input is rejected by default.' val: 'N;'"
+string(71) "param: 'ROOT' error: 'VALIDATE_INT: NULL input is rejected by default.'"
 bool(false)
-string(109) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.' val: '1'"
+string(100) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(108) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.' val: ''"
+string(100) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(111) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
+string(84) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.'"
 bool(false)
-string(71) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '1234abc'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
-string(117) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '99999999999999999999999999999999999999999999999e99999'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
 
 **** validate() INT2 ****
-string(66) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '-1'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
-string(64) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: ''"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
-string(81) "param: 'ROOT' error: 'VALIDATE_INT: NULL input is rejected by default.' val: 'N;'"
+string(71) "param: 'ROOT' error: 'VALIDATE_INT: NULL input is rejected by default.'"
 bool(false)
-string(109) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.' val: '1'"
+string(100) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(108) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.' val: ''"
+string(100) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(111) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
+string(84) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.'"
 bool(false)
-string(71) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '1234abc'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
-string(117) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '99999999999999999999999999999999999999999999999e99999'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
 
 **** validate() FLOAT ****
-string(138) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-0.1" max: "99999999999999999999999999999999999999999999999"' val: '-1'"
+string(128) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-0.1" max: "99999999999999999999999999999999999999999999999"'"
 bool(false)
-string(61) "param: 'ROOT' error: 'VALIDATE_FLOAT: Empty input.' val: 'N;'"
+string(51) "param: 'ROOT' error: 'VALIDATE_FLOAT: Empty input.'"
 bool(false)
-string(83) "param: 'ROOT' error: 'VALIDATE_FLOAT: NULL input is rejected by default.' val: 'N;'"
+string(73) "param: 'ROOT' error: 'VALIDATE_FLOAT: NULL input is rejected by default.'"
 bool(false)
-string(111) "param: 'ROOT' error: 'VALIDATE_FLOAT: Bool value cannot be treated as valid value for this validator.' val: '1'"
+string(102) "param: 'ROOT' error: 'VALIDATE_FLOAT: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(110) "param: 'ROOT' error: 'VALIDATE_FLOAT: Bool value cannot be treated as valid value for this validator.' val: ''"
+string(102) "param: 'ROOT' error: 'VALIDATE_FLOAT: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(113) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.'"
 bool(false)
-string(75) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '1234abc'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(75) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: 'abc1234'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(118) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: 'e9999999999999999999999999999999999999999999999999'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
 
 **** validate() STRING ****
-string(90) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"' val: '0'"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"'"
 bool(false)
-string(89) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"' val: ''"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"'"
 bool(false)
-string(84) "param: 'ROOT' error: 'VALIDATE_STRING: NULL input is rejected by default.' val: 'N;'"
+string(74) "param: 'ROOT' error: 'VALIDATE_STRING: NULL input is rejected by default.'"
 bool(false)
-string(112) "param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'"
+string(103) "param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(111) "param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: ''"
+string(103) "param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(114) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
+string(87) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.'"
 bool(false)
-string(89) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"' val: ''"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"'"
 bool(false)
-string(99) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"' val: '12.3456789'"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"'"
 bool(false)
-string(98) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"' val: '123456789'"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"'"
 bool(false)
-string(95) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"' val: '123456'"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"'"
 bool(false)
-string(136) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"' val: '99999999999999999999999999999999999999999999999'"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"'"
 bool(false)
-string(96) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"' val: '<\b	
->'"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "5"'"
 bool(false)

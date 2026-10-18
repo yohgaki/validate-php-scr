@@ -47,9 +47,9 @@ int(1)
 bool(true)
 int(2)
 bool(true)
-string(87) "param: 'ROOT' error: 'VALIDATE_INT: Failed to match defined option "values".' val: '10'"
+string(77) "param: 'ROOT' error: 'VALIDATE_INT: Failed to match defined option "values".'"
 bool(false)
-string(87) "param: 'ROOT' error: 'VALIDATE_INT: Failed to match defined option "values".' val: '11'"
+string(77) "param: 'ROOT' error: 'VALIDATE_INT: Failed to match defined option "values".'"
 bool(false)
-string(108) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.' val: 'a:1:{i:0;i:123;}'"
+string(84) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.'"
 bool(false)

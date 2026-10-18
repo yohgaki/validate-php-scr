@@ -82,15 +82,15 @@ var_dump(validate($ctx, $copy, $spec_r, $func_opts), $ctx->getStatus());
 ?>
 --EXPECT--
 **** array input is rejected ****
-string(108) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.' val: 'a:1:{i:0;d:1;}'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.'"
 bool(false)
 
 **** NAN / INF / -INF native doubles ****
-string(75) "param: 'ROOT' error: 'VALIDATE_FLOAT: NAN value is not allowed.' val: 'NAN'"
+string(64) "param: 'ROOT' error: 'VALIDATE_FLOAT: NAN value is not allowed.'"
 bool(false)
-string(75) "param: 'ROOT' error: 'VALIDATE_FLOAT: INF value is not allowed.' val: 'INF'"
+string(64) "param: 'ROOT' error: 'VALIDATE_FLOAT: INF value is not allowed.'"
 bool(false)
-string(77) "param: 'ROOT' error: 'VALIDATE_FLOAT: -INF value is not allowed.' val: '-INF'"
+string(65) "param: 'ROOT' error: 'VALIDATE_FLOAT: -INF value is not allowed.'"
 bool(false)
 
 **** INF allowed by option ****
@@ -106,15 +106,15 @@ string(0) ""
 bool(true)
 
 **** empty string without EMPTY flag ****
-string(61) "param: 'ROOT' error: 'VALIDATE_FLOAT: Empty input.' val: 'N;'"
+string(51) "param: 'ROOT' error: 'VALIDATE_FLOAT: Empty input.'"
 bool(false)
 
 **** EMPTY_TO_DEFAULT without default (broken spec, check off) ****
-string(116) "param: 'ROOT' error: 'Invalid validation spec: empty value cannot be used without proper "default" value.' val: 'N;'"
+string(106) "param: 'ROOT' error: 'Invalid validation spec: empty value cannot be used without proper "default" value.'"
 bool(false)
 
 **** string form overflows to INF after cast ****
-string(70) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float value.' val: 'INF'"
+string(59) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float value.'"
 bool(false)
 
 **** RAW returns original string ****

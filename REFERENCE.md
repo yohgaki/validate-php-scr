@@ -78,17 +78,19 @@ Parameters:
 
 validate() validates scalar or array. Array of scalars and/or array such as $_GET/$_POST can be validated. Nested array is supported.
 
-validate() removes validated values from $inputs (pass by reference), so $inputs holds the leftovers afterwards. Input keys that a VALIDATE_ARRAY spec does not declare are validated by its 'undeclared' option spec when it has one (see [Validator options](#validator-options)); otherwise they are validation errors ("Validate: Unvalidated value remains. Undeclared keys: ...") at every nesting level unless VALIDATE_OPT_UNVALIDATED is set. For multi-stage validation, set VALIDATE_OPT_UNVALIDATED on every stage except the last.
+validate() removes validated values from $inputs (pass by reference), so $inputs holds the leftovers afterwards. Input keys that a VALIDATE_ARRAY spec does not declare are validated by its 'undeclared' option spec when it has one (see [Validator options](#validator-options)); otherwise they are validation errors ("Validate: Unvalidated value remains. Undeclared keys: N." - the key names are the error record's 'value') at every nesting level unless VALIDATE_OPT_UNVALIDATED is set. For multi-stage validation, set VALIDATE_OPT_UNVALIDATED on every stage except the last.
+
+A callback (VALIDATE_CALLBACK 'callback', 'filter', 'key_callback', ...) may call validate() with the same $ctx. The nested call validates on its own (its result, status and parameter path below the current parameter) and restores the outer call's state when it returns, also when it throws. Its errors are recorded in $ctx, and a failed nested call fails the value whose callback made it ("Validate: validate() called by a callback with this context failed."). Inside a VALIDATE_MULTI_OR alternative it is speculative like the alternative. To try a spec without failing the value, use another context.
 
 $func_opts bit flag options:
 
  * VALIDATE_OPT_NONE - No options (no spec check).
  * VALIDATE_OPT_CHECK_SPEC - Check $spec before validation (default). Spec errors throw ValidateInvalidSpecException. validate() remembers up to 64 specs that passed the check in the process (one request on per-request SAPIs such as PHP-FPM; the oldest is dropped first) and skips the check for an identical spec: the same values, following PHP references, and the same object instances (closures). A spec is checked on its first and second use (the second check guards against changes made through PHP references) and not again while it stays unchanged; a changed spec is checked again. Use this for development and debugging; omit it in production to skip the check entirely.
  * VALIDATE_OPT_UNVALIDATED - Allow input keys that a VALIDATE_ARRAY spec does not declare. They stay in $inputs. Has no effect on a VALIDATE_ARRAY with an 'undeclared' option, which validates those keys.
- * VALIDATE_OPT_KEEP_INPUTS - Keep $inputs as is (validate() works on a copy, so no unset, no "filter" result and no substituted "default" reaches the caller). validate() unsets validated values from $inputs by default.
+ * VALIDATE_OPT_KEEP_INPUTS - Keep $inputs as is (validate() works on a copy, so no unset, no "filter" result and no substituted "default" reaches the caller, also not through a sub-array the caller holds by PHP reference). validate() unsets validated values from $inputs by default.
  * VALIDATE_OPT_RAISE_ERROR - Also raise a PHP error (trigger_error()) per failure at the level set by validate_set_error_level() (default E_USER_WARNING). Use this for debugging.
  * VALIDATE_OPT_ERROR_PARAM - Key stored errors by the parameter name only (default).
- * VALIDATE_OPT_ERROR_FULL - Store errors as an array corresponding to $inputs.
+ * VALIDATE_OPT_ERROR_FULL - Store errors in a tree corresponding to $inputs: $errors['ROOT']['a']['b'] lists the errors of $inputs['a']['b']. A node's own errors and its children share one array: an error (a string for user errors, an array with an int 'type' for system errors) takes the next int key, a child its key. When an int-keyed child gets errors where the node already has an error, the child takes the key and the node's error moves to the next int key.
  * VALIDATE_OPT_ERROR_SQUASH - Key stored errors by the squashed parameter path. e.g. ROOT=>array1=>array2=>param.
  * VALIDATE_OPT_DISABLE_EXCEPTION - Do not throw; validate() returns null on failure. Use this for business logic (form) validation.
  * VALIDATE_OPT_LOG_ERROR - Log errors by logger function set by validate_set_logger_function().
@@ -99,7 +101,7 @@ Exceptions (all extend InvalidArgumentException, so existing handlers keep worki
 
  * InvalidArgumentException - Bad argument: $ctx is not a Validate, $specs is not an array, $func_opts has unknown bits or more than one error mode.
  * ValidateInvalidSpecException - VALIDATE_OPT_CHECK_SPEC found spec errors. getContext() returns the Validate object holding every spec error (validate_get_system_errors()).
- * ValidateInvalidValueException - An input failed validation (unless VALIDATE_OPT_DISABLE_EXCEPTION). getError() returns the structured error record.
+ * ValidateInvalidValueException - An input failed validation (unless VALIDATE_OPT_DISABLE_EXCEPTION). getError() returns the structured error record, with the input value ('value'). The message names the parameter path and the error, never the input value (it may be a secret, and would reach logs as received); the same holds for the PHP error of VALIDATE_OPT_RAISE_ERROR. It may name the rejected character (ord / code point).
 
 RuntimeException (not an InvalidArgumentException) - the mbstring extension is not loaded, or mbstring.func_overload overloads the string functions (2): `new Validate`, validate_init(), validate() and validate_spec() throw it. Character encodings are validated with mb_check_encoding().
 
@@ -264,7 +266,7 @@ bool validate_spec(array $specs [, &$unvalidated = null [, &$ctx = null]])
 Parameters:
 
  * $specs - Validation spec array
- * $unvalidated - Optional output. A copy of $specs with every sub-spec that checked clean removed, i.e. what remains are the broken parts.
+ * $unvalidated - Optional output. A copy of $specs with every sub-spec that checked clean removed, i.e. what remains are the broken parts. $specs itself is never modified, also not through PHP references inside it.
  * $ctx - Optional Validate object that receives spec errors/warnings/notices (read them with validate_get_system_errors($ctx)).
 
 Return Value:
@@ -300,7 +302,7 @@ Constants:
  * VALIDATE_PARAMS - 3 (sub-specs of VALIDATE_ARRAY)
  * VALIDATE_SPECS - 3 (sub-specs of VALIDATE_MULTI)
 
-For VALIDATE_ARRAY, 'min'/'max' bound the number of elements (declared and undeclared keys together) and every input key must be declared in VALIDATE_PARAMS or validated by the 'undeclared' option (see validate()). 'amin'/'amax' are the element-count options of VALIDATE_FLAG_ARRAY (array of scalars).
+For VALIDATE_ARRAY, the input must be a PHP array (objects such as ArrayObject or other ArrayAccess implementations are rejected), 'min'/'max' bound the number of elements (declared and undeclared keys together) and every input key must be declared in VALIDATE_PARAMS or validated by the 'undeclared' option (see validate()). 'amin'/'amax' are the element-count options of VALIDATE_FLAG_ARRAY (array of scalars).
 
 VALIDATE_ARRAY options are 'min', 'max', 'default' (with VALIDATE_FLAG_UNDEFINED_TO_DEFAULT), 'error_message', 'undeclared' and 'key_callback' (with 'undeclared'); validate_spec() warns about others except '_' prefixed user options.
 
@@ -434,7 +436,7 @@ For VALIDATE_ARRAY specs only VALIDATE_FLAG_REJECT, VALIDATE_FLAG_UNDEFINED, VAL
 
 ### VALIDATE_INT flags
 
- * VALIDATE_INT_AS_STRING - Validate as int string, i.e. no int conversion (values beyond PHP_INT_MAX keep their precision). The result is always a string, also for int input.
+ * VALIDATE_INT_AS_STRING - Validate as int string, i.e. no int conversion (values beyond PHP_INT_MAX keep their precision). The result is always a string, also for int input, without a "+" sign ("+5" yields "5"; VALIDATE_FLAG_RAW returns the input as is).
  * VALIDATE_INT_BIT - TODO Implement this.
  * VALIDATE_INT_OCTAL - TODO Implement this.
  * VALIDATE_INT_HEX - TODO Implement this.
@@ -442,6 +444,8 @@ For VALIDATE_ARRAY specs only VALIDATE_FLAG_REJECT, VALIDATE_FLAG_UNDEFINED, VAL
  * VALIDATE_INT_NEGATIVE_SIGN - Allow "-" prefix. "-" is also allowed without it when negative values are valid: a negative 'min', or a negative key in 'values'.
 
 Integer strings must be "0" or digits without leading zeros, with an optional sign where allowed; "-0" and a lone sign are rejected (also with VALIDATE_INT_AS_STRING).
+
+Int input is compared with 'min' / 'max' exactly, also with integer-string bounds beyond PHP_INT_MAX. Float input is accepted only when it equals an integer exactly (3.0, 1e20); its exact digits are then validated like an integer string, whatever the precision INI setting, and -0.0 is 0. INF, NAN and floats with a fraction (2.9999999999999996) fail. Note that json_decode() turns integers beyond PHP_INT_MAX into floats, which are no longer the digits sent; decode with JSON_BIGINT_AS_STRING and use VALIDATE_INT_AS_STRING for them.
 
 ### VALIDATE_FLOAT flags
 
@@ -468,9 +472,9 @@ String validator reject all chars by default. Allowed chars must be specified ex
  * VALIDATE_STRING_ALPHA - Same as (VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_UPPER_ALPHA)
  * VALIDATE_STRING_ALNUM - Same as (VALIDATE_STRING_ALPHA | VALIDATE_STRING_DIGIT)
  * VALIDATE_STRING_SYMBOL - Allow symbol chars, but not control chars. WARNING: Dangerous option
- * VALIDATE_STRING_MB - Allow MultiByte chars. mb_check_encoding() validates the "encoding" option (default UTF-8); the string is then converted to UTF-8, and the RFC 3454 table C code points (non-ASCII spaces/controls, private use, non-characters, ...) are rejected unless allowed. Without it, only ASCII chars pass. See README "Character Encoding Validation".
+ * VALIDATE_STRING_MB - Allow MultiByte chars. mb_check_encoding() validates the "encoding" option (default UTF-8); the string is then converted to UTF-8, and the RFC 3454 table C code points (non-ASCII spaces/controls, private use, non-characters, ...) are rejected unless allowed. The error names the table, e.g. "Unicode char prohibited by RFC 3454 table C.1.2 (non-ASCII space) detected. code point: U+3000". Table C.1.2 has U+3000 (ideographic space) and U+00A0 (no-break space): allow them with the 'unicode' option, e.g. array('unicode' => array(0x3000 => true)). Without the flag, only ASCII chars pass. See README "Character Encoding Validation".
  * VALIDATE_STRING_BINARY - Allow anything. WARNING: Dangerous option
- * VALIDATE_STRING_RFC3454_C - Allow the RFC 3454 table C code points. ASCII code CNTRL is handled by above flags. e.g. VALIDATE_STRING_LF. The "unicode" option still applies.
+ * VALIDATE_STRING_RFC3454_C - Allow the RFC 3454 table C code points. ASCII control chars are still handled by the flags above, e.g. VALIDATE_STRING_LF. The "unicode" option still applies.
  * VALIDATE_STRING_RFC3454_D - Reserved. Currently has no effect.
 
 ### VALIDATE_CALLBACK flags
@@ -523,10 +527,10 @@ With VALIDATE_FLAG_EMPTY an empty string is accepted without applying the patter
 
 ### VALIDATE_MULTI flags
 
-This is not a type validator, but applies multiple validators for a value. A VALIDATE_MULTI spec takes VALIDATE_MULTI_AND or VALIDATE_MULTI_OR only (any other flag is a spec error) and only the 'filter' option, which runs before the sub-specs see the value (other options are warned about and have no effect).
+This is not a type validator, but applies multiple validators for a value. A VALIDATE_MULTI spec takes VALIDATE_MULTI_AND or VALIDATE_MULTI_OR only (any other flag is a spec error) and only the 'filter' option, which runs before the sub-specs see the value (other options are warned about and have no effect). VALIDATE_SPECS must be a non-empty array of specs.
 
  * VALIDATE_MULTI_AND - Validate a value by multiple specs with AND condition. i.e All validations must success. The result of the last spec is returned.
- * VALIDATE_MULTI_OR - Validate a value by multiple specs with OR condition. i.e One of validation must success. Alternatives are tried in order; a failing alternative records, logs, raises and throws nothing (only "VALIDATE_MULTI: All of specs are failed." is reported when none passes), and validate_error() inside an alternative fails it.
+ * VALIDATE_MULTI_OR - Validate a value by multiple specs with OR condition. i.e One of validation must success. Alternatives are tried in order; a failing alternative records, logs, raises and throws nothing (only "VALIDATE_MULTI: All of specs are failed." is reported when none passes), and validate_error() inside an alternative fails it. "All of specs are failed." is the MULTI spec's error: the flags and options of the alternatives (VALIDATE_FLAG_PASSTHRU, VALIDATE_FLAG_WARNING, 'error_message', ...) do not apply to it.
 
 ## Validator options
 
@@ -551,7 +555,7 @@ Validator options are specified like
  * 'transfer_encoding' - "quoted-printable", "percent", "base64", "base64url" or "html" for string validators. The encoded form is checked strictly and decoded, and the decoded text is validated ('encoding', flags, RFC 3454, 'unicode'). 'min' / 'max', 'regexp', the callback's $input and the validated value are the input as received. A spec error with _BINARY. See README "Character Encoding Validation" for each form.
  * 'ascii' - Char list for additionally allowed chars in strings (7-bit ASCII only).
  * 'unicode' - [code point => bool] overrides for strings with the _MB flag (code points after conversion to UTF-8): true allows, false rejects a code point (0x80-0x10FFFF).
- * 'values' - Set of valid values for string and integer. i.e. If an integer must be 1 or 2, 'values' should be [1=>true,2=>true]; Replaces 'min'/'max'; for strings it also replaces the char and encoding checks, since the value must equal a key exactly. Integer strings ("1") are accepted for integer values, with the sign rules of the VALIDATE_INT flags.
+ * 'values' - Set of valid values for VALIDATE_INT and the string validators: a non-empty array of [value => bool], with int keys for VALIDATE_INT. i.e. If an integer must be 1 or 2, 'values' should be [1=>true,2=>true]; Replaces 'min'/'max'; for strings it also replaces the char and encoding checks, since the value must equal a key exactly, and the result is a string (int input 1 yields "1"). Integer strings ("1") and floats equal to an integer are accepted for integer values, with the sign rules of the VALIDATE_INT flags.
  * 'regexp' - Regular expression for VALIDATE_REGEXP validator.
  * 'resource' - Required resource type name for VALIDATE_RESOURCE (get_resource_type()).
  * 'class' - Optional class/interface name for VALIDATE_OBJECT (instanceof check).
@@ -560,9 +564,9 @@ Validator options are specified like
  * 'callback' - Callback function for VALIDATE_CALLBACK validator; method name for VALIDATE_OBJECT (called as $value->callback($ctx), must return true).
  * 'error_message' - User defined error message, stored as a user error when the value fails (a user warning / notice with VALIDATE_FLAG_WARNING / VALIDATE_FLAG_NOTICE). "{{option}}" placeholders expand to option values, e.g. "{{min}}".
 
-Option keys starting with '_' are reserved for user data and ignored by validate_spec().
+Option keys starting with '_' are reserved for user data and ignored by validate_spec(). validate_spec() warns about unknown options and about options the validator does not use ('values', 'ascii', 'regexp', 'resource', 'class', 'encoding', 'callback', 'INF' / '-INF' / 'length' / 'decimal' / 'thousand', ...).
 
-VALIDATE_STRING, VALIDATE_REGEXP, VALIDATE_CALLBACK is string validators. String validations are performed before regexp or callback validations. i.e. Allowed chars must be specified by validator flags.
+VALIDATE_STRING, VALIDATE_REGEXP, VALIDATE_CALLBACK is string validators. String validations are performed before regexp or callback validations. i.e. Allowed chars must be specified by validator flags. VALIDATE_STRING and VALIDATE_REGEXP accept int input and float input whose string form (the precision INI setting) is the same float; any other float fails ("Float value has no exact string form. Pass it as a string."), so the result is never a value that was not input. VALIDATE_CALLBACK passes non-string input to the callback unchecked.
 
 ## Callbacks
 
@@ -658,7 +662,7 @@ Return Value:
 
 Description:
 
-Assign the validated (possibly normalized) value to $result; it is pre-set to the string-validated value for string input. Calling validate_error() fails the value even when the callback returns TRUE: the value is left out of the result and stays in $inputs.
+Assign the validated (possibly normalized) value to $result; it is pre-set to the string-validated value for string input. Calling validate_error() fails the value even when the callback returns TRUE: the value is left out of the result and stays in $inputs. So does a failed validate() called with $ctx (see [validate()](#validate)).
 
 Usage example:
 

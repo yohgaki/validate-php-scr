@@ -54,7 +54,7 @@ var_dump(validate_get_system_errors($ctx), validate_get_user_errors($ctx));
 ?>
 --EXPECT--
 User error
-string(90) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "3"' val: 'a'"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "3"'"
 array(3) {
   ["error"]=>
   array(1) {

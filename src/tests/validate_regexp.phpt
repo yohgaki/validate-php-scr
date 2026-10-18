@@ -64,13 +64,13 @@ echo "Done\n";
 bool(true)
 string(4) "data"
 ****TEST OPT: a:3:{s:3:"min";i:0;s:3:"max";i:100;s:6:"regexp";s:8:"/^b(.*)/";}
-string(68) "param: 'ROOT' error: 'VALIDATE_REGEXP: Failed to match.' val: 'data'"
+string(56) "param: 'ROOT' error: 'VALIDATE_REGEXP: Failed to match.'"
 ****TEST OPT: a:3:{s:3:"min";i:0;s:3:"max";i:100;s:6:"regexp";s:8:"/^d(.*)/";}
 bool(true)
 string(4) "data"
 ****TEST OPT: a:3:{s:3:"min";i:0;s:3:"max";i:100;s:6:"regexp";s:6:"/blah/";}
-string(68) "param: 'ROOT' error: 'VALIDATE_REGEXP: Failed to match.' val: 'data'"
+string(56) "param: 'ROOT' error: 'VALIDATE_REGEXP: Failed to match.'"
 ****TEST OPT: a:3:{s:3:"min";i:0;s:3:"max";i:100;s:6:"regexp";s:4:"/\[/";}
-string(68) "param: 'ROOT' error: 'VALIDATE_REGEXP: Failed to match.' val: 'data'"
-string(104) "param: 'ROOT' error: 'VALIDATE_REGEXP: PCRE error: Backtrack limit exhausted.' val: 'foobarfoobarfoobar'"
+string(56) "param: 'ROOT' error: 'VALIDATE_REGEXP: Failed to match.'"
+string(78) "param: 'ROOT' error: 'VALIDATE_REGEXP: PCRE error: Backtrack limit exhausted.'"
 Done

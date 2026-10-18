@@ -80,93 +80,93 @@ foreach ($values as $val) {
 ?>
 --EXPECT--
 **** validate() INT ****
-string(81) "param: 'ROOT' error: 'VALIDATE_INT: NULL input is rejected by default.' val: 'N;'"
+string(71) "param: 'ROOT' error: 'VALIDATE_INT: NULL input is rejected by default.'"
 bool(false)
-string(109) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.' val: '1'"
+string(100) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(108) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.' val: ''"
+string(100) "param: 'ROOT' error: 'VALIDATE_INT: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(98) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.' val: 'a:0:{}'"
+string(84) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.'"
 bool(false)
-string(111) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
+string(84) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.'"
 bool(false)
-string(107) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.' val: 'object(Closure)'"
+string(84) "param: 'ROOT' error: 'VALIDATE_INT: Array or object parameter is passed for scalar.'"
 bool(false)
-string(64) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: ''"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
-string(93) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-100" max: "100"' val: '-101'"
+string(81) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-100" max: "100"'"
 bool(false)
-string(92) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-100" max: "100"' val: '101'"
+string(81) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-100" max: "100"'"
 bool(false)
-string(70) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '-100.5'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
-string(69) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '101.5'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
 
 **** validate() FLOAT ****
-string(83) "param: 'ROOT' error: 'VALIDATE_FLOAT: NULL input is rejected by default.' val: 'N;'"
+string(73) "param: 'ROOT' error: 'VALIDATE_FLOAT: NULL input is rejected by default.'"
 bool(false)
-string(111) "param: 'ROOT' error: 'VALIDATE_FLOAT: Bool value cannot be treated as valid value for this validator.' val: '1'"
+string(102) "param: 'ROOT' error: 'VALIDATE_FLOAT: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(110) "param: 'ROOT' error: 'VALIDATE_FLOAT: Bool value cannot be treated as valid value for this validator.' val: ''"
+string(102) "param: 'ROOT' error: 'VALIDATE_FLOAT: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(100) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.' val: 'a:0:{}'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.'"
 bool(false)
-string(113) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.'"
 bool(false)
-string(109) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.' val: 'object(Closure)'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Array or object parameter is passed for scalar.'"
 bool(false)
-string(61) "param: 'ROOT' error: 'VALIDATE_FLOAT: Empty input.' val: 'N;'"
+string(51) "param: 'ROOT' error: 'VALIDATE_FLOAT: Empty input.'"
 bool(false)
-string(96) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-100" max: "100"' val: '-101'"
+string(84) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-100" max: "100"'"
 bool(false)
-string(95) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-100" max: "100"' val: '101'"
+string(84) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-100" max: "100"'"
 bool(false)
-string(98) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-100" max: "100"' val: '-100.5'"
+string(84) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-100" max: "100"'"
 bool(false)
-string(97) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-100" max: "100"' val: '100.5'"
+string(84) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-100" max: "100"'"
 bool(false)
 
 **** validate() STRING ****
-string(84) "param: 'ROOT' error: 'VALIDATE_STRING: NULL input is rejected by default.' val: 'N;'"
+string(74) "param: 'ROOT' error: 'VALIDATE_STRING: NULL input is rejected by default.'"
 bool(false)
-string(112) "param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'"
+string(103) "param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(111) "param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: ''"
+string(103) "param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
-string(101) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'a:0:{}'"
+string(87) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.'"
 bool(false)
-string(114) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'"
+string(87) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.'"
 bool(false)
-string(110) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'object(Closure)'"
+string(87) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.'"
 bool(false)
-string(90) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "3"' val: '0'"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "3"'"
 bool(false)
-string(89) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "3"' val: ''"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "3"'"
 bool(false)
-string(93) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "3"' val: 'abcd'"
+string(81) "param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "2" max: "3"'"
 bool(false)
 
 **** validate() ARRAY ****
-string(75) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: 'N;'"
+string(65) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. '"
 bool(false)
-string(74) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: '1'"
+string(65) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. '"
 bool(false)
-string(73) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: ''"
+string(65) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. '"
 bool(false)
-string(90) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of range. min: 2 max: 3 count 0' val: 'N;'"
+string(80) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of range. min: 2 max: 3 count 0'"
 bool(false)
-string(92) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: 'O:8:"stdClass":0:{}'"
+string(65) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. '"
 bool(false)
-string(88) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: 'object(Closure)'"
+string(65) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. '"
 bool(false)
-string(74) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: '0'"
+string(65) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. '"
 bool(false)
-string(73) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: ''"
+string(65) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. '"
 bool(false)
-string(77) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. ' val: 'abcd'"
+string(65) "param: 'ROOT' error: 'VALIDATE_ARRAY: Input value is not array. '"
 bool(false)
-string(90) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of range. min: 2 max: 3 count 1' val: 'N;'"
+string(80) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of range. min: 2 max: 3 count 1'"
 bool(false)
-string(90) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of range. min: 2 max: 3 count 4' val: 'N;'"
+string(80) "param: 'ROOT' error: 'VALIDATE_ARRAY: Count out of range. min: 2 max: 3 count 4'"
 bool(false)

@@ -53,14 +53,14 @@ try {
 }
 ?>
 --EXPECTF--
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "1"' val: '123456789'
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "2"' val: '123456789'
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "3"' val: '123456789'
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "4"' val: '123456789'
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "5"' val: '123456789'
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "6"' val: '123456789'
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "7"' val: '123456789'
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "8"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "1"'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "2"'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "3"'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "4"'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "5"'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "6"'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "7"'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "8"'
 string(9) "123456789"
 bool(true)
 string(7) "1234567"
@@ -77,6 +77,6 @@ string(7) "1234567"
 bool(true)
 string(7) "1234567"
 bool(true)
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "8" max: "10"' val: '1234567'
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "9" max: "10"' val: '1234567'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "8" max: "10"'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "9" max: "10"'
 Invalid validation spec detected. Fix spec errors first. Errors: 1 Warnings: 0. First error: param: 'ROOT' message: 'VALIDATE_STRING must have valid "min" and "max" options. min: "10" max:"1"'. Hint: validate_spec($spec, $unvalidated, $ctx); validate_get_system_errors($ctx);
