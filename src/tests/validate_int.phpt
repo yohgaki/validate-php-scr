@@ -54,7 +54,7 @@ int(123)
 bool(true)
 int(123)
 bool(true)
-string(68) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '+123'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
 int(123)
 bool(true)
@@ -66,17 +66,17 @@ int(-123)
 bool(true)
 int(-123)
 bool(true)
-string(93) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-150" max: "150"' val: '1234'"
+string(81) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-150" max: "150"'"
 bool(false)
-string(93) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-150" max: "150"' val: '1234'"
+string(81) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-150" max: "150"'"
 bool(false)
-string(93) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-150" max: "150"' val: '1234'"
+string(81) "param: 'ROOT' error: 'VALIDATE_INT: Out of defined range. min: "-150" max: "150"'"
 bool(false)
-string(69) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '123.4'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)
-string(69) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '123.4'"
+string(67) "param: 'ROOT' error: 'VALIDATE_INT: Float value is not an integer.'"
 bool(false)
-string(69) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '123.4'"
+string(67) "param: 'ROOT' error: 'VALIDATE_INT: Float value is not an integer.'"
 bool(false)
-string(71) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.' val: '123.4.5'"
+string(56) "param: 'ROOT' error: 'VALIDATE_INT: Invalid int string.'"
 bool(false)

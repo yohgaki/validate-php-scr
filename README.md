@@ -60,12 +60,15 @@ Every branch provides the same features with code written for its PHP versions. 
 * `master` is the development branch. Changes go to `master` first and are then ported to `php-8.x`, `php-7.x` and `php-5.x`, changing only what their PHP versions require (syntax, test runner, CI settings).
 * [`dev/basic_types_corpus.php`](dev/basic_types_corpus.php) checks a port: it validates tricky inputs with every `$basicTypes` spec. Run it on each branch and PHP version (`php dev/basic_types_corpus.php src > out.txt`) and compare the output with `master`'s. [`dev/fuzz_inputs.php`](dev/fuzz_inputs.php) does the same with generated inputs for the `json` and `url` specs.
 * `nightly` and `master` in the CI column are [setup-php](https://github.com/shivammathur/setup-php) builds of the next PHP release and of php-src master (8.6 and 8.7.0-dev as of October 2026).
-* The CI runs the tests with BCMath, GMP and mbstring, and once more without BCMath and GMP on the newest PHP version of the branch (8.5 on `master` / `php-8.x`, 7.4, 5.6), where big integers are compared in pure PHP. A job fails if an extension is missing, or loaded where it should not be.
+* The CI runs the tests with BCMath, GMP and mbstring, and once more without BCMath and GMP on the newest PHP version of the branch (8.5 on `master` / `php-8.x`, 7.4, 5.6), where big integers are compared in pure PHP. A job fails if an extension is missing, or loaded where it should not be. One more job runs them on 32-bit PHP (the official `php` image for `linux/386`, without BCMath and GMP).
+* The lint job uses PHP_CodeSniffer 3.13.6 (PHPCSStandards), checked against its SHA-256 digest.
 * `.gitlab-ci.yml` runs the same jobs in the official `php` Docker images for the released PHP versions of each branch, except PHP 5.3 / 5.4, whose images current Docker cannot pull (manifest schema 1).
 
 ### Releases
 
 Install with Composer: `composer require yohgaki/validate-php-scr:^1.0`. The same constraint works on every supported PHP version: each branch has its own release tags, and Composer installs the newest release whose `php` requirement your PHP meets.
+
+Composer's `vendor/autoload.php` loads the procedural API (`src/validate_func.php`, which loads `Validate.php` and the constants). The predefined specs are a variable, so `require` them where you use them: `require 'vendor/yohgaki/validate-php-scr/src/lib/basic_types.php';` defines `$basicTypes`. (Without Composer, `require_once` `src/validate_func.php` as in the examples.)
 
 * Tags are `vMAJOR.MINOR.PATCH`. The hundreds digit of PATCH names the branch - `5xx` `php-5.x` (PHP 5.3 - 5.6), `7xx` `php-7.x` (PHP 7.0 - 7.4), `8xx` `php-8.x` (PHP 8.x) - and the last two digits count its fix releases: `v1.0.800`, `v1.0.801`, ...
 * Every branch has the same features in the same MAJOR.MINOR. A fix is released as the next PATCH of the branches it affects, new features as the next MINOR of every branch (`v1.1.500`, `v1.1.700`, `v1.1.800`), incompatible changes as the next MAJOR.
@@ -80,7 +83,7 @@ Install with Composer: `composer require yohgaki/validate-php-scr:^1.0`. The sam
 * validate() checks validation spec format by default (spec errors throw ValidateInvalidSpecException). It remembers specs that passed, so a spec validated repeatedly in a process is not checked again after its second use. i.e. Disable spec format check for production.
 * validate() rejects input keys that a VALIDATE_ARRAY spec does not declare ("Unvalidated value remains."), unless the spec's "undeclared" option gives a spec for them (e.g. a catch-all for unknown HTTP headers). Pass VALIDATE_OPT_UNVALIDATED for multi-stage validation.
 * validate() stores validation statuses to context. e.g. $ctx in examples below. validate_get_status() reports the most recent validate() call.
-* validate() throws ValidateInvalidValueException by default. Both exception classes extend InvalidArgumentException.
+* validate() throws ValidateInvalidValueException by default. Both exception classes extend InvalidArgumentException. The message names the parameter and the error, never the input value; getError() returns the error record with the value.
 
 Tip:
 
@@ -96,6 +99,7 @@ Every string that VALIDATE_STRING, VALIDATE_REGEXP or VALIDATE_CALLBACK accepts 
 * Without the `_MB` flag, only ASCII chars allowed by the flags and the 'ascii' option pass. Any byte 0x80 - 0xFF fails.
 * With the `_MB` flag, `mb_check_encoding()` validates the string in the 'encoding' option: any character encoding name mbstring knows, e.g. `UTF-8` (default), `SJIS`, `Shift_JIS`, `CP932`, `EUC-JP`, `ISO-2022-JP`, `UTF-16`, `EUC-KR`, `BIG5`, `ISO-8859-1`. Then the string is converted to UTF-8 and every char is checked: ASCII chars by the flags and 'ascii', other chars against RFC 3454 table C (rejected unless `_RFC3454_C`) and the 'unicode' option. This works for encodings whose multibyte chars contain ASCII bytes (SJIS, BIG5) or that are not ASCII-compatible (ISO-2022-JP, UTF-16).
 * An unknown 'encoding', and mbstring's names that are not character encodings (`BASE64`, `Quoted-Printable`, `HTML-ENTITIES`, `UUENCODE`, `7bit`, `8bit`, `pass`, ...), are spec errors. With the spec check disabled they fail validation of `_MB` strings (without `_MB` the 'encoding' option is not used).
+* RFC 3454 table C rejects non-ASCII spaces (table C.1.2), among them U+3000 (ideographic space, the Japanese full-width space) and U+00A0 (no-break space), and so does every `_MB` spec of `$basicTypes`. The error names the table: "Unicode char prohibited by RFC 3454 table C.1.2 (non-ASCII space) detected. code point: U+3000". Allow such a char with the 'unicode' option, e.g. `'unicode' => [0x3000 => true]`, or every table C code point with `_RFC3454_C`.
 * Only `_BINARY` (it accepts any bytes) and an exact match of the 'values' option (the spec author's whitelist) skip the check.
 * The validated value is the input as received (after the spec's 'filter', if any), not the converted text.
 

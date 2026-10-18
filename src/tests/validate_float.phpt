@@ -137,35 +137,35 @@ foreach ($floats as $float => $dec) {
 ?>
 --EXPECTF--
 By default, validate() will not convert inputs.
-string(76) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '1.234   '"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(76) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '   1.234'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
 float(1.234)
 bool(true)
 float(-1.234)
 bool(true)
-string(74) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '+1.234'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
 float(1234)
 bool(true)
 float(-1234)
 bool(true)
-string(74) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '+1.2e3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
 float(7000)
 bool(true)
 float(-7000)
 bool(true)
-string(72) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '+7E3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(76) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '7E3     '"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(78) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '  7E3     '"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(79) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '  7E-3     '"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(79) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '  7E+3     '"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
 
 Apply filter trims strings.
@@ -177,19 +177,19 @@ float(1.234)
 bool(true)
 float(-1.234)
 bool(true)
-string(74) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '+1.234'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
 float(1234)
 bool(true)
 float(-1234)
 bool(true)
-string(74) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '+1.2e3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
 float(7000)
 bool(true)
 float(-7000)
 bool(true)
-string(72) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '+7E3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
 float(7000)
 bool(true)
@@ -209,27 +209,27 @@ float(1.234)
 bool(true)
 float(-1.234)
 bool(true)
-string(74) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '+1.234'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(98) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"' val: '1234'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"'"
 bool(false)
-string(99) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"' val: '-1234'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"'"
 bool(false)
-string(74) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '+1.2e3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(98) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"' val: '7000'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"'"
 bool(false)
-string(99) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"' val: '-7000'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"'"
 bool(false)
-string(72) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '+7E3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(98) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"' val: '7000'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"'"
 bool(false)
-string(98) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"' val: '7000'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"'"
 bool(false)
 float(0.007)
 bool(true)
-string(98) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"' val: '7000'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"'"
 bool(false)
 
 No scientific notation.
@@ -243,23 +243,23 @@ float(-1.234)
 bool(true)
 float(1.234)
 bool(true)
-string(98) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"' val: '1234'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"'"
 bool(false)
-string(99) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"' val: '-1234'"
+string(86) "param: 'ROOT' error: 'VALIDATE_FLOAT: Value is out of range. min: "-1000" max: "1000"'"
 bool(false)
-string(74) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '+1.2e3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(71) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '7E3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(72) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '-7E3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(72) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '+7E3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(71) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '7E3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(71) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '7E3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(72) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '7E-3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)
-string(72) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.' val: '7E+3'"
+string(60) "param: 'ROOT' error: 'VALIDATE_FLOAT: Invalid float format.'"
 bool(false)

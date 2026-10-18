@@ -125,7 +125,7 @@ define('VALIDATE_CALLBACK_ALNUM', (VALIDATE_STRING_ALPHA | VALIDATE_STRING_DIGIT
 define('VALIDATE_CALLBACK_SYMBOL', VALIDATE_STRING_SYMBOL); // WARNING: Dangerous option
 define('VALIDATE_CALLBACK_MB', VALIDATE_STRING_MB); // Allow MultiByte chars
 define('VALIDATE_CALLBACK_BINARY', VALIDATE_STRING_BINARY); // WARNING: Dangerous option
-define('VALIDATE_CALLBACK_RFC3454_C', VALIDATE_STRING_RFC3454_C); // Allow Unicode CNTRL char. ASCII code CNTRL is treated by above flags.
+define('VALIDATE_CALLBACK_RFC3454_C', VALIDATE_STRING_RFC3454_C); // Allow the RFC 3454 table C code points (see VALIDATE_STRING_RFC3454_C). ASCII control chars are gated by the flags above.
 define('VALIDATE_CALLBACK_RFC3454_D', VALIDATE_STRING_RFC3454_D); // Reserved: currently has no effect.
 define('VALIDATE_CALLBACK_LAST_BIT', VALIDATE_STRING_LAST_BIT); /* Bit count for this type's flags (not used by this PHP code). */
 
@@ -148,7 +148,7 @@ define('VALIDATE_REGEXP_ALNUM', (VALIDATE_STRING_ALPHA | VALIDATE_STRING_DIGIT))
 define('VALIDATE_REGEXP_SYMBOL', VALIDATE_STRING_SYMBOL); // WARNING: Dangerous option
 define('VALIDATE_REGEXP_MB', VALIDATE_STRING_MB); // Allow MultiByte chars
 define('VALIDATE_REGEXP_BINARY', VALIDATE_STRING_BINARY); // WARNING: Dangerous option
-define('VALIDATE_REGEXP_RFC3454_C', VALIDATE_STRING_RFC3454_C); // Allow Unicode CNTRL char. ASCII code CNTRL is treated by above flags.
+define('VALIDATE_REGEXP_RFC3454_C', VALIDATE_STRING_RFC3454_C); // Allow the RFC 3454 table C code points (see VALIDATE_STRING_RFC3454_C). ASCII control chars are gated by the flags above.
 define('VALIDATE_REGEXP_RFC3454_D', VALIDATE_STRING_RFC3454_D); // Reserved: currently has no effect.
 define('VALIDATE_REGEXP_LAST_BIT', VALIDATE_STRING_LAST_BIT); /* Bit count for this type's flags (not used by this PHP code). */
 
@@ -202,7 +202,7 @@ define('VALIDATE_FLAG_LAST_BIT', 29); /* Used internally — one past the highes
 // Bit masks splitting per-type flags (lower 16 bits) from general flags (upper 16 bits).
 // Not used by this PHP code.
 define('VALIDATE_FLAGS_LOWER', 0x0000ffff); /* Mask for per-type flags. */
-define('VALIDATE_FLAGS_UPPER', 0xffff0000); /* Mask for general VALIDATE_FLAG_* flags. */
+define('VALIDATE_FLAGS_UPPER', ~VALIDATE_FLAGS_LOWER); /* Mask for general VALIDATE_FLAG_* flags (every bit above 15; an int on 32-bit PHP too). */
 
 
 /**************************************************************************/
@@ -237,10 +237,12 @@ define('VALIDATE_OPT_LOG_ERROR', 1 << 5); // Call the user-supplied logger (see 
 define('VALIDATE_OPT_ERROR_FULL', 1 << 6);
 define('VALIDATE_OPT_ERROR_PARAM', 1 << 7);
 define('VALIDATE_OPT_ERROR_SQUASH', 1 << 8);
-define('VALIDATE_OPT_LAST_BIT', 9); /* One past the highest option bit (1 << 8); not used by this PHP code. */
+define('VALIDATE_OPT_LAST_BIT', 9); /* One past the highest option bit (1 << 8); used for VALIDATE_OPT_UPPER. */
 
 // Bit mask covering unused option bits; used internally to detect unknown options.
-define('VALIDATE_OPT_UPPER', 0xfffffe00); /* Internal — reserved bits not exposed to users. */
+// Every bit from VALIDATE_OPT_LAST_BIT up: 0xfffffe00 would be a float on 32-bit PHP and miss
+// bits 32-63 on 64-bit PHP.
+define('VALIDATE_OPT_UPPER', ~((1 << VALIDATE_OPT_LAST_BIT) - 1)); /* Internal — reserved bits not exposed to users. */
 
 
 /**************************************************************************/

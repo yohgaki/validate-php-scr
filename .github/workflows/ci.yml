@@ -51,6 +51,20 @@ jobs:
       - name: Run tests
         run: cd src && php run-tests.php -p $(which php) --show-diff tests
 
+  # 32-bit PHP (setup-php has none): the official image for linux/386, which
+  # has mbstring but neither BCMath nor GMP.
+  test-32bit:
+    name: PHP 8.5 32-bit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tests
+        run: |
+          docker run --rm --platform linux/386 -v "$PWD:/w" -w /w/src php:8.5-cli sh -c \
+            'php -v && php -r "exit(PHP_INT_SIZE === 4 ? 0 : 1);" && php run-tests.php -p $(which php) --show-diff tests'
+
   lint:
     name: phpcs
     runs-on: ubuntu-latest
@@ -66,8 +80,18 @@ jobs:
           tools: cs2pr
           coverage: none
 
+      # PHP_CodeSniffer is maintained by PHPCSStandards (squizlabs.github.io
+      # still serves the abandoned 3.7.2). A pinned release, checked against
+      # the SHA-256 digest GitHub publishes for it.
       - name: Install phpcs
-        run: curl -sSfL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar -o /usr/local/bin/phpcs && chmod +x /usr/local/bin/phpcs
+        env:
+          PHPCS_VERSION: '3.13.6'
+          PHPCS_SHA256: 'aed4148cee26285a73e694a98d4675b84f81ef86b2581f811d3c402c0d3d7d23'
+        run: |
+          curl -sSfL "https://github.com/PHPCSStandards/PHP_CodeSniffer/releases/download/$PHPCS_VERSION/phpcs.phar" -o /tmp/phpcs.phar
+          echo "$PHPCS_SHA256  /tmp/phpcs.phar" | sha256sum -c -
+          install -m 0755 /tmp/phpcs.phar /usr/local/bin/phpcs
+          phpcs --version
 
       - name: Run phpcs
         run: phpcs --standard=src/phpcs.xml src/
