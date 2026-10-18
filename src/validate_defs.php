@@ -58,7 +58,7 @@ define('VALIDATE_BOOL_LAST_BIT', 6); /* Used internally — bit count for this t
    ('' with VALIDATE_BOOL_AS_STRING), like the other validators. */
 
 /* VALIDATE_INT flags */
-define('VALIDATE_INT_AS_STRING', 1 << 0); /* Compare as integer strings (no int conversion, so values beyond PHP_INT_MAX work); always return a string, also for int input. */
+define('VALIDATE_INT_AS_STRING', 1 << 0); /* Compare as integer strings (no int conversion, so values beyond PHP_INT_MAX work); always return a string without '+', also for int input. */
 define('VALIDATE_INT_BIT', 1 << 1); /* TODO: accept binary literals (e.g. "0b1010"). Not implemented yet. */
 define('VALIDATE_INT_OCTAL', 1 << 2); /* TODO: accept octal literals (e.g. "0755"). Not implemented yet. */
 define('VALIDATE_INT_HEX', 1 << 3); /* TODO: accept hexadecimal literals (e.g. "0xff"). Not implemented yet. */
@@ -96,8 +96,10 @@ define('VALIDATE_STRING_ALPHA', (VALIDATE_STRING_LOWER_ALPHA | VALIDATE_STRING_U
 define('VALIDATE_STRING_ALNUM', (VALIDATE_STRING_ALPHA | VALIDATE_STRING_DIGIT)); /* Shortcut: letters + digits. */
 define('VALIDATE_STRING_SYMBOL', 1 << 8); // WARNING: Dangerous — opens up all printable ASCII symbols. Prefer the 'ascii' option to whitelist a few.
 // Allow multibyte characters. mb_check_encoding() validates the "encoding" option
-// (default UTF-8); the chars are then checked on the string converted to UTF-8.
-// Without it, only ASCII chars are allowed.
+// (default UTF-8); the chars are then checked on the string converted to UTF-8:
+// RFC 3454 table C code points (e.g. U+3000, U+00A0) fail unless the "unicode"
+// option or VALIDATE_STRING_RFC3454_C allows them. Without it, only ASCII chars
+// are allowed.
 define('VALIDATE_STRING_MB', 1 << 9);
 define('VALIDATE_STRING_BINARY', 1 << 10); // WARNING: Dangerous — allows arbitrary binary bytes including NUL.
 // With _MB: allow the RFC 3454 table C code points (rejected by default), in any encoding.
@@ -229,7 +231,8 @@ define('VALIDATE_OPT_LOG_ERROR', 1 << 5); // Call the user-supplied logger (see 
 /*
  * Error storage layout — these three are mutually exclusive. They control how
  * errors recorded in the context are keyed:
- *   FULL:   nested array mirroring the spec tree (good for showing per-field errors in deep forms)
+ *   FULL:   nested array mirroring $inputs; a node's own errors take int keys next to its
+ *           children (good for showing per-field errors in deep forms)
  *   PARAM:  flat array keyed by the leaf parameter name (default behavior; matches most form UIs)
  *   SQUASH: flat array keyed by the joined path "a=>b=>c" (good for logging)
  * Passing more than one throws InvalidArgumentException.
