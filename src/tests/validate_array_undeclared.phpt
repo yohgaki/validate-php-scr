@@ -133,7 +133,7 @@ KEEP_INPUTS: true result={"Host":"h","X-Foo":"bar"} left={"Host":"h","X-Foo":"ba
 **** nested VALIDATE_ARRAY as undeclared spec ****
 ok: true result={"a":{"id":3},"b":{"id":4,"name":"xy"}} left=[]
 inner undeclared key: false result=null left={"a":{"zz":1}}
-  [a] Validate: Unvalidated value remains. Undeclared keys: 'zz' value=["zz"]
+  [a] Validate: Unvalidated value remains. Undeclared keys: 1. value=["zz"]
 
 **** VALIDATE_MULTI_OR alternative stays silent ****
 or: true result={"Host":"h","X-Foo":"bar\n"} left={"Host":"h","X-Foo":"bar\n"}

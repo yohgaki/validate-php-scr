@@ -85,4 +85,4 @@ array(4) {
   }
 }
 bool(false)
-string(94) "param: 'ROOT=>bool' error: 'Undefined parameter: Required parameter is not defined.' val: 'N;'"
+string(84) "param: 'ROOT=>bool' error: 'Undefined parameter: Required parameter is not defined.'"

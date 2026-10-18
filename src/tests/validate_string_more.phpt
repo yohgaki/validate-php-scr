@@ -79,33 +79,32 @@ var_dump(validate($ctx, $copy, $spec, $func_opts), $ctx->getStatus());
 **** values option ****
 string(3) "red"
 bool(true)
-string(93) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined option "values".' val: 'green'"
+string(80) "param: 'ROOT' error: 'VALIDATE_STRING: Failed to match defined option "values".'"
 bool(false)
-string(115) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'a:1:{i:0;s:3:"red";}'"
+string(87) "param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.'"
 bool(false)
 
 **** bool input is rejected ****
-string(112) "param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'"
+string(103) "param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'"
 bool(false)
 
 **** VALIDATE_FLAG_EMPTY_TO_DEFAULT ****
 string(8) "fallback"
 bool(true)
-string(116) "param: 'ROOT' error: 'Invalid validation spec: empty value cannot be used without proper "default" value.' val: 'N;'"
+string(106) "param: 'ROOT' error: 'Invalid validation spec: empty value cannot be used without proper "default" value.'"
 bool(false)
 
 **** invalid UTF-8 encoding with VALIDATE_STRING_MB ****
-string(75) "param: 'ROOT' error: 'VALIDATE_STRING: Invalid UTF-8 encoding.' val: 'aÿþb'"
+string(63) "param: 'ROOT' error: 'VALIDATE_STRING: Invalid UTF-8 encoding.'"
 bool(false)
 
 **** strict CRLF (CR and LF flags without CRLF_MIXED) ****
 string(4) "a
 b"
 bool(true)
-string(71) "param: 'ROOT' error: 'VALIDATE_STRING: Invalid LF detected.' val: 'a
-b'"
+string(60) "param: 'ROOT' error: 'VALIDATE_STRING: Invalid LF detected.'"
 bool(false)
-string(74) "param: 'ROOT' error: 'VALIDATE_STRING: Invalid CR/LF detected.' val: 'ab'"
+string(63) "param: 'ROOT' error: 'VALIDATE_STRING: Invalid CR/LF detected.'"
 bool(false)
 
 **** VALIDATE_FLAG_RAW returns original input ****

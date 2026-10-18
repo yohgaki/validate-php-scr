@@ -39,7 +39,11 @@ default. Errors are sent to `error_log()` (parameter paths and messages only,
 no input values) and stashed in `$GLOBALS['_validate_errors_']`. Flip the
 `$exception` switch inside the script to make failures throw
 `ValidateInvalidValueException`. Input keys that the generated spec does not
-declare are validation errors.
+declare are validation errors, and so is a request whose `METHOD:PATH` has no
+spec: an endpoint that was not logged, or another spelling of a logged path
+(`/index.php/x`, `//index.php`). Such a request is reported like any other
+failure ("No spec for this METHOD:PATH."); before 2026-10-18 it passed
+unvalidated.
 
 ## Status and Limitations
 

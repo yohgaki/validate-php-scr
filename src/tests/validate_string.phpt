@@ -104,10 +104,10 @@ foreach($strings as $type => $val) {
 }
 ?>
 --EXPECT--
-param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'O:8:"stdClass":0:{}'
+param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.'
 
 DATA: null=>'N;'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: NULL input is rejected by default.' val: 'N;'
+param: 'ROOT' error: 'VALIDATE_STRING: NULL input is rejected by default.'
 
 DATA: null=>'N;'  FLAG: binary=>1024
 string(2) "N;"
@@ -115,28 +115,28 @@ bool(true)
 
 
 DATA: null=>'N;'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "78" chr: "N"' val: 'N;'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "78" chr: "N"'
 
 DATA: null=>'N;'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "78" chr: "N"' val: 'N;'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "78" chr: "N"'
 
 DATA: null=>'N;'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "59" chr: ";"' val: 'N;'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "59" chr: ";"'
 
 DATA: null=>'N;'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "59" chr: ";"' val: 'N;'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "59" chr: ";"'
 
 DATA: null=>'N;'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "78" chr: "N"' val: 'N;'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "78" chr: "N"'
 
 DATA: null=>'N;'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "59" chr: ";"' val: 'N;'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "59" chr: ";"'
 
 DATA: null=>'N;'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "78" chr: "N"' val: 'N;'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "78" chr: "N"'
 
 DATA: null=>'N;'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "78" chr: "N"' val: 'N;'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "78" chr: "N"'
 
 DATA: empty=>''  FLAG: none=>0
 string(0) ""
@@ -189,7 +189,7 @@ bool(true)
 
 
 DATA: num=>'123456789'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num=>'123456789'  FLAG: binary=>1024
 string(9) "123456789"
@@ -197,16 +197,16 @@ bool(true)
 
 
 DATA: num=>'123456789'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num=>'123456789'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num=>'123456789'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num=>'123456789'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num=>'123456789'  FLAG: digit=>2
 string(9) "123456789"
@@ -219,13 +219,13 @@ bool(true)
 
 
 DATA: num=>'123456789'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num=>'123456789'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num2=>'123456789'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num2=>'123456789'  FLAG: binary=>1024
 string(9) "123456789"
@@ -233,16 +233,16 @@ bool(true)
 
 
 DATA: num2=>'123456789'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num2=>'123456789'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num2=>'123456789'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num2=>'123456789'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num2=>'123456789'  FLAG: digit=>2
 string(9) "123456789"
@@ -255,13 +255,13 @@ bool(true)
 
 
 DATA: num2=>'123456789'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: num2=>'123456789'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: float=>'123.456'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123.456'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: float=>'123.456'  FLAG: binary=>1024
 string(7) "123.456"
@@ -269,31 +269,31 @@ bool(true)
 
 
 DATA: float=>'123.456'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123.456'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: float=>'123.456'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123.456'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: float=>'123.456'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123.456'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: float=>'123.456'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123.456'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: float=>'123.456'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "46" chr: "."' val: '123.456'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "46" chr: "."'
 
 DATA: float=>'123.456'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "46" chr: "."' val: '123.456'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "46" chr: "."'
 
 DATA: float=>'123.456'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123.456'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: float=>'123.456'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123.456'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: lower=>'abc'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: lower=>'abc'  FLAG: binary=>1024
 string(3) "abc"
@@ -301,7 +301,7 @@ bool(true)
 
 
 DATA: lower=>'abc'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: lower=>'abc'  FLAG: lower=>64
 string(3) "abc"
@@ -309,7 +309,7 @@ bool(true)
 
 
 DATA: lower=>'abc'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: lower=>'abc'  FLAG: alpha=>192
 string(3) "abc"
@@ -317,7 +317,7 @@ bool(true)
 
 
 DATA: lower=>'abc'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: lower=>'abc'  FLAG: alnum=>194
 string(3) "abc"
@@ -325,13 +325,13 @@ bool(true)
 
 
 DATA: lower=>'abc'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: lower=>'abc'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: uppper=>'XYZ'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"' val: 'XYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"'
 
 DATA: uppper=>'XYZ'  FLAG: binary=>1024
 string(3) "XYZ"
@@ -339,10 +339,10 @@ bool(true)
 
 
 DATA: uppper=>'XYZ'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"' val: 'XYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"'
 
 DATA: uppper=>'XYZ'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"' val: 'XYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"'
 
 DATA: uppper=>'XYZ'  FLAG: upper=>128
 string(3) "XYZ"
@@ -355,7 +355,7 @@ bool(true)
 
 
 DATA: uppper=>'XYZ'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"' val: 'XYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"'
 
 DATA: uppper=>'XYZ'  FLAG: alnum=>194
 string(3) "XYZ"
@@ -363,13 +363,13 @@ bool(true)
 
 
 DATA: uppper=>'XYZ'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"' val: 'XYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"'
 
 DATA: uppper=>'XYZ'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"' val: 'XYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"'
 
 DATA: alpha=>'abcXYZ'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: alpha=>'abcXYZ'  FLAG: binary=>1024
 string(6) "abcXYZ"
@@ -377,13 +377,13 @@ bool(true)
 
 
 DATA: alpha=>'abcXYZ'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: alpha=>'abcXYZ'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"' val: 'abcXYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"'
 
 DATA: alpha=>'abcXYZ'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: alpha=>'abcXYZ'  FLAG: alpha=>192
 string(6) "abcXYZ"
@@ -391,7 +391,7 @@ bool(true)
 
 
 DATA: alpha=>'abcXYZ'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: alpha=>'abcXYZ'  FLAG: alnum=>194
 string(6) "abcXYZ"
@@ -399,13 +399,13 @@ bool(true)
 
 
 DATA: alpha=>'abcXYZ'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: alpha=>'abcXYZ'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: space=>'   '  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "' val: '   '
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "'
 
 DATA: space=>'   '  FLAG: binary=>1024
 string(3) "   "
@@ -413,22 +413,22 @@ bool(true)
 
 
 DATA: space=>'   '  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "' val: '   '
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "'
 
 DATA: space=>'   '  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "' val: '   '
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "'
 
 DATA: space=>'   '  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "' val: '   '
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "'
 
 DATA: space=>'   '  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "' val: '   '
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "'
 
 DATA: space=>'   '  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "' val: '   '
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "'
 
 DATA: space=>'   '  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "' val: '   '
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "'
 
 DATA: space=>'   '  FLAG: space=>1
 string(3) "   "
@@ -436,10 +436,10 @@ bool(true)
 
 
 DATA: space=>'   '  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "' val: '   '
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "'
 
 DATA: tab=>'	'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"'
 
 DATA: tab=>'	'  FLAG: binary=>1024
 string(1) "	"
@@ -447,31 +447,31 @@ bool(true)
 
 
 DATA: tab=>'	'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"'
 
 DATA: tab=>'	'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"'
 
 DATA: tab=>'	'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"'
 
 DATA: tab=>'	'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"'
 
 DATA: tab=>'	'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"'
 
 DATA: tab=>'	'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"'
 
 DATA: tab=>'	'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"'
 
 DATA: tab=>'	'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"'
 
 DATA: almum=>'abc1234'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc1234'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: almum=>'abc1234'  FLAG: binary=>1024
 string(7) "abc1234"
@@ -479,19 +479,19 @@ bool(true)
 
 
 DATA: almum=>'abc1234'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc1234'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: almum=>'abc1234'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: 'abc1234'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: almum=>'abc1234'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc1234'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: almum=>'abc1234'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: 'abc1234'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 DATA: almum=>'abc1234'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc1234'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: almum=>'abc1234'  FLAG: alnum=>194
 string(7) "abc1234"
@@ -499,13 +499,13 @@ bool(true)
 
 
 DATA: almum=>'abc1234'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc1234'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: almum=>'abc1234'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc1234'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: mixed=>'abcXYZ! "#$%&()'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ! "#$%&()'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: mixed=>'abcXYZ! "#$%&()'  FLAG: binary=>1024
 string(15) "abcXYZ! "#$%&()"
@@ -513,31 +513,31 @@ bool(true)
 
 
 DATA: mixed=>'abcXYZ! "#$%&()'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ! "#$%&()'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: mixed=>'abcXYZ! "#$%&()'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"' val: 'abcXYZ! "#$%&()'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"'
 
 DATA: mixed=>'abcXYZ! "#$%&()'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ! "#$%&()'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: mixed=>'abcXYZ! "#$%&()'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "33" chr: "!"' val: 'abcXYZ! "#$%&()'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "33" chr: "!"'
 
 DATA: mixed=>'abcXYZ! "#$%&()'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ! "#$%&()'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: mixed=>'abcXYZ! "#$%&()'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "33" chr: "!"' val: 'abcXYZ! "#$%&()'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "33" chr: "!"'
 
 DATA: mixed=>'abcXYZ! "#$%&()'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ! "#$%&()'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: mixed=>'abcXYZ! "#$%&()'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ! "#$%&()'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: utf8=>'日本'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: utf8=>'日本'  FLAG: binary=>1024
 string(6) "日本"
@@ -545,25 +545,25 @@ bool(true)
 
 
 DATA: utf8=>'日本'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: utf8=>'日本'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: utf8=>'日本'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: utf8=>'日本'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: utf8=>'日本'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: utf8=>'日本'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: utf8=>'日本'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: utf8=>'日本'  FLAG: mb=>512
 string(6) "日本"
@@ -573,9 +573,7 @@ bool(true)
 DATA: multiline=>'abc
 XYZ
 '  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc
-XYZ
-'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: multiline=>'abc
 XYZ
@@ -589,61 +587,45 @@ bool(true)
 DATA: multiline=>'abc
 XYZ
 '  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc
-XYZ
-'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: multiline=>'abc
 XYZ
 '  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: 'abc
-XYZ
-'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"'
 
 DATA: multiline=>'abc
 XYZ
 '  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc
-XYZ
-'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: multiline=>'abc
 XYZ
 '  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: 'abc
-XYZ
-'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"'
 
 DATA: multiline=>'abc
 XYZ
 '  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc
-XYZ
-'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: multiline=>'abc
 XYZ
 '  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"' val: 'abc
-XYZ
-'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "10" chr: "\x0A"'
 
 DATA: multiline=>'abc
 XYZ
 '  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc
-XYZ
-'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: multiline=>'abc
 XYZ
 '  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc
-XYZ
-'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 DATA: cntrl=>'\b abc'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"' val: '\b abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"'
 
 DATA: cntrl=>'\b abc'  FLAG: binary=>1024
 string(6) "\b abc"
@@ -651,31 +633,31 @@ bool(true)
 
 
 DATA: cntrl=>'\b abc'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"' val: '\b abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"'
 
 DATA: cntrl=>'\b abc'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"' val: '\b abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"'
 
 DATA: cntrl=>'\b abc'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"' val: '\b abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"'
 
 DATA: cntrl=>'\b abc'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"' val: '\b abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"'
 
 DATA: cntrl=>'\b abc'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"' val: '\b abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"'
 
 DATA: cntrl=>'\b abc'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"' val: '\b abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"'
 
 DATA: cntrl=>'\b abc'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"' val: '\b abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"'
 
 DATA: cntrl=>'\b abc'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"' val: '\b abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"'
 
 DATA: urf8broken=>'��日本'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '��日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: urf8broken=>'��日本'  FLAG: binary=>1024
 string(8) "��日本"
@@ -683,58 +665,58 @@ bool(true)
 
 
 DATA: urf8broken=>'��日本'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '��日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: urf8broken=>'��日本'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '��日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: urf8broken=>'��日本'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '��日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: urf8broken=>'��日本'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '��日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: urf8broken=>'��日本'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '��日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: urf8broken=>'��日本'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '��日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: urf8broken=>'��日本'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '��日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 DATA: urf8broken=>'��日本'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Invalid UTF-8 encoding.' val: '��日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Invalid UTF-8 encoding.'
 
 DATA: array=>'a:2:{i:0;i:1;i:1;i:2;}'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.'
 
 DATA: array=>'a:2:{i:0;i:1;i:1;i:2;}'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"'
 
 DATA: array=>'a:2:{i:0;i:1;i:1;i:2;}'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"'
 
 DATA: array=>'a:2:{i:0;i:1;i:1;i:2;}'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"'
 
 DATA: array=>'a:2:{i:0;i:1;i:1;i:2;}'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"'
 
 DATA: array=>'a:2:{i:0;i:1;i:1;i:2;}'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"'
 
 DATA: array=>'a:2:{i:0;i:1;i:1;i:2;}'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"'
 
 DATA: array=>'a:2:{i:0;i:1;i:1;i:2;}'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"'
 
 DATA: array=>'a:2:{i:0;i:1;i:1;i:2;}'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"'
 
 DATA: array=>'a:2:{i:0;i:1;i:1;i:2;}'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "0" max: "20"'
 
 DATA: 0=>''  FLAG: none=>0
 string(0) ""
@@ -787,7 +769,7 @@ bool(true)
 
 
 \DATA: null=>'N;'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: NULL input is rejected by default.' val: 'N;'
+param: 'ROOT' error: 'VALIDATE_STRING: NULL input is rejected by default.'
 
 \DATA: null=>'1'  FLAG: binary=>1024
 string(2) "N;"
@@ -795,537 +777,535 @@ bool(true)
 
 
 \DATA: null=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: null=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: null=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: null=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: null=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: null=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: null=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: null=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: empty=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "10"' val: ''
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "10"'
 
 \DATA: empty=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: empty=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: empty=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: empty=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: empty=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: empty=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: empty=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: empty=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: empty=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 \DATA: num=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num2=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123456789'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 \DATA: num2=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num2=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num2=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num2=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num2=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num2=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num2=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num2=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: num2=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: float=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"' val: '123.456'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "49" chr: "1"'
 
 \DATA: float=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: float=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: float=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: float=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: float=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: float=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: float=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: float=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: float=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: lower=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 \DATA: lower=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: lower=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: lower=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: lower=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: lower=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: lower=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: lower=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: lower=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: lower=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: uppper=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"' val: 'XYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "88" chr: "X"'
 
 \DATA: uppper=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: uppper=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: uppper=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: uppper=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: uppper=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: uppper=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: uppper=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: uppper=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: uppper=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: alpha=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abcXYZ'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 \DATA: alpha=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: alpha=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: alpha=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: alpha=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: alpha=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: alpha=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: alpha=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: alpha=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: alpha=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: space=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "' val: '   '
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "32" chr: " "'
 
 \DATA: space=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: space=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: space=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: space=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: space=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: space=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: space=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: space=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: space=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: tab=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"' val: '	'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "9" chr: "\x09"'
 
 \DATA: tab=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: tab=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: tab=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: tab=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: tab=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: tab=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: tab=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: tab=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: tab=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: almum=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc1234'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 \DATA: almum=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: almum=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: almum=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: almum=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: almum=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: almum=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: almum=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: almum=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: almum=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: mixed=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "10"' val: 'abcXYZ! "#$%&()'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "10"'
 
 \DATA: mixed=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: mixed=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: mixed=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: mixed=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: mixed=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: mixed=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: mixed=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: mixed=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: mixed=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: utf8=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 \DATA: utf8=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: utf8=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: utf8=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: utf8=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: utf8=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: utf8=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: utf8=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: utf8=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: utf8=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: multiline=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"' val: 'abc
-XYZ
-'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "97" chr: "a"'
 
 \DATA: multiline=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: multiline=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: multiline=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: multiline=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: multiline=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: multiline=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: multiline=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: multiline=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: multiline=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: cntrl=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"' val: '\b abc'
+param: 'ROOT' error: 'VALIDATE_STRING: Illegal char detected. ord: "92" chr: "\\"'
 
 \DATA: cntrl=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: cntrl=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: cntrl=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: cntrl=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: cntrl=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: cntrl=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: cntrl=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: cntrl=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: cntrl=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: urf8broken=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.' val: '��日本'
+param: 'ROOT' error: 'VALIDATE_STRING: Multibyte char detected.'
 
 \DATA: urf8broken=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: urf8broken=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: urf8broken=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: urf8broken=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: urf8broken=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: urf8broken=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: urf8broken=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: urf8broken=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: urf8broken=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: array=>'a:2:{i:0;i:1;i:1;i:2;}'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Array or object parameter is passed for scalar.'
 
 \DATA: array=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "10"' val: 'a:2:{i:0;i:1;i:1;i:2;}'
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "10"'
 
 \DATA: array=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: array=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: array=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: array=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: array=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: array=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: array=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: array=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: 0=>'1'  FLAG: none=>0
-param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "10"' val: ''
+param: 'ROOT' error: 'VALIDATE_STRING: Length is out of range. min: "1" max: "10"'
 
 \DATA: 0=>'1'  FLAG: binary=>1024
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: 0=>'1'  FLAG: lf=>8
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: 0=>'1'  FLAG: lower=>64
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: 0=>'1'  FLAG: upper=>128
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: 0=>'1'  FLAG: alpha=>192
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: 0=>'1'  FLAG: digit=>2
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: 0=>'1'  FLAG: alnum=>194
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: 0=>'1'  FLAG: space=>1
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'
 
 \DATA: 0=>'1'  FLAG: mb=>512
-param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.' val: '1'
+param: 'ROOT' error: 'VALIDATE_STRING: Bool value cannot be treated as valid value for this validator.'

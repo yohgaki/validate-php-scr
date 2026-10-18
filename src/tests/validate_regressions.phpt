@@ -186,7 +186,7 @@ DEL is an ASCII control char, also with _MB: null status=false errors=["VALIDATE
 trailing CR in strict CRLF: null status=false errors=["VALIDATE_STRING: Invalid CR\/LF detected."]
 CRLF pair in strict CRLF: "a\r\nb" status=true
 "0" with _MB: "0" status=true
-U+00A0 is rejected: null status=false errors=["VALIDATE_STRING: Unicode CNTRL char detected. code point: U+00A0"]
+U+00A0 is rejected: null status=false errors=["VALIDATE_STRING: Unicode char prohibited by RFC 3454 table C.1.2 (non-ASCII space) detected. code point: U+00A0"]
 "unicode"=>false also applies with RFC3454_C: null status=false errors=["VALIDATE_STRING: Detected invalid unicode defined by $option[\"unicode\"]. code point: U+3042"]
 BINARY returns a string: "12.5" status=true
 bool(true)
@@ -205,7 +205,7 @@ AS_STRING "-": null status=false errors=["VALIDATE_INT: Invalid int string."]
 AS_STRING "+": null status=false errors=["VALIDATE_INT: Invalid int string."]
 AS_STRING "-0": null status=false errors=["VALIDATE_INT: Invalid int string."]
 AS_STRING "007": null status=false errors=["VALIDATE_INT: Invalid int string."]
-AS_STRING "+7": "+7" status=true
+AS_STRING "+7": "7" status=true
 AS_STRING "-7": "-7" status=true
 "-0" without AS_STRING: null status=false errors=["VALIDATE_INT: Invalid int string."]
 spec min "1-2": VALIDATE_INT "min" and "max" options must be int or integer string.
@@ -222,8 +222,8 @@ REJECT parameter absent: {"b":1} status=true
 REJECT parameter present: null status=false errors=["VALIDATE_INT: Rejected by flag."]
 
 **** undeclared input keys ****
-undeclared key: null status=false errors=["Validate: Unvalidated value remains. Undeclared keys: 'evil'"]
-undeclared nested key: null status=false errors=["Validate: Unvalidated value remains. Undeclared keys: 'evil'"]
+undeclared key: null status=false errors=["Validate: Unvalidated value remains. Undeclared keys: 1."]
+undeclared nested key: null status=false errors=["Validate: Unvalidated value remains. Undeclared keys: 1."]
 VALIDATE_OPT_UNVALIDATED: {"a":1} status=true
 array(1) {
   ["evil"]=>

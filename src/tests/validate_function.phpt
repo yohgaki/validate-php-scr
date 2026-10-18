@@ -103,11 +103,11 @@ Exception raised
 
 From logger:
 string(18) "TEST USER ERROR #1"
-param: 'ROOT' error: 'TEST USER ERROR #1' val: '1000.1'
+param: 'ROOT' error: 'TEST USER ERROR #1'
 
 From logger:
 string(18) "TEST USER ERROR #2"
-param: 'ROOT' error: 'TEST USER ERROR #2' val: '1000.1'
+param: 'ROOT' error: 'TEST USER ERROR #2'
 
 From logger:
 string(20) "TEST USER WARNING #1"

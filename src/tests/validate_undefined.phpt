@@ -190,7 +190,7 @@ print_r($ctx->getValidated());
 ?>
 --EXPECT--
 bool(false)
-param: 'ROOT=>GET=>undefined_flag_none' error: 'Undefined parameter: Required parameter is not defined.' val: 'N;'
+param: 'ROOT=>GET=>undefined_flag_none' error: 'Undefined parameter: Required parameter is not defined.'
 
 Input array - validated values are removed
 Array
