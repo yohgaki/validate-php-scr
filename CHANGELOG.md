@@ -2,8 +2,13 @@
 
 ## Unreleased
 
-A second review of the design and the code (2026-10-18). Every finding was
-reproduced on every branch, on PHP 5.3, 5.6, 7.0, 7.4, 8.0 and 8.7-dev.
+Nothing yet.
+
+## 1.0.x02 - 2026-10-19: `v1.0.502` (`php-5.x`), `v1.0.702` (`php-7.x`), `v1.0.802` (`php-8.x`)
+
+Fix release of 1.0. A second review of the design and the code (2026-10-18).
+Every finding was reproduced on every branch, on PHP 5.3, 5.6, 7.0, 7.4, 8.0
+and 8.7-dev.
 
 ### Security
 
